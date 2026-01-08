@@ -45,6 +45,7 @@ export default function Home() {
       color: "from-purple-500 to-pink-500",
       description: "Coming soon",
        disabled: true,
+       href: "/subjects/sql",
     },
     {
       name: "Operating Systems",
@@ -52,6 +53,7 @@ export default function Home() {
       color: "from-orange-500 to-red-500",
        description: "Coming soon",
        disabled: true,
+       href: "/subjects/sql",
     },
     {
       name: "Computer Networks",
@@ -59,6 +61,7 @@ export default function Home() {
       color: "from-green-500 to-emerald-500",
       description: "Coming soon",
        disabled: true,
+       href: "/subjects/sql",
     },
     {
       name: "DSA (Logic)",
@@ -66,6 +69,7 @@ export default function Home() {
       color: "from-yellow-500 to-orange-500",
       description: "Coming soon",
        disabled: true,
+       href: "/subjects/sql",
     },
     {
       name: "System Design",
@@ -73,6 +77,7 @@ export default function Home() {
       color: "from-slate-600 to-slate-700",
       description: "Coming soon",
       disabled: true,
+      href: "/subjects/sql",
     },
   ];
 
