@@ -71,7 +71,7 @@ export default function Footer() {
             title="Product"
             links={[
               { label: "Features", href: "#features" },
-              { label: "Pricing", href: "/pricing" },
+             
               
             ]}
           />
@@ -81,9 +81,7 @@ export default function Footer() {
             title="Resources"
             links={[
               { label: "SQL", href: "/subjects/sql" },
-              { label: "OOOPs", href: "#" },
-              { label: "OS", href: "#" },
-              { label: "DSA", href: "#" },
+              
 
             ]}
           />
@@ -92,10 +90,8 @@ export default function Footer() {
           <FooterColumn
             title="Company"
             links={[
-              { label: "About", href: "/about" },
-              { label: "Careers", href: "/careers" },
-              { label: "Privacy", href: "/privacy" },
-              { label: "Terms", href: "/terms" },
+              { label: "About", href: "/about-us" },
+             
             ]}
           />
         </div>
