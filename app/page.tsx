@@ -44,7 +44,6 @@ export default function Home() {
       icon: "🎯",
       color: "from-purple-500 to-pink-500",
       description: "Coming soon",
-      href: "/subjects/oops",
        disabled: true,
     },
     {
@@ -52,7 +51,6 @@ export default function Home() {
       icon: "💻",
       color: "from-orange-500 to-red-500",
        description: "Coming soon",
-      href: "/subjects/os",
        disabled: true,
     },
     {
@@ -60,7 +58,6 @@ export default function Home() {
       icon: "🌐",
       color: "from-green-500 to-emerald-500",
       description: "Coming soon",
-      href: "/subjects/cn",
        disabled: true,
     },
     {
@@ -68,7 +65,6 @@ export default function Home() {
       icon: "🧮",
       color: "from-yellow-500 to-orange-500",
       description: "Coming soon",
-      href: "/subjects/dsa",
        disabled: true,
     },
     {
@@ -77,7 +73,6 @@ export default function Home() {
       color: "from-slate-600 to-slate-700",
       description: "Coming soon",
       disabled: true,
-      href: "/subjects/dsa",
     },
   ];
 
