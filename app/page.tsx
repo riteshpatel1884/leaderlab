@@ -93,12 +93,8 @@ export default function Home() {
         <Navbar/>
 
         {/* Hero Section */}
-        <section className="pt-40 px-6 relative">
+        <section className="pt-30 px-6 relative">
           <div className="max-w-6xl mx-auto text-center relative z-10">
-            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-gradient-to-r from-brand-primary/10 to-brand-secondary/10 text-brand-primary text-sm font-bold uppercase tracking-wider mb-8 border border-brand-primary/20 hover:border-brand-primary/40 transition-all cursor-default group">
-              <span className="group-hover:tracking-widest transition-all">Confidence without feedback is delusion.</span>
-            </div>
-            
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight mb-8 leading-[1.05]">
               Stop practicing in <br/>
               <span className="relative inline-block">
@@ -112,7 +108,7 @@ export default function Home() {
             </h1>
             
             <p className="text-xl md:text-2xl lg:text-3xl text-text-secondary max-w-3xl mx-auto mb-12 leading-relaxed font-light">
-              Interviews aren't multiple choice. Write your answer, explain your logic, and get the <span className="text-text-primary font-semibold underline decoration-brand-primary/50 decoration-2 underline-offset-4">brutal feedback</span> your friends are too nice to give you.
+              Write your answer, explain your logic, and get the <span className="text-text-primary font-semibold underline decoration-brand-primary/50 decoration-2 underline-offset-4">brutal feedback</span> your friends are too nice to give you.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -139,7 +135,7 @@ export default function Home() {
         </section>
 
         {/* Advanced Feedback Visualization Section */}
-        <section id="features" className="py-32 px-6 bg-gradient-to-b from-transparent via-bg-secondary/50 to-transparent">
+        <section id="features" className="py-32 px-6 pt-15 bg-gradient-to-b from-transparent via-bg-secondary/50 to-transparent">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-20">
               <h2 className="text-4xl md:text-6xl font-extrabold mb-6">
@@ -258,7 +254,7 @@ export default function Home() {
         </section>
 
         {/* Bento Grid Features */}
-        <section id="how-it-works" className="py-24 px-6">
+        <section id="how-it-works" className="py-24 px-6 pt-0">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-5xl font-extrabold mb-4">Get judged. <span className="text-brand-primary">Fix it. Repeat.</span></h2>  
@@ -337,7 +333,7 @@ export default function Home() {
         </section>
 
         {/* Subjects Section */}
-        <section id="subjects" className="py-24 px-6 bg-bg-secondary/30">
+        <section id="subjects" className="py-24 pt-0 px-6 bg-bg-secondary/30">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-5xl font-extrabold mb-4">
@@ -411,7 +407,7 @@ export default function Home() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-32 px-6">
+        <section className="py-32 px-6 pt-0">
           <div className="max-w-4xl mx-auto text-center">
             <div className="bg-gradient-to-br from-brand-primary to-brand-secondary p-1 rounded-[3rem] shadow-2xl">
               <div className="bg-surface rounded-[2.85rem] py-20 px-6 sm:px-12 border border-border-subtle relative overflow-hidden">
