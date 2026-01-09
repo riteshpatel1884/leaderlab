@@ -1,160 +1,271 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { Verdict, Difficulty } from "@prisma/client";
 
-import { NextResponse } from 'next/server';
-import Groq from 'groq-sdk';
+// Map difficulty strings to Prisma enum
+function mapDifficulty(difficulty: string): Difficulty {
+  switch (difficulty.toUpperCase()) {
+    case "EASY":
+      return Difficulty.EASY;
+    case "MEDIUM":
+      return Difficulty.MEDIUM;
+    case "HARD":
+      return Difficulty.HARD;
+    default:
+      return Difficulty.MEDIUM;
+  }
+}
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+// Extract verdict from feedback
+function extractVerdict(feedback: string): Verdict {
+  const lowerFeedback = feedback.toLowerCase();
+  
+  // Look for explicit verdict indicators
+  if (lowerFeedback.includes("pass") || lowerFeedback.includes("excellent") || 
+      lowerFeedback.includes("correct") || lowerFeedback.includes("well done")) {
+    return Verdict.PASS;
+  }
+  
+  if (lowerFeedback.includes("weak") || lowerFeedback.includes("needs improvement") ||
+      lowerFeedback.includes("could be better") || lowerFeedback.includes("partially correct")) {
+    return Verdict.WEAK;
+  }
+  
+  if (lowerFeedback.includes("fail") || lowerFeedback.includes("incorrect") ||
+      lowerFeedback.includes("wrong") || lowerFeedback.includes("does not")) {
+    return Verdict.FAIL;
+  }
+  
+  // Default to WEAK if unclear
+  return Verdict.WEAK;
+}
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { question, userQuery, schema, followUp, conversationHistory, userResponse } = await req.json();
+    const { 
+      question, 
+      schema, 
+      userQuery, 
+      followUp, 
+      conversationHistory, 
+      userResponse,
+      questionId,
+      difficulty,
+      topic,
+      clerkUserId 
+    } = await req.json();
 
-    // Count how many exchanges have happened (assistant messages = number of exchanges)
-    const exchangeCount = conversationHistory ? conversationHistory.filter((msg: any) => msg.role === 'assistant').length : 0;
+    if (!question || !schema || !userQuery) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
 
-    // Initial evaluation
-    if (!followUp) {
-      const systemPrompt = `
-You are a Senior SQL Interviewer at a top-tier tech company.
+    let prompt;
+    
+    if (followUp && conversationHistory && userResponse) {
+      // Handle follow-up conversation
+      const lastMessages = conversationHistory.slice(-4); // Only last 2 exchanges
+      const attemptCount = conversationHistory.filter((msg: any) => msg.role === 'user').length;
+      
+      // After 2 user attempts, offer to show the answer
+      const shouldShowAnswer = attemptCount >= 2;
+      
+      prompt = `SQL Problem: ${question}
+User's Query: ${userQuery}
 
-Your personality:
-Strict, concise, analytical. No fluff. No lectures. No unnecessary explanations.
+${lastMessages.map((msg: any) => `${msg.role}: ${msg.content}`).join('\n')}
 
-Your task:
-Evaluate the candidate's SQL query against the given schema and problem.
+User: ${userResponse}
 
-RULES (VERY IMPORTANT):
-1. Be brief. 3–6 lines max unless the query is fundamentally wrong.
-2. Stick strictly to the point. Do NOT wander or over-explain.
-3. Do NOT always ask for optimization.
+${shouldShowAnswer ? `
+The user has tried multiple times. If they're still stuck or asking for help:
+1. Show the correct SQL query
+2. Explain it briefly (2-3 lines max)
+3. Point out the key difference from their approach
 
-Evaluation logic:
-- If the query is WRONG:
-  • Clearly state it is incorrect.
-  • Explain the core logical or syntactic mistake in 1–2 lines.
-  • Ask ONE follow-up question to guide them (e.g., "What JOIN type should you use here?")
+Keep it short and clear.` : 'Respond briefly and naturally. If they\'re stuck after hints, give one more hint or ask if they want to see the answer.'}`;
+    } else {
+      // Initial evaluation
+      prompt = `Evaluate this SQL query:
 
-- If the query is CORRECT but INEFFICIENT:
-  • Say: "This works, but it's inefficient."
-  • Ask ONE short follow-up question about optimization.
+Problem: ${question}
 
-- If the query is CORRECT and ACCEPTABLE:
-  • Say: "Yes, this answer is correct."
-  • Ask ONE edge-case or conceptual question to deepen understanding.
-
-- If the query is PERFECT:
-  • Say: "Correct. Excellent work."
-  • Ask ONE advanced question about scalability or alternative approaches.
-
-ALWAYS end with ONE specific follow-up question to continue the conversation.
-
-Formatting:
-- Use Markdown
-- Use **bold** only for verdicts (Correct / Incorrect / Inefficient)
-- No paragraphs. Short bullets or sentences only.
-- End with a clear question.
-
-Start your response immediately with the evaluation.
-`;
-
-      const userMessage = `
-CONTEXT:
-Schema: 
+Schema:
 ${schema}
 
-Problem Description:
-${question}
-
-CANDIDATE'S QUERY:
+User's Query:
 ${userQuery}
 
-Evaluate this and ask ONE follow-up question.
-      `;
+Rules:
+1. Start with: **PASS**, **WEAK**, or **FAIL**
+2. Keep response SHORT (max 4-5 lines)
 
-      const completion = await groq.chat.completions.create({
+If PASS:
+- Say "Correct!" 
+- Ask ONE follow-up question (optional)
+
+If WEAK/FAIL:
+- Give 1-2 specific hints (don't explain everything)
+- Don't give the answer yet - let them try
+
+Be direct and concise like a real interviewer.`;
+    }
+
+    // Call Groq API
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile", // or "mixtral-8x7b-32768" for faster responses
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage },
+          {
+            role: "user",
+            content: prompt,
+          },
         ],
-        model: 'llama-3.3-70b-versatile', 
-        temperature: 0.6,
-      });
+        temperature: 0.5, // Lower for more focused responses
+        max_tokens: 500, // Reduced from 2000 to keep answers short
+      }),
+    });
 
-      return NextResponse.json({ 
-        feedback: completion.choices[0]?.message?.content || "No feedback generated." 
-      });
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("Groq API error:", error);
+      return NextResponse.json(
+        { error: "Failed to evaluate query" },
+        { status: 500 }
+      );
     }
 
-    // Follow-up conversation
-    else {
-      // Check if we've reached the limit (3 exchanges total: initial + 2 follow-ups)
-      const isLastExchange = exchangeCount >= 2;
+    const data = await response.json();
+    const feedback = data.choices[0]?.message?.content || "Unable to generate feedback";
 
-      const followUpSystemPrompt = `
-You are a Senior SQL Interviewer continuing a technical discussion.
-
-Your personality:
-Strict, concise, analytical. Direct and to the point.
-
-Your task:
-Respond to the candidate's answer/question based on the ongoing conversation.
-
-${isLastExchange ? `
-IMPORTANT: This is the FINAL exchange. Do NOT ask another question.
-- Provide a brief closing statement (1-2 lines)
-- Acknowledge their effort
-- End with "Good luck with your interview!" or similar
-- Do NOT ask any more questions
-` : `
-RULES:
-1. Keep responses brief (2–5 lines).
-2. If their answer is correct: Acknowledge briefly and ask ONE new question.
-3. If their answer is wrong/incomplete: Correct them concisely and ask ONE clarifying question.
-4. If they ask a question: Answer directly (1–2 lines) and ask ONE follow-up.
-5. Stay focused on SQL concepts, optimization, edge cases, or problem-solving.
-
-ALWAYS end with ONE new question to keep the conversation going.
-`}
-
-Formatting:
-- Use Markdown
-- Use **bold** for key terms
-- Short sentences only
-${isLastExchange ? '- End with a closing remark, NO questions' : '- End with a clear question'}
-
-Be conversational but professional. Guide them like a real interviewer would.
-`;
-
-      // Build conversation messages for context
-      const messages: any[] = [
-        { role: 'system', content: followUpSystemPrompt },
-        { 
-          role: 'user', 
-          content: `Original Problem: ${question}\n\nOriginal Schema: ${schema}\n\nCandidate's Query: ${userQuery}` 
-        },
-      ];
-
-      // Add conversation history
-      conversationHistory.forEach((msg: any) => {
-        messages.push({
-          role: msg.role === 'assistant' ? 'assistant' : 'user',
-          content: msg.content
+    // Store in database only for initial submissions (not follow-ups) and when user is authenticated
+    if (!followUp && clerkUserId && questionId && difficulty && topic) {
+      try {
+        // Get or create user
+        const user = await prisma.user.upsert({
+          where: { clerkUserId: clerkUserId },
+          update: {},
+          create: {
+            clerkUserId: clerkUserId,
+            name: null, // Can be updated later from Clerk user data
+          },
         });
-      });
 
-      const completion = await groq.chat.completions.create({
-        messages,
-        model: 'llama-3.3-70b-versatile',
-        temperature: 0.7,
-      });
+        // Get or create subject (topic)
+        const subject = await prisma.subject.upsert({
+          where: { slug: topic.toLowerCase().replace(/\s+/g, '-') },
+          update: {},
+          create: {
+            name: topic,
+            slug: topic.toLowerCase().replace(/\s+/g, '-'),
+            isActive: true,
+          },
+        });
 
-      return NextResponse.json({ 
-        feedback: completion.choices[0]?.message?.content || "No response generated." 
-      });
+        // Get or create question
+        const dbQuestion = await prisma.question.upsert({
+          where: { id: `sql-${questionId}` },
+          update: {},
+          create: {
+            id: `sql-${questionId}`,
+            subjectId: subject.id,
+            difficulty: mapDifficulty(difficulty),
+            isActive: true,
+          },
+        });
+
+        // Extract verdict from feedback
+        const verdict = extractVerdict(feedback);
+
+        // Create or update user question attempt
+        await prisma.userQuestionAttempt.upsert({
+          where: {
+            userId_questionId: {
+              userId: user.id,
+              questionId: dbQuestion.id,
+            },
+          },
+          update: {
+            verdict: verdict,
+            attemptedAt: new Date(),
+          },
+          create: {
+            userId: user.id,
+            questionId: dbQuestion.id,
+            subjectId: subject.id,
+            verdict: verdict,
+          },
+        });
+
+        // Update user subject summary
+        const summary = await prisma.userSubjectSummary.findUnique({
+          where: {
+            userId_subjectId: {
+              userId: user.id,
+              subjectId: subject.id,
+            },
+          },
+        });
+
+        if (summary) {
+          // Calculate new counts based on all attempts for this subject
+          const allAttempts = await prisma.userQuestionAttempt.findMany({
+            where: {
+              userId: user.id,
+              subjectId: subject.id,
+            },
+          });
+
+          const solvedCount = allAttempts.filter(a => a.verdict === Verdict.PASS).length;
+          const failedCount = allAttempts.filter(a => a.verdict === Verdict.FAIL).length;
+
+          await prisma.userSubjectSummary.update({
+            where: {
+              userId_subjectId: {
+                userId: user.id,
+                subjectId: subject.id,
+              },
+            },
+            data: {
+              solvedCount,
+              failedCount,
+              lastActivity: new Date(),
+            },
+          });
+        } else {
+          // Create new summary
+          const solvedCount = verdict === Verdict.PASS ? 1 : 0;
+          const failedCount = verdict === Verdict.FAIL ? 1 : 0;
+
+          await prisma.userSubjectSummary.create({
+            data: {
+              userId: user.id,
+              subjectId: subject.id,
+              solvedCount,
+              failedCount,
+              lastActivity: new Date(),
+            },
+          });
+        }
+      } catch (dbError) {
+        console.error("Database error:", dbError);
+        // Continue even if database operation fails - don't block the user
+      }
     }
+
+    return NextResponse.json({ feedback });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to evaluate' }, { status: 500 });
+    console.error("Error evaluating SQL:", error);
+    return NextResponse.json(
+      { error: "Failed to evaluate query" },
+      { status: 500 }
+    );
   }
 }

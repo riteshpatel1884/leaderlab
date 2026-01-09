@@ -8,6 +8,8 @@ export default function DashboardPage() {
   const { user } = useUser();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  // 1. New state to track if stats are visible or hidden
+  const [showStats, setShowStats] = useState(false);
 
   const fetchUserDetails = async () => {
     setLoading(true);
@@ -22,6 +24,20 @@ export default function DashboardPage() {
     }
   };
 
+  // 2. Logic to handle the toggle
+  const handleToggleStats = async () => {
+    if (showStats) {
+      // If currently showing, just hide them
+      setShowStats(false);
+    } else {
+      // If currently hidden, check if we need to fetch data first
+      if (!userData) {
+        await fetchUserDetails();
+      }
+      setShowStats(true);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black">
       {/* Header */}
@@ -29,13 +45,13 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-                <a 
-          href="/"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-gray-900/50 border-2 border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-300 group shadow-sm hover:shadow-lg hover:shadow-indigo-500/10"
-        >
-          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-          <span className="font-semibold text-sm">Back to Home</span>
-        </a>
+              <a 
+                href="/"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-gray-900/50 border-2 border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-300 group shadow-sm hover:shadow-lg hover:shadow-indigo-500/10"
+              >
+                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                <span className="font-semibold text-sm">Back to Home</span>
+              </a>
             </div>
             <UserButton 
               afterSignOutUrl="/"
@@ -76,22 +92,33 @@ export default function DashboardPage() {
             </div>
           </a>
 
-          {/* View Stats Card */}
+          {/* View/Hide Stats Card */}
           <button 
-            onClick={fetchUserDetails}
-            className="group text-left"
+            onClick={handleToggleStats}
+            className="group text-left w-full"
             disabled={loading}
           >
-            <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-2xl p-6 hover:border-blue-500/40 transition-all duration-300 hover:scale-105">
+            <div className={`bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border rounded-2xl p-6 transition-all duration-300 hover:scale-105 ${showStats ? 'border-blue-500 ring-1 ring-blue-500' : 'border-blue-500/20 hover:border-blue-500/40'}`}>
               <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
+                {showStats ? (
+                   /* Icon for Hide */
+                   <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                   </svg>
+                ) : (
+                   /* Icon for Show */
+                   <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                   </svg>
+                )}
               </div>
               <h3 className="text-xl font-bold text-white mb-2">
-                {loading ? 'Loading...' : 'View My Stats'}
+                {/* 3. Dynamic Text */}
+                {loading ? 'Loading...' : (showStats ? 'Hide My Stats' : 'View My Stats')}
               </h3>
-              <p className="text-gray-400">Check your progress and achievements</p>
+              <p className="text-gray-400">
+                {showStats ? 'Click to collapse detailed statistics' : 'Check your progress and achievements'}
+              </p>
             </div>
           </button>
 
@@ -109,8 +136,8 @@ export default function DashboardPage() {
           </a>
         </div>
 
-        {/* User Details Section - Only shown after fetching */}
-        {userData && (
+        {/* User Details Section - Only shown if enabled and data exists */}
+        {showStats && userData && (
           <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-8 animate-fade-in">
             <h2 className="text-2xl font-bold text-white mb-6">Your Statistics</h2>
             

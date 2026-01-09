@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
     "@clerk/nextjs": "^6.36.7",
     "@codemirror/lang-sql": "^6.10.0",
     "@monaco-editor/react": "^4.7.0",
