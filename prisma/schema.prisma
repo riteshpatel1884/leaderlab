@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  clerkUserId  String   @unique
+  name         String?
+  createdAt    DateTime @default(now())
+  
+  attempts     UserQuestionAttempt[]
+  summaries    UserSubjectSummary[]
+}
+
+model Subject {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  isActive  Boolean   @default(true)
+  
+  questions Question[]
+  attempts  UserQuestionAttempt[]
+  summaries UserSubjectSummary[]
+}
+
+model Question {
+  id         String     @id @default(cuid())
+  subjectId  String
+  difficulty Difficulty
+  isActive   Boolean    @default(true)
+  
+  subject    Subject   @relation(fields: [subjectId], references: [id])
+  attempts   UserQuestionAttempt[]
+}
+
+model UserQuestionAttempt {
+  id          String   @id @default(cuid())
+  userId      String
+  questionId  String
+  subjectId   String
+  verdict     Verdict
+  attemptedAt DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id])
+  question    Question @relation(fields: [questionId], references: [id])
+  subject     Subject  @relation(fields: [subjectId], references: [id])
+  
+  @@unique([userId, questionId])
+  @@index([userId, subjectId])
+}
+
+model UserSubjectSummary {
+  id           String    @id @default(cuid())
+  userId       String
+  subjectId    String
+  solvedCount  Int       @default(0)
+  failedCount  Int       @default(0)
+  lastActivity DateTime?
+  
+  user         User    @relation(fields: [userId], references: [id])
+  subject      Subject @relation(fields: [subjectId], references: [id])
+  
+  @@unique([userId, subjectId])
+}
+
+enum Verdict {
+  PASS
+  WEAK
+  FAIL
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}

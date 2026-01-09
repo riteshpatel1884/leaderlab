@@ -1,17 +1,33 @@
 'use client';
 
 import React from 'react';
-
+import { ArrowLeft } from 'lucide-react';
 const AboutPage = () => {
   return (
     <div className="min-h-screen bg-[#050505] text-white selection:bg-brand-primary/30">
+      <div className="">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+                <a 
+          href="/"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-gray-900/50 border-2 border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-300 group shadow-sm hover:shadow-lg hover:shadow-indigo-500/10"
+        >
+          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+          <span className="font-semibold text-sm">Back to Home</span>
+        </a>
+            </div>
+            
+          </div>
+        </div>
+      </div>
       {/* Background Decorative Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand-primary/10 blur-[120px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 blur-[120px] rounded-full" />
       </div>
 
-      <main className="relative z-10 max-w-4xl mx-auto px-6 pt-32 pb-24">
+      <main className="relative z-10 max-w-4xl mx-auto px-6 pt-12 pb-24">
         {/* Hero Section */}
         <section className="space-y-8">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight">

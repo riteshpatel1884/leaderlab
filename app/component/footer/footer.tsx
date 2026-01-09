@@ -68,9 +68,9 @@ export default function Footer() {
 
           {/* Product */}
           <FooterColumn
-            title="Product"
+            title="User"
             links={[
-              { label: "Features", href: "#features" },
+              { label: "Dashboard", href: "/dashboard" },
              
               
             ]}
