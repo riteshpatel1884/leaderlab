@@ -1012,7 +1012,7 @@ export default function SqlPracticePage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0a0e27] text-gray-900 dark:text-white transition-colors duration-300">
       {/* HEADER SECTION */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-0">
         <a href="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-gray-900/50 border-2 border-gray-200 dark:border-gray-800 hover:border-indigo-500 transition-all group">
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           <span className="font-semibold text-sm">Back to Home</span>
