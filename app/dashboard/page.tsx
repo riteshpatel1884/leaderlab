@@ -95,7 +95,7 @@ export default function DashboardPage() {
           {/* View/Hide Stats Card */}
           <button 
             onClick={handleToggleStats}
-            className="group text-left w-full"
+            className="group text-left w-full cursor-pointer"
             disabled={loading}
           >
             <div className={`bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border rounded-2xl p-6 transition-all duration-300 hover:scale-105 ${showStats ? 'border-blue-500 ring-1 ring-blue-500' : 'border-blue-500/20 hover:border-blue-500/40'}`}>

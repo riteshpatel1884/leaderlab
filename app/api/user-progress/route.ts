@@ -1,30 +1,63 @@
-// app/api/user-progress/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { Verdict } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const clerkUserId = searchParams.get("clerkUserId");
-
-  if (!clerkUserId) return NextResponse.json({ solvedIds: [] });
-
   try {
-    const attempts = await prisma.userQuestionAttempt.findMany({
-      where: {
-        user: { clerkUserId },
-        verdict: Verdict.PASS,
+    const { searchParams } = new URL(req.url);
+    const clerkUserId = searchParams.get("clerkUserId");
+
+    if (!clerkUserId) {
+      return NextResponse.json(
+        { error: "Missing clerkUserId parameter" },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkUserId: clerkUserId },
+      include: {
+        attempts: {
+          where: {
+            questionId: {
+              startsWith: "sql-",
+            },
+          },
+          select: {
+            questionId: true,
+            verdict: true,
+            cooldownUntil: true,
+          },
+        },
       },
-      select: { questionId: true },
     });
 
-    // Extract the numeric ID from "sql-1" format
-    const solvedIds = attempts.map((a) => 
-      parseInt(a.questionId.replace("sql-", ""))
-    );
+    if (!user) {
+      return NextResponse.json({ solvedIds: [], failedIds: [] });
+    }
 
-    return NextResponse.json({ solvedIds });
+    // Extract solved question IDs (PASS verdict)
+    const solvedIds = user.attempts
+      .filter((attempt) => attempt.verdict === Verdict.PASS)
+      .map((attempt) => parseInt(attempt.questionId.replace("sql-", "")));
+
+    // Extract failed/locked question IDs (FAIL verdict with active or past cooldown)
+    const failedIds = user.attempts
+      .filter((attempt) => 
+        attempt.verdict === Verdict.FAIL && 
+        attempt.cooldownUntil !== null
+      )
+      .map((attempt) => parseInt(attempt.questionId.replace("sql-", "")));
+
+    return NextResponse.json({ 
+      solvedIds,
+      failedIds
+    });
   } catch (error) {
-    return NextResponse.json({ solvedIds: [] }, { status: 500 });
+    console.error("Error fetching user progress:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch progress" },
+      { status: 500 }
+    );
   }
 }

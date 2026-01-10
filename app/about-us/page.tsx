@@ -30,9 +30,9 @@ const AboutPage = () => {
       <main className="relative z-10 max-w-4xl mx-auto px-6 pt-12 pb-24">
         {/* Hero Section */}
         <section className="space-y-8">
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight">
-            The <span className="text-brand-primary italic">Illusion</span> of <br />
-            Competence.
+          <h1 className="text-4xl md:text-6xl font-bold italic tracking-tight leading-tight">
+            The <span className="text-blue-800">Illusion</span> of <br />   
+            <span className="text-blue-800" >Competence. </span>  
           </h1>
           
           <div className="space-y-6 text-xl md:text-2xl text-zinc-400 font-light leading-relaxed">
@@ -41,7 +41,7 @@ const AboutPage = () => {
               Watching tutorials feels productive.
             </p>
             <p className="text-white font-medium">
-              But interviews don’t care what looks familiar to you - they care what you can <span className="text-brand-primary underline underline-offset-8">explain clearly</span>, under pressure.
+              But interviews don’t care what looks familiar to you - they care what you can <span className="text-blue-800 underline underline-offset-8">explain clearly, </span> under pressure.
             </p>
           </div>
         </section>
@@ -52,7 +52,7 @@ const AboutPage = () => {
           
           <div className="grid md:grid-cols-2 gap-12 items-start">
             <div>
-              <h2 className="text-sm uppercase tracking-[0.2em] text-brand-primary font-bold mb-4">
+              <h2 className="text-sm uppercase tracking-[0.2em] text-blue-800 font-bold mb-4">
                 The Mission
               </h2>
               <p className="text-3xl font-semibold leading-snug">
@@ -71,9 +71,9 @@ const AboutPage = () => {
         </section>
 
         {/* The Difference Section */}
-        <section className="mt-32 bg-zinc-900/40 border border-zinc-800 p-8 md:p-12 rounded-3xl backdrop-blur-sm">
+        <section className="mt-32 italic bg-zinc-900/40 border border-zinc-800 p-8 md:p-12 rounded-3xl backdrop-blur-sm">
           <div className="max-w-2xl">
-            <h2 className="text-2xl font-bold mb-6">How we operate</h2>
+            <h2 className="text-2xl font-bold mb-6 text-blue-800">How we operate</h2>
             <p className="text-lg text-zinc-400 leading-relaxed mb-8">
               LeaderLab doesn’t give you multiple-choice shortcuts or instant solutions. 
               It asks you to write real answers, the same way you would in an interview - 
@@ -84,8 +84,8 @@ const AboutPage = () => {
               {['Not politely.', 'Not generously.', 'Honestly.'].map((word, i) => (
                 <div 
                   key={word}
-                  className={`p-4 rounded-xl text-center font-bold text-lg ${
-                    i === 2 ? 'bg-brand-primary text-white' : 'bg-zinc-800/50 text-zinc-300'
+                  className={`p-4 bg-blue-800 rounded-xl text-center font-bold text-lg ${
+                    i === 2 ? 'bg-blue-400 text-white' : 'bg-blue-500 text-zinc-300'
                   }`}
                 >
                   {word}
@@ -98,7 +98,7 @@ const AboutPage = () => {
         {/* Footer CTA */}
         <footer className="mt-32 text-center space-y-8">
           <p className="text-zinc-500 font-medium">Ready to stop pretending and start practicing?</p>
-          <a href="/subjects/sql"><button className="px-8 cursor-pointer py-4 bg-white text-black rounded-full font-bold hover:bg-brand-primary hover:text-white hover:bg-zinc-900/40 transition-all duration-300 transform hover:scale-105">
+          <a href="/subjects/sql"><button className="px-8 cursor-pointer py-4 bg-green-600 text-black rounded-full font-bold hover:bg-brand-primary hover:text-white hover:bg-blue-800 transition-all duration-300 transform hover:scale-105">
             Start Your First Lab
           </button></a>
         </footer>

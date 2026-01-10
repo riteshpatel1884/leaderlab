@@ -42,16 +42,18 @@ model Question {
 }
 
 model UserQuestionAttempt {
-  id          String   @id @default(cuid())
-  userId      String
-  questionId  String
-  subjectId   String
-  verdict     Verdict
-  attemptedAt DateTime @default(now())
+  id            String    @id @default(cuid())
+  userId        String
+  questionId    String
+  subjectId     String
+  verdict       Verdict
+  attemptedAt   DateTime  @default(now())
+  cooldownUntil DateTime? // NEW: When user can retry after failure
+  failureCount  Int       @default(0) // NEW: Track consecutive failures
   
-  user        User     @relation(fields: [userId], references: [id])
-  question    Question @relation(fields: [questionId], references: [id])
-  subject     Subject  @relation(fields: [subjectId], references: [id])
+  user          User      @relation(fields: [userId], references: [id])
+  question      Question  @relation(fields: [questionId], references: [id])
+  subject       Subject   @relation(fields: [subjectId], references: [id])
   
   @@unique([userId, questionId])
   @@index([userId, subjectId])

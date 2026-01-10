@@ -257,7 +257,7 @@ export default function Home() {
         <section id="how-it-works" className="py-24 px-6 pt-0">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-5xl font-extrabold mb-4">Get judged. <span className="text-brand-primary">Fix it. Repeat.</span></h2>  
+              <h2 className="text-4xl md:text-6xl font-extrabold mb-6">Get judged. <span className="text-brand-primary">Fix it. Repeat.</span></h2>  
               <p className="text-text-secondary text-xl">From explanation to correction.</p>
             </div>
 
