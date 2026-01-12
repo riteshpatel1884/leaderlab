@@ -42,14 +42,7 @@ export default function Navbar() {
             
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-sm font-semibold text-gray-400 hover:text-blue-500 transition-colors relative group">
-                Features
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-500 group-hover:w-full transition-all duration-300"></span>
-              </a>
-              <a href="#how-it-works" className="text-sm font-semibold text-gray-400 hover:text-blue-500 transition-colors relative group">
-                How it Works
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-500 group-hover:w-full transition-all duration-300"></span>
-              </a>
+              
               <a href="#subjects" className="text-sm font-semibold text-gray-400 hover:text-blue-500 transition-colors relative group">
                 Subjects
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-500 group-hover:w-full transition-all duration-300"></span>

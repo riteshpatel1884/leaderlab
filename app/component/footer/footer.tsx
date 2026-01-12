@@ -81,7 +81,7 @@ export default function Footer() {
             title="Resources"
             links={[
               { label: "SQL", href: "/subjects/sql" },
-              
+              { label: "OOPs", href: "/subjects/oops" },
 
             ]}
           />

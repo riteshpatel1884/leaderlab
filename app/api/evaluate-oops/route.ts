@@ -1,4 +1,3 @@
-// api/evaluate-sql/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { Verdict, Difficulty } from "@prisma/client";
@@ -21,11 +20,18 @@ function mapDifficulty(difficulty: string): Difficulty {
 function extractVerdict(feedback: string): Verdict {
   const lowerFeedback = feedback.toLowerCase();
   
-  if (lowerFeedback.includes("correct") || lowerFeedback.includes("✓")) {
+  if (lowerFeedback.includes("correct") || 
+      lowerFeedback.includes("excellent") || 
+      lowerFeedback.includes("great explanation") ||
+      lowerFeedback.includes("well done") ||
+      lowerFeedback.includes("✓")) {
     return Verdict.PASS;
   }
   
-  if (lowerFeedback.includes("wrong") || lowerFeedback.includes("incorrect") || 
+  if (lowerFeedback.includes("incorrect") || 
+      lowerFeedback.includes("wrong") ||
+      lowerFeedback.includes("poor explanation") ||
+      lowerFeedback.includes("major issues") ||
       lowerFeedback.includes("✗")) {
     return Verdict.FAIL;
   }
@@ -36,22 +42,23 @@ function extractVerdict(feedback: string): Verdict {
 export async function POST(req: NextRequest) {
   try {
     const { 
-      question, 
-      schema, 
-      userQuery, 
-      followUp, 
-      conversationHistory, 
+      question,
+      userAnswer,
+      codeSubmission, // Optional: for code-based questions
+      followUp,
+      conversationHistory,
       userResponse,
       questionId,
       difficulty,
       topic,
       clerkUserId,
-      attemptNumber, // Track which attempt this is (1, 2, or 3)
-      isCorrect, // Track if initial submission was correct
-      hasAskedFollowUp // Track if AI already asked a follow-up
+      attemptNumber,
+      isCorrect,
+      hasAskedFollowUp,
+      language // Programming language context
     } = await req.json();
 
-    if (!question || !schema || !userQuery) {
+    if (!question || !userAnswer) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -66,7 +73,7 @@ export async function POST(req: NextRequest) {
         });
 
         if (user) {
-          const dbQuestionId = `sql-${questionId}`;
+          const dbQuestionId = `oop-${questionId}`;
           const attempt = await prisma.userQuestionAttempt.findUnique({
             where: {
               userId_questionId: {
@@ -80,7 +87,7 @@ export async function POST(req: NextRequest) {
           if (attempt && attempt.cooldownUntil && new Date() < attempt.cooldownUntil) {
             const hoursLeft = Math.ceil((attempt.cooldownUntil.getTime() - Date.now()) / (1000 * 60 * 60));
             return NextResponse.json({
-              feedback: `⏳ **COOLDOWN ACTIVE**\n\nYou failed this question previously. You can retry after **${hoursLeft} hours**.\n\nUse this time to:\n- Review SQL concepts\n- Practice similar problems\n- Study the schema carefully\n\nCome back stronger! 💪`,
+              feedback: `⏳ **COOLDOWN ACTIVE**\n\nYou failed this OOP question previously. You can retry after **${hoursLeft} hours**.\n\nUse this time to:\n- Review OOP concepts and principles\n- Study design patterns\n- Practice explaining concepts clearly\n- Read the topic documentation\n\nCome back stronger! 💪`,
               cooldown: true,
               cooldownUntil: attempt.cooldownUntil.toISOString(),
             });
@@ -100,122 +107,151 @@ export async function POST(req: NextRequest) {
       // This is a follow-up conversation
       if (isCorrect) {
         // User already passed - just answer their question
-        prompt = `SQL Problem: ${question}
+        prompt = `OOP Interview Question: ${question}
 
-Schema:
-${schema}
+User's CORRECT Answer:
+${userAnswer}
 
-User's Correct Query:
-${userQuery}
+${codeSubmission ? `User's Code:\n\`\`\`\n${codeSubmission}\n\`\`\`` : ''}
 
-The user's SQL query was CORRECT. They are now asking a follow-up question about the problem.
+The user's explanation and understanding were CORRECT. They are now asking a follow-up question about the OOP concept.
 
 Previous conversation:
 ${conversationHistory.slice(-4).map((msg: any) => `${msg.role}: ${msg.content}`).join('\n')}
 
 User: ${userResponse}
 
-RULES:
-1. Answer their question briefly (2-3 sentences max)
+INTERVIEWER ROLE:
+You are an experienced OOP interviewer. The candidate passed this question.
+
+RESPONSE RULES:
+1. Answer their question briefly and clearly (2-4 sentences)
 2. Be helpful and educational
-3. DO NOT ask any more questions - just answer
-4. Keep it concise`;
+3. Provide examples if relevant
+4. DO NOT ask any more questions - just answer
+5. Keep it conversational and encouraging`;
       } else if (hasAskedFollowUp) {
         // AI already asked a follow-up, this is the user's response to it
-        prompt = `SQL Problem: ${question}
-
-Schema:
-${schema}
+        prompt = `OOP Interview Context: ${question}
 
 Previous conversation:
 ${conversationHistory.slice(-4).map((msg: any) => `${msg.role}: ${msg.content}`).join('\n')}
 
-User: ${userResponse}
+User's Response: ${userResponse}
 
-RULES:
-1. Evaluate their response briefly (1-2 sentences)
-2. If correct, say "Good!" or "Correct!"
-3. If wrong, give a brief correction
+INTERVIEWER ROLE:
+You asked a follow-up question. Now evaluate their response.
+
+RESPONSE RULES:
+1. Evaluate their answer briefly (2-3 sentences)
+2. If correct/satisfactory, acknowledge it: "Good understanding!" or "That's correct!"
+3. If incorrect, provide a brief correction with explanation
 4. DO NOT ask another follow-up question
-5. End the conversation here`;
+5. Keep it professional yet friendly`;
       } else {
-        // User is asking for help (hint request or clarification)
-        prompt = `SQL Problem: ${question}
+        // User is asking for help/clarification
+        prompt = `OOP Interview Question: ${question}
 
-Schema:
-${schema}
+User's Current Answer:
+${userAnswer}
 
-User's Current Query:
-${userQuery}
+${codeSubmission ? `User's Code:\n\`\`\`\n${codeSubmission}\n\`\`\`` : ''}
 
 Previous feedback:
 ${conversationHistory.slice(-2).map((msg: any) => `${msg.role}: ${msg.content}`).join('\n')}
 
-User: ${userResponse}
+User's Question: ${userResponse}
 
-RULES:
-1. Look at their current query and the feedback given
-2. Give ONE specific, actionable hint (2-3 sentences max)
-3. Don't reveal the full answer
-4. Point them in the right direction
-5. Be encouraging`;
+INTERVIEWER ROLE:
+You are an experienced OOP interviewer helping a candidate.
+
+RESPONSE RULES:
+1. Look at their current answer and the feedback given
+2. Give ONE specific, actionable hint (2-4 sentences)
+3. Don't reveal the complete answer
+4. Guide them toward the correct understanding
+5. Focus on the OOP concept they're struggling with
+6. Be encouraging and supportive`;
       }
     } else {
       // Initial submission or retry attempt
       const currentAttempt = attemptNumber || 1;
       
       if (currentAttempt === 3) {
-        // Third attempt - give answer and lock
-        prompt = `Evaluate this SQL query (THIRD AND FINAL ATTEMPT):
+        // Third attempt - give comprehensive answer and lock
+        prompt = `OOP Interview Question (FINAL ATTEMPT 3/3): ${question}
 
-Problem: ${question}
+${language ? `Programming Language Context: ${language}` : ''}
 
-Schema:
-${schema}
+User's Answer:
+${userAnswer}
 
-User's Query:
-${userQuery}
+${codeSubmission ? `User's Code:\n\`\`\`${language || ''}\n${codeSubmission}\n\`\`\`` : ''}
 
-RULES FOR THIRD ATTEMPT:
-1. Start with "**WRONG**" if incorrect, or "**CORRECT**" if correct
-2. If WRONG:
-   - Show the COMPLETE CORRECT SQL query in a code block
-   - Explain it in 2-3 sentences
-   - Say "This question is now locked for 24 hours."
-3. If CORRECT:
-   - Say "Correct!" and briefly explain why (2-3 sentences)
-   - Ask ONE follow-up question ONLY IF the problem requires conceptual understanding
-   - For simple problems, just congratulate and don't ask follow-up
+INTERVIEWER ROLE:
+You are an experienced OOP interviewer. This is the candidate's FINAL attempt.
 
-Keep it SHORT and PRECISE.`;
+EVALUATION RULES FOR FINAL ATTEMPT:
+1. Start with "**PASS**" if their understanding is solid, or "**FAIL**" if not
+
+2. If FAIL:
+   - Provide a COMPREHENSIVE explanation of the correct answer
+   - Include a complete code example if applicable (well-commented)
+   - Explain the key OOP concepts involved
+   - Mention common mistakes to avoid
+   - End with: "This question is now locked for 24 hours. Review this material and try again."
+
+3. If PASS:
+   - Acknowledge their correct understanding
+   - Provide a brief enhancement or optimization suggestion
+   - Ask ONE conceptual follow-up question ONLY if the topic is advanced (like design patterns, SOLID principles)
+   - For basic concepts (encapsulation, inheritance), just congratulate them
+
+RESPONSE FORMAT:
+- Be thorough but structured
+- Use bullet points for clarity
+- Include code examples with syntax highlighting
+- Keep it professional yet encouraging`;
       } else {
         // First or second attempt
         const remainingAttempts = 3 - currentAttempt;
-        prompt = `Evaluate this SQL query (Attempt ${currentAttempt} of 3):
+        prompt = `OOP Interview Question (Attempt ${currentAttempt}/3): ${question}
 
-Problem: ${question}
+${language ? `Programming Language Context: ${language}` : ''}
 
-Schema:
-${schema}
+User's Answer:
+${userAnswer}
 
-User's Query:
-${userQuery}
+${codeSubmission ? `User's Code:\n\`\`\`${language || ''}\n${codeSubmission}\n\`\`\`` : ''}
 
-RULES:
-1. Start with "**CORRECT**" or "**WRONG**"
-2. If CORRECT:
-   - Say "Correct!" and briefly explain why (2-3 sentences)
-   - Ask ONE follow-up question ONLY IF the problem requires conceptual understanding (e.g., for complex joins, window functions, subqueries)
-   - For simple problems (basic SELECT, WHERE), just congratulate and don't ask follow-up
-3. If WRONG:
-   - Give ONE specific hint (don't reveal the answer)
-   - Say "You have ${remainingAttempts} attempt(s) remaining. Try again!"
+INTERVIEWER ROLE:
+You are an experienced OOP interviewer conducting a technical interview.
 
-Keep response under 5 lines.`;
+EVALUATION RULES:
+
+1. Start with "**PASS**" or "**FAIL**"
+
+2. If PASS:
+   - Acknowledge what they got right (2-3 sentences)
+   - If it's a complex topic (design patterns, SOLID, polymorphism), ask ONE conceptual follow-up
+   - For simple topics (basic encapsulation, simple inheritance), just congratulate
+   - Example follow-up: "Can you explain when you'd use composition over inheritance?"
+
+3. If FAIL:
+   - Identify the main gap in their understanding
+   - Give ONE specific hint or guiding question
+   - Don't reveal the complete answer yet
+   - Say: "You have ${remainingAttempts} attempt(s) remaining. Think about [specific concept] and try again."
+
+RESPONSE STYLE:
+- Be professional but friendly
+- Focus on understanding, not just memorization
+- Give constructive feedback
+- Keep response under 6-7 sentences unless asking follow-up`;
       }
     }
 
-    // Call Groq API
+    // Call Groq API (or your preferred LLM API)
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -224,9 +260,18 @@ Keep response under 5 lines.`;
       },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.5,
-        max_tokens: 800,
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert OOP interviewer with deep knowledge of object-oriented programming concepts, design patterns, and SOLID principles. You evaluate candidates' understanding through clear, constructive feedback. You focus on conceptual understanding rather than just syntax."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1200,
       }),
     });
 
@@ -234,7 +279,7 @@ Keep response under 5 lines.`;
       const error = await response.text();
       console.error("Groq API error:", error);
       return NextResponse.json(
-        { error: "Failed to evaluate query" },
+        { error: "Failed to evaluate answer" },
         { status: 500 }
       );
     }
@@ -247,8 +292,14 @@ Keep response under 5 lines.`;
     let failureCount = 0;
     const currentAttempt = attemptNumber || 1;
 
-    // Check if AI asked a follow-up question
-    const aiAskedFollowUp = feedback.includes('?') && verdict === Verdict.PASS && !followUp;
+    // Check if AI asked a follow-up question (only for complex topics)
+    const aiAskedFollowUp = feedback.includes('?') && 
+                           verdict === Verdict.PASS && 
+                           !followUp &&
+                           (topic.includes("Design Patterns") || 
+                            topic.includes("SOLID") || 
+                            topic.includes("Polymorphism") ||
+                            topic.includes("Multiple Concepts"));
 
     // Store in database
     if (clerkUserId && questionId && difficulty && topic && !followUp) {
@@ -260,20 +311,20 @@ Keep response under 5 lines.`;
         });
 
         const subject = await prisma.subject.upsert({
-          where: { slug: topic.toLowerCase().replace(/\s+/g, '-') },
+          where: { slug: 'oop' },
           update: {},
           create: {
-            name: topic,
-            slug: topic.toLowerCase().replace(/\s+/g, '-'),
+            name: 'Object-Oriented Programming',
+            slug: 'oop',
             isActive: true,
           },
         });
 
         const dbQuestion = await prisma.question.upsert({
-          where: { id: `sql-${questionId}` },
+          where: { id: `oop-${questionId}` },
           update: {},
           create: {
-            id: `sql-${questionId}`,
+            id: `oop-${questionId}`,
             subjectId: subject.id,
             difficulty: mapDifficulty(difficulty),
             isActive: true,
@@ -302,17 +353,17 @@ Keep response under 5 lines.`;
           // Failed on third attempt - lock question
           finalVerdict = Verdict.FAIL;
           failureCount = failureCount + 1;
-          const cooldownHours = 24; // Always 24 hours for first failure
+          const cooldownHours = 24;
           cooldownUntil = new Date(Date.now() + cooldownHours * 60 * 60 * 1000);
           shouldLockQuestion = true;
           
-          feedback += `\n\n⏳ **Question Locked for 24 hours**\n\nStudy the solution above and retry after the cooldown period.`;
+          feedback += `\n\n⏳ **Question Locked for 24 hours**\n\nReview the explanation above carefully. Take time to understand the concept before retrying.`;
         } else {
           // Failed but has more attempts
           finalVerdict = Verdict.WEAK;
         }
 
-        // ALWAYS update the database for any submission (not just PASS or FAIL)
+        // Update database
         await prisma.userQuestionAttempt.upsert({
           where: {
             userId_questionId: {
@@ -378,9 +429,9 @@ Keep response under 5 lines.`;
       attemptNumber: followUp ? attemptNumber : currentAttempt
     });
   } catch (error) {
-    console.error("Error evaluating SQL:", error);
+    console.error("Error evaluating OOP answer:", error);
     return NextResponse.json(
-      { error: "Failed to evaluate query" },
+      { error: "Failed to evaluate answer" },
       { status: 500 }
     );
   }

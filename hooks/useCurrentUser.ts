@@ -1,4 +1,6 @@
+// hooks/CurrentUser.ts
 'use client';
+
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';

@@ -16,8 +16,11 @@ model User {
   name         String?
   createdAt    DateTime @default(now())
   
-  attempts     UserQuestionAttempt[]
-  summaries    UserSubjectSummary[]
+  attempts      UserQuestionAttempt[]
+  summaries     UserSubjectSummary[]
+  feedbacks     Feedback[]
+  issues        Issue[]
+  contributions Contribution[]
 }
 
 model Subject {
@@ -26,9 +29,10 @@ model Subject {
   slug      String    @unique
   isActive  Boolean   @default(true)
   
-  questions Question[]
-  attempts  UserQuestionAttempt[]
-  summaries UserSubjectSummary[]
+  questions     Question[]
+  attempts      UserQuestionAttempt[]
+  summaries     UserSubjectSummary[]
+  contributions Contribution[]
 }
 
 model Question {
@@ -48,8 +52,8 @@ model UserQuestionAttempt {
   subjectId     String
   verdict       Verdict
   attemptedAt   DateTime  @default(now())
-  cooldownUntil DateTime? // NEW: When user can retry after failure
-  failureCount  Int       @default(0) // NEW: Track consecutive failures
+  cooldownUntil DateTime?
+  failureCount  Int       @default(0)
   
   user          User      @relation(fields: [userId], references: [id])
   question      Question  @relation(fields: [questionId], references: [id])
@@ -73,6 +77,49 @@ model UserSubjectSummary {
   @@unique([userId, subjectId])
 }
 
+model Feedback {
+  id          String   @id @default(cuid())
+  userId      String
+  username    String
+  feedback    String
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+}
+
+model Issue {
+  id          String     @id @default(cuid())
+  userId      String
+  username    String
+  issueType   IssueType
+  description String?
+  createdAt   DateTime   @default(now())
+  
+  user        User       @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+}
+
+model Contribution {
+  id          String             @id @default(cuid())
+  userId      String
+  username    String
+  fullName    String
+  subjectId   String
+  link        String
+  status      ContributionStatus @default(PENDING)
+  createdAt   DateTime           @default(now())
+  
+  user        User               @relation(fields: [userId], references: [id])
+  subject     Subject            @relation(fields: [subjectId], references: [id])
+  
+  @@index([userId])
+  @@index([subjectId])
+  @@index([status])
+}
+
 enum Verdict {
   PASS
   WEAK
@@ -83,4 +130,18 @@ enum Difficulty {
   EASY
   MEDIUM
   HARD
+}
+
+enum IssueType {
+  TECHNICAL_BUG
+  QUESTION_ERROR
+  UI_UX_PROBLEM
+  EVALUATION_ISSUE
+  OTHER
+}
+
+enum ContributionStatus {
+  PENDING
+  ACCEPTED
+  NEEDS_REVISION
 }
