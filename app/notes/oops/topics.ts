@@ -252,7 +252,8 @@ public class Main {
         Ritesh.id = 233;
         Ritesh.marks = 89;
 
-        System.out.println(Ritesh.id);      // 233 If an instance variable is assigned a new value after object creation, the default value is replaced by the newly assigned value.
+        System.out.println(Ritesh.id);      // 233 
+        // If an instance variable is assigned a new value after object creation, the default value is replaced by the newly assigned value.
         System.out.println(Ritesh.name);    // Ritesh   
         System.out.println(Ritesh.marks);   // 89.0
 
