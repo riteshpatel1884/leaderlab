@@ -307,11 +307,11 @@ class Student {
         // this keyword is referring to the object Ritesh.
 
         // this.id = 192;
-        // this.name = "Ritesh";
+        // this.name = Ritesh;
         // this.marks = 89;   These 3 lines is exactly the same as writing:
 
         // Ritesh.id = 192;
-        // Ritesh.name = "Ritesh";
+        // Ritesh.name = Ritesh;
         // Ritesh.marks = 89;
 
         // But we cannot use Ritesh inside the class, so Java provides this keyword to refer it.
@@ -372,10 +372,10 @@ class Student {
         this.name = std_name;
         this.marks = std_marks;
 
-        // The 'this' keyword refers to the current object's instance variable.
+        // The this keyword refers to the current object's instance variable.
         // It is used here to distinguish between the instance variables (id, name, marks) 
         // and the constructor parameters (std_id, std_name, std_marks) that have similar names.
-        // Without 'this', Java would not know we are referring to the object's variable rather than the parameter.
+        // Without this, Java would not know we are referring to the object's variable rather than the parameter.
     }
 }
 
