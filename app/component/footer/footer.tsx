@@ -13,7 +13,7 @@ export default function Footer() {
       <div className="relative max-w-7xl mx-auto px-6 py-16">
         
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-12 mb-12">
 
           {/* Brand */}
           <div>
@@ -66,7 +66,7 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Product */}
+          {/* User */}
           <FooterColumn
             title="User"
             links={[
@@ -83,6 +83,14 @@ export default function Footer() {
               { label: "SQL", href: "/subjects/sql" },
               { label: "OOPs", href: "/subjects/oops" },
 
+            ]}
+          />
+          {/* Notes */}
+          <FooterColumn
+            title="Notes"
+            links={[
+              { label: "OOPs", href: "/notes/oops" },
+            
             ]}
           />
 
