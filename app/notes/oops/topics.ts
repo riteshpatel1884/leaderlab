@@ -389,10 +389,81 @@ public class Main {
     }
 }
 
+
+// Calling a constructor from another constructor
+class Student {
+    int id;
+    String name;
+    float marks;
+    
+    // constructor 1
+    Student(int std_id, String std_name, float std_marks){
+        this.id = std_id;
+        this.name = std_name;
+        this.marks = std_marks;
+}
+    // constructor 2   
+    Student(){
+    this (192, "Ritesh", 89);  // this is referring to the above Student constructor
+    }
+   
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Student Ritesh = new Student();
+        
+        System.out.println(Ritesh.id);    // 192
+        System.out.println(Ritesh.name);  // Ritesh
+        System.out.println(Ritesh.marks); //  89.0
+    }
+}
+`
+          },
+          
+        }
+      },
+      {
+        id: 'final_keyword',
+        title: 'Final Keyword',
+        contributors: ['LeaderLab'],
+        content: {
+          description: [
+            '- The final keyword in Java is used to restrict variables, methods, and classes from being modified, overridden, or inherited.',
+          ],
+          keyPoints: [
+            'final Variable: Value cannot be changed once assigned.',
+            'final Method: Method cannot be overridden by subclasses.',
+            'final Class: Class cannot be inherited.'
+           
+          ],
+          codeExample: {
+            title: 'final',
+            code: `// final Variable
+final int MAX = 100;
+MAX = 200; // ❌ Error
+ 
+
+// final Method
+class Parent {
+    final void show() {
+        System.out.println("Hello");
+    }
+}
+class Child extends Parent {
+    void show() { } // ❌ Error
+}
+
+
+// final Class
+final class Vehicle { }
+
+class Car extends Vehicle { } // ❌ Error
+
 `
           }
         }
-      }
+      },
     ]
   },
   {
