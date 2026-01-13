@@ -291,9 +291,9 @@ const App = () => {
         {/* Top Header Bar (With Dynamic Breadcrumbs) */}
         <div className="h-14 border-b border-[#2d2d2d] bg-[#1e1e1e] flex items-center justify-between px-4 sm:px-8 shrink-0">
           <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 overflow-hidden">
-             <span>notes</span>
+             <span>Notes</span>
              <ChevronRight className="w-3 h-3 shrink-0" />
-             <span className="hidden sm:inline">java</span>
+             <span className="hidden sm:inline">OOPs</span>
              
              {/* DYNAMIC BREADCRUMBS MAPPING */}
              {breadcrumbs.map((item, index) => {
