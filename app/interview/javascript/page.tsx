@@ -362,7 +362,7 @@ const App = () => {
                   <Check className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-zinc-100"></h3>
+                  <h3 className="text-xl font-bold text-zinc-100">Solution</h3>
                   <p className="text-sm text-zinc-500 font-mono">{viewingAnswer.answer.title}</p>
                 </div>
               </div>
