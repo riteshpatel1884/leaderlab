@@ -437,5 +437,6 @@ INSERT INTO Activity VALUES
   (2, 4, '2019-07-21', 'open_session'),
   (3, 5, '2019-07-21', 'open_session'),
   (3, 6, '2019-07-27', 'end_session');`
-  }
+  },
+  
 ];

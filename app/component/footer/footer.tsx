@@ -81,7 +81,7 @@ export default function Footer() {
             title="Resources"
             links={[
               { label: "SQL", href: "/subjects/sql" },
-              { label: "OOPs", href: "/subjects/oops" },
+              // { label: "OOPs", href: "/subjects/oops" },
 
             ]}
           />
@@ -90,6 +90,7 @@ export default function Footer() {
             title="Notes"
             links={[
               { label: "OOPs", href: "/notes/oops" },
+               { label: "SQL", href: "/notes/sql" },
             
             ]}
           />
