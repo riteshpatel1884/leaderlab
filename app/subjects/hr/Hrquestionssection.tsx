@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { hrQuestions, HRQuestion } from "@/data/hr/hrQuestions";
-import { X, ArrowUpRight, ChevronRight } from "lucide-react";
+import { X, ChevronRight } from "lucide-react";
 
 const categoryColors: Record<string, { bg: string; text: string; dot: string }> = {
   Introduction: { bg: "bg-emerald-500/10", text: "text-emerald-400", dot: "bg-emerald-400" },
@@ -23,6 +23,13 @@ const fallback = { bg: "bg-violet-500/10", text: "text-violet-400", dot: "bg-vio
 
 export default function HRQuestionsSection() {
   const [selected, setSelected] = useState<HRQuestion | null>(null);
+
+  const handleNext = () => {
+    if (!selected) return;
+    const currentIndex = hrQuestions.findIndex((q) => q.id === selected.id);
+    const nextIndex = (currentIndex + 1) % hrQuestions.length;
+    setSelected(hrQuestions[nextIndex]);
+  };
 
   return (
     <>
@@ -46,53 +53,37 @@ export default function HRQuestionsSection() {
         }
         .card-row:hover::before       { width: 100%; }
         .card-row:hover .row-index    { color: #6366f1; }
-        .card-row:hover .row-arrow    { opacity: 1; transform: translateX(0) translateY(0); }
         .card-row:hover .row-question { color: #e0e1ff; }
-        .row-arrow {
-          opacity: 0;
-          transform: translateX(-8px) translateY(4px);
-          transition: opacity 0.25s, transform 0.25s;
-        }
+        
         .tag-pill {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          padding: 4px 12px;
+          padding: 4px 10px;
           border-radius: 9999px;
-          font-size: 11px;
+          font-size: 9px;
           font-weight: 700;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.05em;
           text-transform: uppercase;
+          white-space: nowrap;
         }
+        @media (min-width: 640px) {
+          .tag-pill { font-size: 11px; padding: 4px 12px; }
+        }
+
+        /* Float Animations for Modal */
         @keyframes float-up {
-          0%   { transform: translateY(0px) rotate(0deg);   opacity: 0.06; }
-          50%  { transform: translateY(-18px) rotate(3deg); opacity: 0.10; }
-          100% { transform: translateY(0px) rotate(0deg);   opacity: 0.06; }
+          0%   { transform: translateY(0px); opacity: 0.06; }
+          50%  { transform: translateY(-18px); opacity: 0.10; }
+          100% { transform: translateY(0px); opacity: 0.06; }
         }
-        .bubble   { animation: float-up 6s ease-in-out infinite; }
-        .bubble-2 { animation: float-up 8s ease-in-out infinite reverse; }
-        .tip-card { position: relative; overflow: hidden; }
-        .tip-card::before {
-          content: '';
-          position: absolute; inset: 0;
-          background: linear-gradient(135deg, rgba(255,255,255,0.025) 0%, transparent 60%);
-          pointer-events: none;
-        }
-        .practice-btn { position: relative; overflow: hidden; }
-        .practice-btn::after {
-          content: '';
-          position: absolute; inset: 0;
-          background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
-          transform: translateX(-100%);
-          transition: transform 0.5s ease;
-        }
-        .practice-btn:hover::after { transform: translateX(100%); }
+        .bubble { animation: float-up 6s ease-in-out infinite; }
       `}</style>
 
       {/* ─── QUESTIONS LIST ─── */}
-      <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-12 pt-24 pb-32">
-        <div className="flex items-end justify-between mb-2">
-          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(1.6rem, 4vw, 2.4rem)", fontWeight: 900, letterSpacing: "-0.02em", color: "white" }}>
+      <div className="relative z-10 max-w-5xl mx-auto px-4 md:px-12 pt-24 pb-32">
+        <div className="flex items-end justify-between mb-6">
+          <h2 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "clamp(1.4rem, 4vw, 2.4rem)", fontWeight: 700, letterSpacing: "-0.03em", color: "white" }}>
             Core Interview <span style={{ color: "#6366f1" }}>Subjects</span>
           </h2>
           <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", fontWeight: 500 }}>
@@ -100,11 +91,24 @@ export default function HRQuestionsSection() {
           </span>
         </div>
 
+        {/* Responsive Grid Header */}
         <div
           className="grid"
-          style={{ gridTemplateColumns: "48px 1fr 140px 48px", gap: "0 24px", padding: "12px 24px", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.2)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+          style={{ 
+            gridTemplateColumns: "35px 1fr 100px", // Smaller widths for mobile
+            gap: "0 12px", 
+            padding: "12px 16px", 
+            fontSize: 10, 
+            fontWeight: 700, 
+            letterSpacing: "0.12em", 
+            textTransform: "uppercase", 
+            color: "rgba(255,255,255,0.2)", 
+            borderBottom: "1px solid rgba(255,255,255,0.06)" 
+          }}
         >
-          <span>#</span><span>Question</span><span>Category</span><span />
+          <span className="md:w-[48px]">#</span>
+          <span>Question</span>
+          <span className="text-right md:text-left md:w-[140px]">Category</span>
         </div>
 
         {hrQuestions.map((q, idx) => {
@@ -112,43 +116,48 @@ export default function HRQuestionsSection() {
           return (
             <motion.div
               key={q.id}
-              className="card-row"
-              style={{ padding: "20px 24px" }}
-              initial={{ opacity: 0, x: -16 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              className="card-row grid"
+              style={{ 
+                gridTemplateColumns: "35px 1fr 100px", 
+                gap: "0 12px", 
+                padding: "20px 16px",
+                alignItems: "center"
+              }}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: idx * 0.07, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ delay: idx * 0.05 }}
               onClick={() => setSelected(q)}
             >
-              <span className="row-index" style={{ width: 48, fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.18)", transition: "color 0.2s", flexShrink: 0, marginRight: 24 }}>
+              <span className="row-index" style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.18)" }}>
                 {String(idx + 1).padStart(2, "0")}
               </span>
-              <p className="row-question" style={{ flex: 1, fontSize: 17, fontWeight: 600, color: "rgba(255,255,255,0.75)", lineHeight: 1.4, transition: "color 0.2s", marginRight: 24 }}>
+              
+              <p className="row-question" style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "clamp(0.9rem, 2.5vw, 1.05rem)", fontWeight: 600, color: "rgba(255,255,255,0.75)", lineHeight: 1.4, margin: 0 }}>
                 {q.question}
               </p>
-              <div style={{ width: 140, display: "flex", justifyContent: "flex-start" }}>
+
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
                 <span className={`tag-pill ${c.bg} ${c.text}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
                   {q.category}
                 </span>
               </div>
-              <div className="row-arrow" style={{ width: 48, display: "flex", justifyContent: "flex-end" }}>
-                <ChevronRight style={{ width: 18, height: 18, color: "#6366f1" }} />
-              </div>
             </motion.div>
           );
         })}
-        <div style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }} />
       </div>
 
       {/* ─── POPUP ─── */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {selected && (
           <AnswerModal
+            key={selected.id}
             question={selected}
             accent={accentMap[selected.category] ?? "#6366f1"}
             c={categoryColors[selected.category] ?? fallback}
             onClose={() => setSelected(null)}
+            onNext={handleNext}
           />
         )}
       </AnimatePresence>
@@ -156,161 +165,109 @@ export default function HRQuestionsSection() {
   );
 }
 
-/* ─── Split-panel Answer Modal ─── */
-function AnswerModal({
-  question,
-  accent,
-  c,
-  onClose,
-}: {
+function AnswerModal({ question, accent, c, onClose, onNext }: {
   question: HRQuestion;
   accent: string;
   c: { bg: string; text: string; dot: string };
   onClose: () => void;
+  onNext: () => void;
 }) {
   const steps = question.answer.split(". ").filter(Boolean);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       <motion.div
         className="absolute inset-0"
-        style={{ background: "rgba(2,3,10,0.9)", backdropFilter: "blur(32px)" }}
+        style={{ background: "rgba(2,3,10,0.85)", backdropFilter: "blur(20px)" }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
       />
 
-      {/* Modal */}
       <motion.div
-        className="relative z-[101] w-full flex flex-col md:flex-row"
+        className="relative z-[101] w-full flex flex-col md:flex-row bg-[#090c17] overflow-hidden"
         style={{
           maxWidth: 860,
-          borderRadius: 28,
-          overflow: "hidden",
-          boxShadow: `0 60px 120px -30px rgba(0,0,0,0.9), 0 0 0 1px ${accent}25`,
+          maxHeight: "90vh",
+          borderRadius: 24,
+          boxShadow: `0 40px 100px -20px rgba(0,0,0,0.8), 0 0 0 1px ${accent}20`,
         }}
-        initial={{ opacity: 0, y: 40, scale: 0.96 }}
+        initial={{ opacity: 0, y: 20, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 20, scale: 0.97 }}
-        transition={{ type: "spring", stiffness: 260, damping: 24 }}
+        exit={{ opacity: 0, y: 10, scale: 0.98 }}
       >
-        {/* ── LEFT PANEL – Question ── */}
-        <div
-          style={{
-            width: 300,
-            flexShrink: 0,
-            padding: "2.5rem 2rem",
-            background: `linear-gradient(160deg, ${accent}1e 0%, ${accent}08 45%, #07090f 100%)`,
-            borderRight: `1px solid ${accent}18`,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            position: "relative",
-            minHeight: 400,
-            overflow: "hidden",
-          }}
-        >
-          {/* Decorative floating circles */}
-          <div
-            className="bubble"
-            style={{ position: "absolute", bottom: 30, right: -30, width: 130, height: 130, borderRadius: "50%", border: `1px solid ${accent}20`, pointerEvents: "none" }}
-          />
-          <div
-            className="bubble-2"
-            style={{ position: "absolute", bottom: 70, right: 30, width: 55, height: 55, borderRadius: "50%", background: `${accent}0a`, pointerEvents: "none" }}
-          />
-
-          <div>
-            {/* Category pill */}
-            <span className={`tag-pill ${c.bg} ${c.text}`} style={{ marginBottom: "1.75rem", display: "inline-flex" }}>
-              <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
-              {question.category}
-            </span>
-
-            {/* Giant decorative Q */}
-            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 88, fontWeight: 900, lineHeight: 1, color: `${accent}15`, letterSpacing: "-0.05em", userSelect: "none", marginBottom: "0.25rem" }}>
-              Q.
-            </div>
-
-            {/* Question text */}
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(1.2rem, 2.4vw, 1.55rem)", fontWeight: 900, lineHeight: 1.25, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.95)", margin: 0 }}>
-              {question.question}
-            </h2>
-          </div>
-
-          {/* Difficulty bar */}
-          <div style={{ marginTop: "2rem" }}>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.2)", marginBottom: "0.6rem" }}>
-              Difficulty
-            </p>
-            <div style={{ display: "flex", gap: 4 }}>
-              {[1, 2, 3, 4, 5].map(i => (
-                <div key={i} style={{ height: 4, flex: 1, borderRadius: 9999, background: i <= 3 ? accent : "rgba(255,255,255,0.07)" }} />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ── RIGHT PANEL – Answer ── */}
-        <div style={{ flex: 1, background: "#090c17", padding: "2.25rem 2rem 2rem", display: "flex", flexDirection: "column", gap: "1.25rem", position: "relative" }}>
-
-          {/* Close btn */}
-          <button
-            onClick={onClose}
-            style={{ position: "absolute", top: "1.25rem", right: "1.25rem", width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(255,255,255,0.3)", transition: "all 0.2s" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.09)"; (e.currentTarget as HTMLButtonElement).style.color = "white"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.3)"; }}
+        {/* Important: Enable scrolling for mobile */}
+        <div className="flex flex-col md:flex-row w-full overflow-y-auto">
+          
+          {/* Left Panel */}
+          <div className="w-full md:w-[300px] flex-shrink-0 p-8 md:p-10 flex flex-col justify-between relative overflow-hidden"
+            style={{ 
+              background: `linear-gradient(160deg, ${accent}1e 0%, #07090f 100%)`,
+              borderRight: `1px solid ${accent}18`,
+              borderBottom: `1px solid ${accent}18` 
+            }}
           >
-            <X className="w-3.5 h-3.5" />
-          </button>
+            <div className="bubble" style={{ position: "absolute", bottom: -20, right: -20, width: 100, height: 100, borderRadius: "50%", border: `1px solid ${accent}20` }} />
+            
+            <div className="relative z-10">
+              <span className={`tag-pill ${c.bg} ${c.text} mb-6`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
+                {question.category}
+              </span>
+              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 64, fontWeight: 900, color: `${accent}15`, lineHeight: 1 }}>Q.</div>
+              <h2 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "1.5rem", fontWeight: 700, lineHeight: 1.3, color: "white" }}>
+                {question.question}
+              </h2>
+            </div>
 
-          {/* Section label */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 3, height: 16, borderRadius: 9999, background: accent }} />
-            <p style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", margin: 0 }}>
-              Master Answer Framework
-            </p>
+            <div className="mt-8 relative z-10">
+              <p className="text-[10px] uppercase font-bold tracking-widest text-white/30 mb-2">Difficulty</p>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} className={`h-1 flex-1 rounded-full ${i <= 3 ? "" : "bg-white/10"}`} style={{ background: i <= 3 ? accent : "" }} />
+                ))}
+              </div>
+            </div>
           </div>
 
-          {/* Answer step cards */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
-            {steps.map((sentence, i) => (
-              <motion.div
-                key={i}
-                className="tip-card"
-                style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.055)", borderRadius: 12, padding: "0.85rem 1rem", display: "flex", gap: 12, alignItems: "flex-start" }}
-                initial={{ opacity: 0, x: 14 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.08 + i * 0.07, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <span style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 6, background: `${accent}18`, border: `1px solid ${accent}28`, color: accent, fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
-                  {i + 1}
-                </span>
-                <p style={{ fontSize: 14.5, lineHeight: 1.68, color: "rgba(255,255,255,0.65)", fontWeight: 400, margin: 0 }}>
-                  {sentence}{sentence.endsWith(".") ? "" : "."}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* CTAs */}
-          <div style={{ display: "flex", gap: 8, paddingTop: "0.25rem" }}>
-            <button
-              className="practice-btn"
-              style={{ flex: 1, height: 48, borderRadius: 12, background: accent, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 800, color: "white", letterSpacing: "0.03em", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, boxShadow: `0 8px 28px -8px ${accent}66` }}
-            >
-              Practice This Question <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={onClose}
-              style={{ width: 48, height: 48, flexShrink: 0, borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", color: "rgba(255,255,255,0.35)", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.7)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.04)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(255,255,255,0.35)"; }}
-            >
+          {/* Right Panel */}
+          <div className="flex-1 p-8 md:p-10 flex flex-col gap-6 relative">
+            <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white z-20 hover:bg-white/10 transition-colors">
               <X className="w-4 h-4" />
             </button>
+
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-4 rounded-full" style={{ background: accent }} />
+              <p className="text-[10px] uppercase font-extrabold tracking-[0.2em] text-white/40">Master Answer Framework</p>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {steps.map((sentence, i) => (
+                <motion.div
+                  key={i}
+                  className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] flex gap-4"
+                  initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
+                >
+                  <span className="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-bold" style={{ background: `${accent}20`, color: accent }}>
+                    {i + 1}
+                  </span>
+                  <p className="text-sm leading-relaxed text-white/70 m-0">
+                    {sentence.trim()}{sentence.trim().endsWith(".") ? "" : "."}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="mt-auto pt-4">
+              <button
+                onClick={onNext}
+                className="w-full h-12 rounded-xl border-none cursor-pointer text-sm font-bold text-white flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+                style={{ background: accent, boxShadow: `0 10px 30px -10px ${accent}80` }}
+              >
+                Next Question <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </motion.div>
