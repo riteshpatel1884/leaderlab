@@ -80,7 +80,7 @@ export default function HRQuestionsSection() {
         .bubble { animation: float-up 6s ease-in-out infinite; }
       `}</style>
 
-      {/* ─── QUESTIONS LIST ─── */}
+     
       <div className="relative z-10 max-w-5xl mx-auto px-4 md:px-12 pt-24 pb-32">
         <div className="flex items-end justify-between mb-6">
           <h2 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "clamp(1.4rem, 4vw, 2.4rem)", fontWeight: 700, letterSpacing: "-0.03em", color: "white" }}>

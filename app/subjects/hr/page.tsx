@@ -11,7 +11,7 @@ export default function HRSubjectsPage() {
         fontFamily: "'DM Sans', sans-serif",
       }}
     >
-      {/* ── Global styles (fonts, shared CSS classes) ── */}
+     
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300;1,9..40,400&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&display=swap');
 
