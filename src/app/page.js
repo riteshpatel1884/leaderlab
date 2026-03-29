@@ -25,11 +25,6 @@ const features = [
     desc: "Normal mode spreads your backlog over 3 days. Hard mode dumps it all on tomorrow. Choose your poison — both create accountability.",
   },
   {
-    icon: "📊",
-    title: "Panic Meter",
-    desc: "A 0–100 pressure score calculated from missed days, backlog size, and pace. It turns red when you need to act. No sugarcoating.",
-  },
-  {
     icon: "⏳",
     title: "Deadline Integrity",
     desc: 'If you\'re falling behind pace, DueOrDietells you directly: "At this rate, you will miss your 60-day deadline." That hits differently than a to-do app.',
@@ -38,11 +33,6 @@ const features = [
     icon: "🔢",
     title: "Streak Tracking",
     desc: "Build a streak of consecutive completed days. Losing a streak after 10 days of consistency is one of the best motivators to not skip today.",
-  },
-  {
-    icon: "✅",
-    title: "Daily Check-In",
-    desc: "Log each day with a simple checklist — mark topics done or partial. Partial completions automatically become backlog for upcoming days.",
   },
 ];
 
@@ -475,7 +465,7 @@ export default function HomePage() {
           textAlign: "center",
         }}
       >
-        <div style={{ fontSize: 48, marginBottom: 20 }}>🔥</div>
+        
         <h2
           style={{
             fontFamily: "Syne, sans-serif",
@@ -507,7 +497,7 @@ export default function HomePage() {
           className="btn btn-primary"
           style={{ padding: "16px 36px", fontSize: 16 }}
         >
-          Create Your Goal Now →
+          Create Your Goal Now 
         </Link>
         {hasGoals && (
           <p style={{ marginTop: 16, fontSize: 13, color: "var(--text3)" }}>
