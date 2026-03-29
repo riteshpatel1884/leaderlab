@@ -38,23 +38,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/" style={{ textDecoration: "none" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div
-              style={{
-                width: 30,
-                height: 30,
-                background: "var(--accent)",
-                borderRadius: 8,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: "Space Mono, monospace",
-                fontSize: 14,
-                fontWeight: 700,
-                color: "white",
-              }}
-            >
-              SF
-            </div>
+            
             <span
               style={{
                 fontFamily: "Syne, sans-serif",
@@ -64,7 +48,7 @@ export default function Navbar() {
                 letterSpacing: "-0.3px",
               }}
             >
-              StackFlow
+              DueOrDie
             </span>
           </div>
         </Link>

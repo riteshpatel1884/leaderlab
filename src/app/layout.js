@@ -1,6 +1,7 @@
 import { ThemeProvider } from "./theme/Themecontext";
 import Navbar from "./components/Navbar/Navbar";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata = {
   title: "DueOrDie— Dynamic Backlog Pressure System",
@@ -22,6 +23,7 @@ export default function RootLayout({ children }) {
         <ThemeProvider>
           <Navbar />
           <main style={{ minHeight: "calc(100vh - 60px)" }}>{children}</main>
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>
