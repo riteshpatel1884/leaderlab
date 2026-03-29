@@ -99,24 +99,7 @@ export default function HomePage() {
           textAlign: "center",
         }}
       >
-        {/* Badge */}
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "6px 16px",
-            borderRadius: 100,
-            border: "1px solid rgba(255,77,77,0.3)",
-            background: "rgba(255,77,77,0.07)",
-            marginBottom: 28,
-            fontSize: 13,
-            color: "var(--accent)",
-            fontFamily: "Space Mono, monospace",
-          }}
-        >
-          <span>⚡</span> Consequence-Driven Productivity
-        </div>
+        
 
         <h1
           style={{
