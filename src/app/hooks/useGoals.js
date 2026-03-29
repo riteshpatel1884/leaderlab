@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-const STORAGE_KEY = "stackflow-goals";
-
+const STORAGE_KEY = "DueOrDie-goals";
 
 export function todayStr() {
   return new Date().toISOString().split("T")[0];
@@ -27,7 +26,7 @@ export function totalTopicDays(topics) {
   );
 }
 
-/**
+/** Note 1
  * Build the daily schedule for a goal.
  *
  * Distribution logic:
@@ -37,12 +36,13 @@ export function totalTopicDays(topics) {
  * - Result: 50 days / 21 topics → each day shows the topic being studied that day.
  * - Topics needing 3 days appear across 3 consecutive days, etc.
  */
+
 export function buildSchedule(goal) {
   const { topics, startDate, deadlineDays, mode, dailyLogs } = goal;
   const today = todayStr();
   const endDate = addDays(startDate, deadlineDays - 1);
 
-  // Normalize topics
+  // Note 2 Normalize topics
   const normalizedTopics = topics.map((t) =>
     typeof t === "string"
       ? { name: t, days: 1 }
