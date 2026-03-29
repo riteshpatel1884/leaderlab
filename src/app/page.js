@@ -5,37 +5,37 @@ import { useGoals, computeStats } from "@/app/hooks/useGoals";
 
 const features = [
   {
-    icon: "📅",
+    icon: "1",
     title: "Smart Daily Scheduling",
     desc: "Add your topics, set a deadline — DueOrDie automatically spreads every topic across every single day of your plan. No empty days, no guesswork.",
     tag: "Core",
   },
   {
-    icon: "⏱️",
+    icon: "2",
     title: "Per-Topic Duration",
     desc: "Some topics take 3 days, others just 1. Set exact duration per topic and the schedule adjusts automatically.",
     tag: "Smart",
   },
   {
-    icon: "🔥",
+    icon: "3",
     title: "Backlog Pressure System",
     desc: "Miss a day? Those topics pile onto upcoming days, making tomorrow heavier. The pressure is real — and intentional.",
     tag: "Pressure",
   },
   {
-    icon: "⚡",
+    icon: "4",
     title: "Hard Mode & Normal Mode",
     desc: "Normal mode spreads your backlog over 3 days. Hard mode dumps it all on tomorrow. Choose your poison.",
     tag: "Modes",
   },
   {
-    icon: "⏳",
+    icon: "5",
     title: "Deadline Integrity",
     desc: "If you're falling behind pace, DueOrDie tells you directly. That hits differently than a to-do app.",
     tag: "Tracking",
   },
   {
-    icon: "🔢",
+    icon: "6",
     title: "Streak Tracking",
     desc: "Build a streak of consecutive completed days. Losing a streak after 10 days is one of the best motivators.",
     tag: "Habit",
@@ -47,7 +47,7 @@ const howItWorks = [
     step: "01",
     title: "Create a Goal",
     desc: "Name your goal, set a deadline, choose backlog mode.",
-    icon: "🎯",
+    icon: "1",
     color: "#FF4D4D",
     bg: "rgba(255,77,77,0.12)",
     border: "rgba(255,77,77,0.3)",
@@ -56,7 +56,7 @@ const howItWorks = [
     step: "02",
     title: "Add Topics",
     desc: "Add topics with how many days each one needs.",
-    icon: "📚",
+    icon: "2",
     color: "#4D9FFF",
     bg: "rgba(77,159,255,0.12)",
     border: "rgba(77,159,255,0.3)",
@@ -65,7 +65,7 @@ const howItWorks = [
     step: "03",
     title: "Get Scheduled",
     desc: "Topics distribute across every day automatically.",
-    icon: "📆",
+    icon: "3",
     color: "#A78BFA",
     bg: "rgba(167,139,250,0.12)",
     border: "rgba(167,139,250,0.3)",
@@ -74,7 +74,7 @@ const howItWorks = [
     step: "04",
     title: "Log Progress",
     desc: "Check off daily topics. Skipped ones become backlog.",
-    icon: "✅",
+    icon: "4",
     color: "#34D399",
     bg: "rgba(52,211,153,0.12)",
     border: "rgba(52,211,153,0.3)",
@@ -83,7 +83,7 @@ const howItWorks = [
     step: "05",
     title: "Feel Pressure",
     desc: "Watch your Panic Meter rise. That anxiety makes you act.",
-    icon: "🔥",
+    icon: "5",
     color: "#FB923C",
     bg: "rgba(251,146,60,0.12)",
     border: "rgba(251,146,60,0.3)",
@@ -252,7 +252,7 @@ export default function HomePage() {
           <strong style={{ color: "var(--text)", fontWeight: 600 }}>
             visible, compounding pressure
           </strong>{" "}
-          — so you can't pretend you're on track when you're not.
+          - so you can't pretend you're on track when you're not.
         </p>
 
         {/* CTAs */}
@@ -424,7 +424,7 @@ export default function HomePage() {
                 }}
               >
                 Every other tool lets you skip a day with zero consequence. The
-                task sits there quietly — no weight, no pressure, no truth.
+                task sits there quietly - no weight, no pressure, no truth.
               </p>
               <div
                 style={{
@@ -572,7 +572,7 @@ export default function HomePage() {
                       marginBottom: 4,
                     }}
                   >
-                    DueOrDie ⚡
+                    DueOrDie
                   </div>
                   <div
                     style={{
