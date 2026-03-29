@@ -88,7 +88,7 @@ export function buildSchedule(goal) {
     extra: [],
   }));
 
-  // Process logs & collect backlog
+  //Note 7: Process logs & collect backlog
   let pendingBacklog = [];
 
   plan = plan.map((day) => {
@@ -119,7 +119,7 @@ export function buildSchedule(goal) {
     };
   });
 
-  // Redistribute backlog
+  //Note 8: Redistribute backlog
   if (pendingBacklog.length > 0) {
     const futureDays = plan.filter(
       (d) => d.date >= today && d.status !== "done",
@@ -201,7 +201,7 @@ export function computeStats(goal) {
   };
 }
 
-// ─── hook ─────────────────────────────────────────────────────────────────────
+// hook part code 
 
 export function useGoals() {
   const [goals, setGoals] = useState([]);
