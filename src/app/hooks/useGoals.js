@@ -49,12 +49,12 @@ export function buildSchedule(goal) {
       : { name: t.name || t, days: t.days || 1 },
   );
 
-  // Build slot array: topic name repeated for its duration
+  // Note 3: Build slot array: topic name repeated for its duration
   const slots = normalizedTopics.flatMap((t) => Array(t.days).fill(t.name));
   const totalSlots = slots.length;
   const totalDays = deadlineDays;
 
-  // Map each slot to a day index using ratio
+  // Note 4:  Map each slot to a day index using ratio
   const dayTopicMap = Array.from({ length: totalDays }, () => []);
 
   if (totalSlots > 0) {
@@ -63,13 +63,13 @@ export function buildSchedule(goal) {
         Math.floor((slotIdx * totalDays) / totalSlots),
         totalDays - 1,
       );
-      // Only add if not already present for this day
+      // Note 5: Only add if not already present for this day
       if (!dayTopicMap[dayIdx].includes(topicName)) {
         dayTopicMap[dayIdx].push(topicName);
       }
     });
 
-    // Fill any empty days by inheriting from the nearest previous non-empty day
+    // Note 6: Fill any empty days by inheriting from the nearest previous non-empty day
     for (let i = 0; i < totalDays; i++) {
       if (dayTopicMap[i].length === 0) {
         for (let back = i - 1; back >= 0; back--) {
