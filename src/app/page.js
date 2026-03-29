@@ -7,7 +7,7 @@ const features = [
   {
     icon: "📅",
     title: "Smart Daily Scheduling",
-    desc: "Add your topics, set a deadline — DueOrDieautomatically spreads every topic across every single day of your plan. No empty days, no guesswork.",
+    desc: "Add your topics, set a deadline — DueOrDie automatically spreads every topic across every single day of your plan. No empty days, no guesswork.",
   },
   {
     icon: "⏱️",
@@ -27,7 +27,7 @@ const features = [
   {
     icon: "⏳",
     title: "Deadline Integrity",
-    desc: 'If you\'re falling behind pace, DueOrDietells you directly: "At this rate, you will miss your 60-day deadline." That hits differently than a to-do app.',
+    desc: 'If you\'re falling behind pace, DueOrDie tells you directly: "At this rate, you will miss your deadline." That hits differently than a to-do app.',
   },
   {
     icon: "🔢",
@@ -40,27 +40,47 @@ const howItWorks = [
   {
     step: "01",
     title: "Create a Goal",
-    desc: "Name your goal, set a deadline in days, choose normal or hard backlog mode.",
+    desc: "Name your goal, set a deadline, choose backlog mode.",
+    icon: "🎯",
+    color: "#FF4D4D",
+    bg: "rgba(255,77,77,0.12)",
+    border: "rgba(255,77,77,0.3)",
   },
   {
     step: "02",
-    title: "Add Topics + Duration",
-    desc: "Add every topic you need to cover. Set how many days each topic needs — 1 day, 3 days, whatever.",
+    title: "Add Topics",
+    desc: "Add topics with how many days each one needs.",
+    icon: "📚",
+    color: "#4D9FFF",
+    bg: "rgba(77,159,255,0.12)",
+    border: "rgba(77,159,255,0.3)",
   },
   {
     step: "03",
-    title: "Get Your Schedule",
-    desc: "DueOrDiedistributes all topics evenly across your entire deadline — every day has something assigned.",
+    title: "Get Scheduled",
+    desc: "Topics distribute across every day automatically.",
+    icon: "📆",
+    color: "#A78BFA",
+    bg: "rgba(167,139,250,0.12)",
+    border: "rgba(167,139,250,0.3)",
   },
   {
     step: "04",
-    title: "Log Daily Progress",
-    desc: "Each day, check off completed topics. Skipped ones automatically roll into upcoming days as backlog.",
+    title: "Log Progress",
+    desc: "Check off daily topics. Skipped ones become backlog.",
+    icon: "✅",
+    color: "#34D399",
+    bg: "rgba(52,211,153,0.12)",
+    border: "rgba(52,211,153,0.3)",
   },
   {
     step: "05",
-    title: "Feel the Pressure",
-    desc: "Watch your Panic Meter climb as backlog grows. That anxiety? It's a feature — it makes you act.",
+    title: "Feel Pressure",
+    desc: "Watch your Panic Meter rise. That anxiety makes you act.",
+    icon: "🔥",
+    color: "#FB923C",
+    bg: "rgba(251,146,60,0.12)",
+    border: "rgba(251,146,60,0.3)",
   },
 ];
 
@@ -68,7 +88,6 @@ export default function HomePage() {
   const { goals, loaded } = useGoals();
   const hasGoals = loaded && goals.length > 0;
 
-  // Quick stats for users who have goals
   const totalBacklog = hasGoals
     ? goals.reduce((a, g) => a + computeStats(g).backlogTopics, 0)
     : 0;
@@ -79,27 +98,75 @@ export default function HomePage() {
     : 0;
 
   return (
-    <div style={{ background: "var(--bg)" }}>
+    <div style={{ background: "var(--bg)", overflowX: "hidden" }}>
       {/* ── HERO ── */}
       <section
         style={{
           maxWidth: 1100,
           margin: "0 auto",
-          padding: "80px 24px 60px",
+          padding: "90px 24px 70px",
           textAlign: "center",
+          position: "relative",
         }}
       >
+        {/* Subtle radial glow behind headline */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: "10%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 600,
+            height: 300,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(ellipse, rgba(255,77,77,0.10) 0%, transparent 70%)",
+            pointerEvents: "none",
+          }}
+        />
+
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            background: "rgba(255,77,77,0.08)",
+            border: "1px solid rgba(255,77,77,0.25)",
+            borderRadius: 999,
+            padding: "6px 14px",
+            marginBottom: 28,
+            fontSize: 12,
+            fontFamily: "Space Mono, monospace",
+            color: "var(--accent)",
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+          }}
+        >
+          <span
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              background: "var(--accent)",
+              display: "inline-block",
+              animation: "pulse 1.8s infinite",
+            }}
+          />
+          Pressure-based study planner
+        </div>
+
         <h1
           style={{
             fontFamily: "Syne, sans-serif",
             fontWeight: 800,
-            fontSize: "clamp(36px, 6vw, 64px)",
+            fontSize: "clamp(38px, 6vw, 66px)",
             color: "var(--text)",
-            letterSpacing: "-1.5px",
-            lineHeight: 1.1,
-            marginBottom: 24,
-            maxWidth: 800,
-            margin: "0 auto 24px",
+            letterSpacing: "-2px",
+            lineHeight: 1.08,
+            marginBottom: 26,
+            maxWidth: 820,
+            margin: "0 auto 26px",
           }}
         >
           Stop ignoring your
@@ -110,16 +177,15 @@ export default function HomePage() {
 
         <p
           style={{
-            fontSize: 18,
+            fontSize: 17,
             color: "var(--text2)",
-            maxWidth: 560,
-            margin: "0 auto 36px",
-            lineHeight: 1.7,
+            maxWidth: 520,
+            margin: "0 auto 40px",
+            lineHeight: 1.75,
           }}
         >
-          DueOrDieturns missed study days into visible, growing pressure — so
-          you can't ignore what you owe yourself. Unlike Notion or Todoist, we
-          don't let you off the hook.
+          DueOrDie turns missed study days into visible, growing pressure — so
+          you can't ignore what you owe yourself.
         </p>
 
         <div
@@ -133,27 +199,26 @@ export default function HomePage() {
           <Link
             href="/goals/new"
             className="btn btn-primary"
-            style={{ padding: "14px 28px", fontSize: 15 }}
+            style={{ padding: "14px 30px", fontSize: 15, borderRadius: 10 }}
           >
             Create Your First Goal →
           </Link>
           <Link
             href="/goals"
             className="btn btn-secondary"
-            style={{ padding: "14px 28px", fontSize: 15 }}
+            style={{ padding: "14px 30px", fontSize: 15, borderRadius: 10 }}
           >
             {hasGoals ? `View My Goals (${goals.length})` : "See Goals Page"}
           </Link>
         </div>
 
-        {/* Live user stats if they have goals */}
         {hasGoals && (
           <div
             style={{
               display: "flex",
-              gap: 24,
+              gap: 32,
               justifyContent: "center",
-              marginTop: 40,
+              marginTop: 48,
               flexWrap: "wrap",
             }}
           >
@@ -177,7 +242,7 @@ export default function HomePage() {
               <div key={s.label} style={{ textAlign: "center" }}>
                 <div
                   style={{
-                    fontSize: 28,
+                    fontSize: 30,
                     fontFamily: "Space Mono, monospace",
                     fontWeight: 700,
                     color: s.color,
@@ -187,11 +252,11 @@ export default function HomePage() {
                 </div>
                 <div
                   style={{
-                    fontSize: 12,
+                    fontSize: 11,
                     color: "var(--text3)",
                     textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                    marginTop: 2,
+                    letterSpacing: "0.08em",
+                    marginTop: 4,
                   }}
                 >
                   {s.label}
@@ -212,9 +277,9 @@ export default function HomePage() {
       >
         <div
           style={{
-            maxWidth: 900,
+            maxWidth: 960,
             margin: "0 auto",
-            padding: "60px 24px",
+            padding: "64px 24px",
             textAlign: "center",
           }}
         >
@@ -224,8 +289,8 @@ export default function HomePage() {
               fontWeight: 800,
               fontSize: 28,
               color: "var(--text)",
-              marginBottom: 16,
-              letterSpacing: "-0.4px",
+              marginBottom: 12,
+              letterSpacing: "-0.5px",
             }}
           >
             Why normal planners fail you
@@ -233,21 +298,21 @@ export default function HomePage() {
           <p
             style={{
               color: "var(--text3)",
-              fontSize: 15,
-              maxWidth: 600,
-              margin: "0 auto 40px",
+              fontSize: 14,
+              maxWidth: 540,
+              margin: "0 auto 44px",
               lineHeight: 1.7,
             }}
           >
-            Todoist, Notion, and Excel trackers all share one fatal flaw —
-            missing a day has zero consequence. The task just sits there
-            quietly, waiting. No pressure, no urgency.
+            Todoist, Notion, and Excel all share one fatal flaw — missing a day
+            has zero consequence. No pressure, no urgency.
           </p>
+
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: 16,
+              gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+              gap: 14,
             }}
           >
             {[
@@ -268,7 +333,7 @@ export default function HomePage() {
               },
               {
                 emoji: "⚡",
-                title: "StackFlow",
+                title: "DueOrDie",
                 prob: "Missed days compound into backlog. Tomorrow gets heavier. You feel it.",
                 highlight: true,
               },
@@ -277,21 +342,36 @@ export default function HomePage() {
                 key={c.title}
                 className="card"
                 style={{
-                  padding: "20px",
+                  padding: "22px 18px",
                   borderColor: c.highlight
-                    ? "rgba(255,77,77,0.4)"
+                    ? "rgba(255,77,77,0.5)"
                     : "var(--border)",
                   background: c.highlight
-                    ? "rgba(255,77,77,0.05)"
+                    ? "rgba(255,77,77,0.07)"
                     : "var(--surface)",
+                  position: "relative",
+                  overflow: "hidden",
                 }}
               >
+                {c.highlight && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 2,
+                      background:
+                        "linear-gradient(90deg, transparent, var(--accent), transparent)",
+                    }}
+                  />
+                )}
                 <div style={{ fontSize: 28, marginBottom: 10 }}>{c.emoji}</div>
                 <div
                   style={{
                     fontFamily: "Syne, sans-serif",
                     fontWeight: 700,
-                    fontSize: 16,
+                    fontSize: 15,
                     color: c.highlight ? "var(--accent)" : "var(--text)",
                     marginBottom: 8,
                   }}
@@ -313,81 +393,217 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ── */}
+      {/* ── HOW IT WORKS — GRAPHIC VERSION ── */}
       <section
-        style={{ maxWidth: 900, margin: "0 auto", padding: "70px 24px" }}
+        style={{ maxWidth: 1100, margin: "0 auto", padding: "80px 24px" }}
       >
-        <div style={{ textAlign: "center", marginBottom: 48 }}>
+        <div style={{ textAlign: "center", marginBottom: 56 }}>
           <h2
             style={{
               fontFamily: "Syne, sans-serif",
               fontWeight: 800,
               fontSize: 28,
               color: "var(--text)",
-              letterSpacing: "-0.4px",
+              letterSpacing: "-0.5px",
               marginBottom: 10,
             }}
           >
             How it works
           </h2>
-          <p style={{ color: "var(--text3)", fontSize: 15 }}>
+          <p style={{ color: "var(--text3)", fontSize: 14 }}>
             Five steps from zero to full pressure-mode.
           </p>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-          {howItWorks.map((h, i) => (
+
+        {/* Timeline graphic */}
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            gap: 0,
+          }}
+        >
+          {howItWorks.map((h, i) => {
+            const isEven = i % 2 === 0;
+            return (
+              <div
+                key={h.step}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 80px 1fr",
+                  alignItems: "center",
+                  minHeight: 130,
+                  position: "relative",
+                }}
+              >
+                {/* Left card (even steps) or spacer */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    padding: "0 20px",
+                  }}
+                >
+                  {isEven ? <StepCard h={h} align="right" /> : <div />}
+                </div>
+
+                {/* Center spine */}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    position: "relative",
+                    height: "100%",
+                  }}
+                >
+                  {/* Vertical line above node */}
+                  {i > 0 && (
+                    <div
+                      style={{
+                        flex: 1,
+                        width: 2,
+                        background: `linear-gradient(180deg, ${howItWorks[i - 1].color}60, ${h.color}60)`,
+                        marginBottom: 0,
+                      }}
+                    />
+                  )}
+                  {i === 0 && <div style={{ flex: 1 }} />}
+
+                  {/* Node */}
+                  <div
+                    style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: "50%",
+                      background: h.bg,
+                      border: `2px solid ${h.border}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 22,
+                      flexShrink: 0,
+                      position: "relative",
+                      zIndex: 2,
+                      boxShadow: `0 0 20px ${h.color}25`,
+                    }}
+                  >
+                    {h.icon}
+                  </div>
+
+                  {/* Vertical line below node */}
+                  {i < howItWorks.length - 1 ? (
+                    <div
+                      style={{
+                        flex: 1,
+                        width: 2,
+                        background: `linear-gradient(180deg, ${h.color}60, ${howItWorks[i + 1].color}60)`,
+                      }}
+                    />
+                  ) : (
+                    <div style={{ flex: 1 }} />
+                  )}
+                </div>
+
+                {/* Right card (odd steps) or spacer */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-start",
+                    padding: "0 20px",
+                  }}
+                >
+                  {!isEven ? <StepCard h={h} align="left" /> : <div />}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Mobile fallback: linear list shown on small screens via CSS below */}
+        <style>{`
+          @media (max-width: 640px) {
+            .hiw-grid { display: none !important; }
+            .hiw-mobile { display: flex !important; }
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+          }
+        `}</style>
+
+        {/* Mobile list */}
+        <div
+          className="hiw-mobile"
+          style={{
+            display: "none",
+            flexDirection: "column",
+            gap: 16,
+            marginTop: 0,
+          }}
+        >
+          {howItWorks.map((h) => (
             <div
               key={h.step}
               style={{
                 display: "flex",
-                gap: 24,
+                gap: 16,
                 alignItems: "flex-start",
-                padding: "28px 0",
-                borderBottom:
-                  i < howItWorks.length - 1
-                    ? "1px solid var(--border)"
-                    : "none",
+                padding: "18px",
+                borderRadius: 14,
+                background: h.bg,
+                border: `1px solid ${h.border}`,
               }}
             >
               <div
                 style={{
-                  minWidth: 52,
-                  height: 52,
-                  borderRadius: 12,
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
+                  width: 48,
+                  height: 48,
+                  borderRadius: "50%",
+                  background: h.bg,
+                  border: `2px solid ${h.border}`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontFamily: "Space Mono, monospace",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: "var(--accent)",
+                  fontSize: 20,
+                  flexShrink: 0,
                 }}
               >
-                {h.step}
+                {h.icon}
               </div>
               <div>
-                <h3
+                <div
+                  style={{
+                    fontFamily: "Space Mono, monospace",
+                    fontSize: 11,
+                    color: h.color,
+                    marginBottom: 4,
+                    letterSpacing: "0.06em",
+                  }}
+                >
+                  STEP {h.step}
+                </div>
+                <div
                   style={{
                     fontFamily: "Syne, sans-serif",
                     fontWeight: 700,
-                    fontSize: 17,
+                    fontSize: 15,
                     color: "var(--text)",
-                    marginBottom: 6,
+                    marginBottom: 4,
                   }}
                 >
                   {h.title}
-                </h3>
-                <p
+                </div>
+                <div
                   style={{
-                    fontSize: 14,
+                    fontSize: 13,
                     color: "var(--text3)",
-                    lineHeight: 1.7,
+                    lineHeight: 1.6,
                   }}
                 >
                   {h.desc}
-                </p>
+                </div>
               </div>
             </div>
           ))}
@@ -402,7 +618,7 @@ export default function HomePage() {
           borderBottom: "1px solid var(--border)",
         }}
       >
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "70px 24px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "72px 24px" }}>
           <div style={{ textAlign: "center", marginBottom: 48 }}>
             <h2
               style={{
@@ -410,26 +626,56 @@ export default function HomePage() {
                 fontWeight: 800,
                 fontSize: 28,
                 color: "var(--text)",
-                letterSpacing: "-0.4px",
+                letterSpacing: "-0.5px",
                 marginBottom: 10,
               }}
             >
               Everything you need to stay on track
             </h2>
-            <p style={{ color: "var(--text3)", fontSize: 15 }}>
+            <p style={{ color: "var(--text3)", fontSize: 14 }}>
               Features designed for pressure, not comfort.
             </p>
           </div>
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fill, minmax(270px, 1fr))",
               gap: 16,
             }}
           >
             {features.map((f) => (
-              <div key={f.title} className="card" style={{ padding: "22px" }}>
-                <div style={{ fontSize: 26, marginBottom: 12 }}>{f.icon}</div>
+              <div
+                key={f.title}
+                className="card"
+                style={{
+                  padding: "24px",
+                  transition: "border-color 0.2s, transform 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(255,77,77,0.4)";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border)";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                <div
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 10,
+                    background: "var(--bg2)",
+                    border: "1px solid var(--border)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 20,
+                    marginBottom: 14,
+                  }}
+                >
+                  {f.icon}
+                </div>
                 <h3
                   style={{
                     fontFamily: "Syne, sans-serif",
@@ -461,20 +707,35 @@ export default function HomePage() {
         style={{
           maxWidth: 700,
           margin: "0 auto",
-          padding: "80px 24px",
+          padding: "88px 24px",
           textAlign: "center",
+          position: "relative",
         }}
       >
-        
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: "20%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 500,
+            height: 200,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(ellipse, rgba(255,77,77,0.07) 0%, transparent 70%)",
+            pointerEvents: "none",
+          }}
+        />
         <h2
           style={{
             fontFamily: "Syne, sans-serif",
             fontWeight: 800,
-            fontSize: 32,
+            fontSize: 34,
             color: "var(--text)",
-            letterSpacing: "-0.6px",
+            letterSpacing: "-0.8px",
             marginBottom: 16,
-            lineHeight: 1.2,
+            lineHeight: 1.15,
           }}
         >
           Your backlog is waiting.
@@ -485,22 +746,22 @@ export default function HomePage() {
           style={{
             color: "var(--text3)",
             fontSize: 15,
-            marginBottom: 32,
-            lineHeight: 1.7,
+            marginBottom: 36,
+            lineHeight: 1.75,
           }}
         >
           Every day you delay is another day of backlog that will haunt you.
-          DueOrDiemakes sure you can't ignore it.
+          DueOrDie makes sure you can't ignore it.
         </p>
         <Link
           href="/goals/new"
           className="btn btn-primary"
-          style={{ padding: "16px 36px", fontSize: 16 }}
+          style={{ padding: "16px 40px", fontSize: 16, borderRadius: 12 }}
         >
-          Create Your Goal Now 
+          Create Your Goal Now →
         </Link>
         {hasGoals && (
-          <p style={{ marginTop: 16, fontSize: 13, color: "var(--text3)" }}>
+          <p style={{ marginTop: 18, fontSize: 13, color: "var(--text3)" }}>
             Or{" "}
             <Link
               href="/goals"
@@ -512,6 +773,64 @@ export default function HomePage() {
           </p>
         )}
       </section>
+    </div>
+  );
+}
+
+/* ── Step Card sub-component ── */
+function StepCard({ h, align }) {
+  return (
+    <div
+      style={{
+        maxWidth: 320,
+        width: "100%",
+        padding: "20px 22px",
+        borderRadius: 16,
+        background: h.bg,
+        border: `1px solid ${h.border}`,
+        textAlign: align === "right" ? "right" : "left",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Subtle top accent line */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: align === "right" ? "auto" : 0,
+          right: align === "right" ? 0 : "auto",
+          width: "50%",
+          height: 2,
+          background: `linear-gradient(${align === "right" ? "270deg" : "90deg"}, ${h.color}, transparent)`,
+        }}
+      />
+      <div
+        style={{
+          fontFamily: "Space Mono, monospace",
+          fontSize: 11,
+          color: h.color,
+          letterSpacing: "0.08em",
+          marginBottom: 6,
+          opacity: 0.8,
+        }}
+      >
+        STEP {h.step}
+      </div>
+      <div
+        style={{
+          fontFamily: "Syne, sans-serif",
+          fontWeight: 700,
+          fontSize: 16,
+          color: "var(--text)",
+          marginBottom: 6,
+        }}
+      >
+        {h.title}
+      </div>
+      <div style={{ fontSize: 13, color: "var(--text3)", lineHeight: 1.65 }}>
+        {h.desc}
+      </div>
     </div>
   );
 }
