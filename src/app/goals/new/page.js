@@ -45,7 +45,7 @@ function StepDot({ n, active, done }) {
   );
 }
 
-// ─── Suggestion dropdown card ─────────────────────────────────────────────────
+// ─── Suggestion dropdown card
 function SuggestionCard({ entry, onImport }) {
   return (
     <div
