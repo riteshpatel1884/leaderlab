@@ -110,7 +110,7 @@ function SuggestionCard({ entry, onImport }) {
   );
 }
 
-// ─── Topic row ────────────────────────────────────────────────────────────────
+// ─── Topic row 
 function TopicRow({
   topic,
   index,
