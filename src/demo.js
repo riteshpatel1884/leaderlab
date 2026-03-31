@@ -1,9 +1,11 @@
-import React from 'react'
+import React from "react";
 
 function demo() {
   return (
-    <div>demo</div>
-  )
+    <>
+      <div>demo</div>
+    </>
+  );
 }
 
-export default demo
+export default demo;
