@@ -77,12 +77,20 @@ MongoDB for storing user queries and results. I explained that this setup cleanl
       "You noticed a teammate was consistently missing deadlines and affecting the group's progress. Walk me through how you addressed it.",
     tags: ["empathy", "team dynamics", "leadership"],
     situation:
-      "In a software engineering group project, one of our four members missed two consecutive sprint deadlines for the authentication module. The rest of the team was getting frustrated, and our delivery timeline was at risk.",
-    task: "As the informal team lead for that sprint, I was responsible for ensuring we stayed on track. I needed to address the issue without damaging team morale or publicly humiliating my teammate.",
-    action:
-      "I requested a one-on-one coffee chat with the teammate, framing it as a check-in rather than a confrontation. I learned they were dealing with a family situation and were overwhelmed. Together, we broke down their remaining tasks into smaller daily subtasks. I also paired them with another teammate for co-working sessions and took on one of their smaller tasks myself to ease the load.",
+      "During our major project on medical plant identification using ML, one of my teammates was consistently missing deadlines for assigned tasks like dataset labeling and frontend integration. This obstructed our progress because other parts of the system depended on his work.",
+    task: "I needed to address the issue without creating conflict,by ensuring that the project stayed on track, and maintain team accountability.",
+    action: `I spoke to him directly and asked what was causing the delays. It turned out he was struggling with time management and also had difficulty understanding parts of the stack, especially integrating the frontend with the ML API.
+
+I didn’t just motivate him - that’s useless. I made it practical:
+
+1. Broke his tasks into smaller tasks.
+2. Set short deadlines.
+3. Helped him understand the integration flow between React frontend and Flask ML API.
+4. Introduced quick daily check-ins so work didn’t pile up.
+
+At the same time, I redistributed a small portion of critical work to avoid bottlenecks and kept the rest of the team informed without blaming him.`,
     result:
-      "The teammate completed their revised tasks by the next sprint. They later told me that conversation was the turning point. We submitted the project on time with all core features implemented. I also gained experience in empathetic leadership, which I now consider one of my most important non-technical skills.",
+      "His consistency improved, and he started meeting the smaller deadlines. We reduced delays, completed the project on time, and successfully delivered a working web-based plant identification system. The team became more structured, and we avoided similar issues for the rest of the project.",
   },
   {
     id: 3,

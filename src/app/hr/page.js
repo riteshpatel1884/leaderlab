@@ -37,7 +37,6 @@ const STAR_LABELS = {
 
 // ─── Answer Modal ─────────────────────────────────────────────────────────────
 function AnswerModal({ question, onClose }) {
-  const [activeTab, setActiveTab] = useState("full");
   const [copiedPart, setCopiedPart] = useState(null);
 
   // Close on Escape
@@ -67,8 +66,6 @@ function AnswerModal({ question, onClose }) {
         @keyframes backdropIn {
           from { opacity: 0; } to { opacity: 1; }
         }
-        .star-tab { transition: all 0.2s; }
-        .star-tab:hover { background: var(--bg3) !important; }
         .star-section { transition: box-shadow 0.2s; }
         .star-section:hover { box-shadow: 0 2px 16px rgba(0,0,0,0.1); }
       `}</style>
@@ -248,41 +245,17 @@ function AnswerModal({ question, onClose }) {
               "{question.question}"
             </div>
 
-            {/* Tabs */}
-            <div style={{ display: "flex", gap: 4 }}>
-              {[
-                { key: "full", label: "📖 Full Answer" },
-                { key: "breakdown", label: "🔍 S·T·A·R Breakdown" },
-              ].map((t) => (
-                <button
-                  key={t.key}
-                  onClick={() => setActiveTab(t.key)}
-                  className="star-tab"
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: "10px 10px 0 0",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    fontFamily: "DM Sans, sans-serif",
-                    background:
-                      activeTab === t.key ? "var(--bg)" : "transparent",
-                    color: activeTab === t.key ? "var(--text)" : "var(--text3)",
-                    borderBottom:
-                      activeTab === t.key
-                        ? `2px solid ${question.categoryColor}`
-                        : "2px solid transparent",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  {t.label}
-                </button>
-              ))}
+            {/* Copy All button */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                paddingBottom: 16,
+              }}
+            >
               <button
                 onClick={() => copyText(fullAnswer, "all")}
                 style={{
-                  marginLeft: "auto",
                   padding: "7px 14px",
                   borderRadius: 8,
                   border: "1px solid var(--border)",
@@ -305,166 +278,72 @@ function AnswerModal({ question, onClose }) {
           {/* Modal body */}
           <div
             style={{ flex: 1, overflowY: "auto", padding: "20px 24px 24px" }}
-           >
-            {activeTab === "full" ? (
-              // Full answer view — clean readable prose
-              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                {["situation", "task", "action", "result"].map((key) => {
-                  const cfg = STAR_LABELS[key];
-                  return (
+          >
+            {/* Full answer view — clean readable prose */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {["situation", "task", "action", "result"].map((key) => {
+                const cfg = STAR_LABELS[key];
+                return (
+                  <div
+                    key={key}
+                    className="star-section"
+                    style={{
+                      display: "flex",
+                      gap: 16,
+                      padding: "16px 0",
+                      borderBottom:
+                        key !== "result" ? "1px solid var(--border)" : "none",
+                    }}
+                  >
+                    {/* Letter badge */}
                     <div
-                      key={key}
-                      className="star-section"
                       style={{
-                        display: "flex",
-                        gap: 16,
-                        padding: "16px 0",
-                        borderBottom:
-                          key !== "result" ? "1px solid var(--border)" : "none",
-                      }}
-                    >
-                      {/* Letter badge */}
-                      <div
-                        style={{
-                          width: 34,
-                          height: 34,
-                          borderRadius: 10,
-                          flexShrink: 0,
-                          background: cfg.bg,
-                          border: `1.5px solid ${cfg.border}`,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontFamily: "Space Mono, monospace",
-                          fontWeight: 700,
-                          fontSize: 15,
-                          color: cfg.color,
-                        }}
-                      >
-                        {cfg.letter}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: cfg.color,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.1em",
-                            marginBottom: 6,
-                            fontFamily: "Space Mono, monospace",
-                          }}
-                        >
-                          {cfg.label}
-                        </div>
-                        <p
-                          style={{
-                            fontSize: 14,
-                            color: "var(--text)",
-                            lineHeight: 1.8,
-                            margin: 0,
-                          }}
-                        >
-                          {question[key]}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              // Breakdown view — card grid
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 12,
-                }}
-               >
-                {["situation", "task", "action", "result"].map((key) => {
-                  const cfg = STAR_LABELS[key];
-                  return (
-                    <div
-                      key={key}
-                      style={{
-                        borderRadius: 14,
-                        border: `1.5px solid ${cfg.border}`,
+                        width: 34,
+                        height: 34,
+                        borderRadius: 10,
+                        flexShrink: 0,
                         background: cfg.bg,
-                        padding: "16px",
-                        position: "relative",
+                        border: `1.5px solid ${cfg.border}`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontFamily: "Space Mono, monospace",
+                        fontWeight: 700,
+                        fontSize: 15,
+                        color: cfg.color,
                       }}
                     >
+                      {cfg.letter}
+                    </div>
+                    <div style={{ flex: 1 }}>
                       <div
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          marginBottom: 10,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: cfg.color,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.1em",
+                          marginBottom: 6,
+                          fontFamily: "Space Mono, monospace",
                         }}
                       >
-                        <div
-                          style={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: 8,
-                            background: `${cfg.color}20`,
-                            border: `1.5px solid ${cfg.color}50`,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontFamily: "Space Mono, monospace",
-                            fontWeight: 700,
-                            fontSize: 13,
-                            color: cfg.color,
-                          }}
-                        >
-                          {cfg.letter}
-                        </div>
-                        <span
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 700,
-                            color: cfg.color,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.08em",
-                            fontFamily: "Space Mono, monospace",
-                          }}
-                        >
-                          {cfg.label}
-                        </span>
-                        <button
-                          onClick={() => copyText(question[key], key)}
-                          style={{
-                            marginLeft: "auto",
-                            padding: "2px 8px",
-                            borderRadius: 5,
-                            border: `1px solid ${cfg.border}`,
-                            background: "transparent",
-                            color:
-                              copiedPart === key ? cfg.color : "var(--text3)",
-                            cursor: "pointer",
-                            fontSize: 10,
-                            transition: "all 0.15s",
-                          }}
-                        >
-                          {copiedPart === key ? "✓" : "⎘"}
-                        </button>
+                        {cfg.label}
                       </div>
                       <p
                         style={{
-                          fontSize: 13,
+                          fontSize: 14,
                           color: "var(--text)",
-                          lineHeight: 1.7,
+                          lineHeight: 1.8,
                           margin: 0,
                         }}
                       >
                         {question[key]}
                       </p>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  </div>
+                );
+              })}
+            </div>
 
             {/* Tags */}
             <div
@@ -584,7 +463,6 @@ function QuestionCard({ question, index, onOpen }) {
               {question.categoryEmoji} {question.categoryLabel}
             </span>
           </div>
-          
         </div>
 
         {/* Title */}
@@ -616,52 +494,6 @@ function QuestionCard({ question, index, onOpen }) {
         >
           {question.question}
         </p>
-
-        {/* STAR mini badges
-        <div style={{ display: "flex", gap: 4 }}>
-          {["S", "T", "A", "R"].map((l, i) => {
-            const keys = ["situation", "task", "action", "result"];
-            const cfg = STAR_LABELS[keys[i]];
-            return (
-              <div
-                key={l}
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 6,
-                  background: cfg.bg,
-                  border: `1px solid ${cfg.border}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontFamily: "Space Mono, monospace",
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: cfg.color,
-                }}
-              >
-                {l}
-              </div>
-            );
-          })}
-          <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
-            {question.tags.slice(0, 2).map((tag) => (
-              <span
-                key={tag}
-                style={{
-                  padding: "2px 8px",
-                  borderRadius: 100,
-                  fontSize: 10,
-                  background: "var(--bg2)",
-                  color: "var(--text3)",
-                  border: "1px solid var(--border)",
-                }}
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        </div> */}
       </div>
     </div>
   );
@@ -672,7 +504,6 @@ export default function StarInterviewPage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [selectedQ, setSelectedQ] = useState(null);
-  const [randomMode, setRandomMode] = useState(false);
 
   const filtered = STAR_QUESTIONS.filter((q) => {
     const matchCat = activeCategory === "all" || q.category === activeCategory;
@@ -717,7 +548,6 @@ export default function StarInterviewPage() {
               marginBottom: 10,
             }}
           >
-           
             <span
               style={{
                 fontSize: 12,
@@ -1089,11 +919,7 @@ export default function StarInterviewPage() {
                 structure (S·T·A·R)
               </strong>{" "}
               and your real story. Interviewers want authenticity — adapt these
-              answers to your own experiences. Use the{" "}
-              <strong style={{ color: "var(--text2)" }}>
-                S·T·A·R Breakdown tab
-              </strong>{" "}
-              in each answer to internalize the skeleton.
+              answers to your own experiences.
             </p>
           </div>
         </div>
