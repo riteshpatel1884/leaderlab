@@ -101,7 +101,7 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation. */}
           <div
             className="desktop-nav"
             style={{
