@@ -65,7 +65,7 @@ export default function Navbar() {
             justifyContent: "space-between",
           }}
         >
-          {/* Logo with gradient accent */}
+         
           <Link href="/" style={{ textDecoration: "none" }}>
             <div
               style={{
