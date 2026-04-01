@@ -9,10 +9,9 @@ export default function PanicMeter({ level, compact = false }) {
   };
 
   const getLabel = () => {
-    if (level >= 70) return "🔥 Critical";
-    if (level >= 40) return "⚠️ Warning";
-    if (level >= 20) return "📊 Caution";
-    return "✅ On Track";
+    if (level >= 50) return "Critical";
+    if (level >= 10) return "Warning";
+    return "On Track";
   };
 
   const color = getColor();

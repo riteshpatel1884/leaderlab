@@ -388,7 +388,7 @@ export default function TodayPage() {
             cursor: checkedCount === 0 ? "not-allowed" : "pointer",
           }}
         >
-          ✅ Submit — Day Complete ({checkedCount}/{totalCount} done)
+          Submit 
         </button>
       ) : (
         <Link
