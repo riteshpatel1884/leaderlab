@@ -378,14 +378,17 @@ export default function TodayPage() {
         <button
           className="btn btn-primary"
           onClick={() => handleSubmit(true)}
+          disabled={checkedCount === 0}
           style={{
             width: "100%",
             justifyContent: "center",
             padding: "14px",
             fontSize: 15,
+            opacity: checkedCount === 0 ? 0.5 : 1,
+            cursor: checkedCount === 0 ? "not-allowed" : "pointer",
           }}
         >
-         Submit. Day Complete ({checkedCount}/{totalCount} done)
+          ✅ Submit — Day Complete ({checkedCount}/{totalCount} done)
         </button>
       ) : (
         <Link
