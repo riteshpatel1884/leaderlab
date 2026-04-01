@@ -206,7 +206,7 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Mobile menu button + theme toggle */}
+          {/* Mobile menu button + theme toggle. */}
           <div
             className="mobile-controls"
             style={{
