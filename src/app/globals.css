@@ -2,55 +2,87 @@
 
 @import "tailwindcss";
 
+/* ─── DARK THEME (default) ─────────────────────────────────────────────────
+   Two-color system: near-black backgrounds + off-white text.
+   Every surface, border, badge, and status is a shade between these two.
+──────────────────────────────────────────────────────────────────────────── */
 :root {
-  --bg: #0a0a0f;
-  --bg2: #111118;
-  --bg3: #1a1a24;
-  --surface: #1e1e2e;
-  --surface2: #252538;
-  --border: #2e2e45;
-  --border2: #3a3a55;
-  --text: #e8e8f0;
-  --text2: #9898b8;
-  --text3: #5a5a7a;
-  --accent: #ff4d4d;
-  --accent2: #ff8c42;
-  --accent3: #ffd166;
-  --green: #06d6a0;
-  --blue: #4a9eff;
-  --purple: #9b59ff;
-  --red: #ff3860;
+  /* Backgrounds — darkest → lightest */
+  --bg:       #111111;
+  --bg2:      #161616;
+  --bg3:      #1c1c1c;
+
+  /* Surfaces (cards, modals) */
+  --surface:  #1e1e1e;
+  --surface2: #242424;
+
+  /* Borders */
+  --border:   #2a2a2a;
+  --border2:  #363636;
+
+  /* Text — brightest → dimmest */
+  --text:     #efefef;
+  --text2:    #888888;
+  --text3:    #444444;
+
+  /* Single accent: a bright off-white used sparingly for CTAs */
+  --accent:   #efefef;
+  --accent-fg:#111111;   /* text on accent buttons */
+
+  /* Status shades — all greyscale tints */
+  --status-done-bg:    rgba(239,239,239, 0.08);
+  --status-done-fg:    #c8c8c8;
+  --status-pending-bg: rgba(239,239,239, 0.05);
+  --status-pending-fg: #999999;
+  --status-missed-bg:  rgba(239,239,239, 0.04);
+  --status-missed-fg:  #666666;
+  --status-today-bg:   rgba(239,239,239, 0.10);
+  --status-today-fg:   #efefef;
+  --status-overdue-bg: rgba(239,239,239, 0.04);
+  --status-overdue-fg: #777777;
 }
 
+/* ─── LIGHT THEME ──────────────────────────────────────────────────────────
+   Two-color system: near-white backgrounds + near-black text.
+──────────────────────────────────────────────────────────────────────────── */
 [data-theme="light"] {
-  --bg: #f5f4f0;
-  --bg2: #edecea;
-  --bg3: #e4e2de;
-  --surface: #ffffff;
-  --surface2: #f8f7f5;
-  --border: #dddbd6;
-  --border2: #c8c5be;
-  --text: #1a1a2e;
-  --text2: #4a4a6a;
-  --text3: #8a8aaa;
-  --accent: #e63333;
-  --accent2: #e07528;
-  --accent3: #c9a000;
-  --green: #05a87c;
-  --blue: #2f7ee0;
-  --purple: #7b3fdc;
-  --red: #cc2d4d;
+  --bg:       #f5f5f5;
+  --bg2:      #eeeeee;
+  --bg3:      #e7e7e7;
+
+  --surface:  #ffffff;
+  --surface2: #f8f8f8;
+
+  --border:   #d8d8d8;
+  --border2:  #c2c2c2;
+
+  --text:     #111111;
+  --text2:    #555555;
+  --text3:    #aaaaaa;
+
+  --accent:   #111111;
+  --accent-fg:#ffffff;
+
+  --status-done-bg:    rgba(17,17,17, 0.07);
+  --status-done-fg:    #333333;
+  --status-pending-bg: rgba(17,17,17, 0.05);
+  --status-pending-fg: #555555;
+  --status-missed-bg:  rgba(17,17,17, 0.04);
+  --status-missed-fg:  #888888;
+  --status-today-bg:   rgba(17,17,17, 0.09);
+  --status-today-fg:   #111111;
+  --status-overdue-bg: rgba(17,17,17, 0.04);
+  --status-overdue-fg: #777777;
 }
 
-* {
+/* ─── RESET ─────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
   background-color: var(--bg);
@@ -62,20 +94,20 @@ body {
   min-height: 100vh;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg2); }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+/* ─── SCROLLBAR ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar          { width: 6px; }
+::-webkit-scrollbar-track    { background: var(--bg2); }
+::-webkit-scrollbar-thumb    { background: var(--border2); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
 
-/* Selection */
-::selection { background: var(--accent); color: white; }
+/* ─── SELECTION ──────────────────────────────────────────────────────────── */
+::selection { background: var(--accent); color: var(--accent-fg); }
 
-/* Typography utilities */
+/* ─── TYPOGRAPHY UTILITIES ───────────────────────────────────────────────── */
 .font-display { font-family: 'Syne', sans-serif; }
-.font-mono { font-family: 'Space Mono', monospace; }
+.font-mono    { font-family: 'Space Mono', monospace; }
 
-/* Noise texture overlay */
+/* ─── NOISE TEXTURE ──────────────────────────────────────────────────────── */
 .noise::before {
   content: '';
   position: fixed;
@@ -86,38 +118,33 @@ body {
   opacity: 0.4;
 }
 
-/* Card base */
+/* ─── CARD ───────────────────────────────────────────────────────────────── */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-
 .card:hover {
   border-color: var(--border2);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.12);
 }
 
-/* Panic gradient */
-.panic-glow {
-  box-shadow: 0 0 20px rgba(255, 77, 77, 0.15), 0 0 40px rgba(255, 77, 77, 0.05);
-}
-
-/* Progress bar */
+/* ─── PROGRESS BAR ───────────────────────────────────────────────────────── */
 .progress-bar {
   height: 4px;
   border-radius: 2px;
   background: var(--border);
   overflow: hidden;
 }
-
 .progress-fill {
   height: 100%;
   border-radius: 2px;
+  background: var(--text);
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Button base */
+/* ─── BUTTONS ────────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -134,41 +161,41 @@ body {
   white-space: nowrap;
 }
 
+/* Primary: solid accent (white on dark / black on light) */
 .btn-primary {
   background: var(--accent);
-  color: white;
+  color: var(--accent-fg);
   border-color: var(--accent);
 }
-
 .btn-primary:hover {
-  background: #ff3333;
+  opacity: 0.88;
   transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(255, 77, 77, 0.3);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
 }
 
+/* Secondary: muted surface */
 .btn-secondary {
   background: var(--surface2);
   color: var(--text);
   border-color: var(--border);
 }
-
 .btn-secondary:hover {
   border-color: var(--border2);
   background: var(--bg3);
 }
 
+/* Ghost: transparent */
 .btn-ghost {
   background: transparent;
   color: var(--text2);
   border-color: var(--border);
 }
-
 .btn-ghost:hover {
   background: var(--surface);
   color: var(--text);
 }
 
-/* Input base */
+/* ─── INPUT ──────────────────────────────────────────────────────────────── */
 .input {
   width: 100%;
   padding: 10px 14px;
@@ -181,17 +208,16 @@ body {
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-
 .input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(255, 77, 77, 0.1);
+  border-color: var(--text2);
+  box-shadow: 0 0 0 3px rgba(239,239,239,0.06);
 }
-
-.input::placeholder {
-  color: var(--text3);
+[data-theme="light"] .input:focus {
+  box-shadow: 0 0 0 3px rgba(17,17,17,0.06);
 }
+.input::placeholder { color: var(--text3); }
 
-/* Badge */
+/* ─── BADGE ──────────────────────────────────────────────────────────────── */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -200,46 +226,58 @@ body {
   font-size: 12px;
   font-weight: 500;
   font-family: 'Space Mono', monospace;
+  background: var(--surface2);
+  color: var(--text2);
+  border: 1px solid var(--border);
 }
 
-/* Status colors */
-.status-done { background: rgba(6, 214, 160, 0.12); color: var(--green); }
-.status-pending { background: rgba(255, 209, 102, 0.12); color: var(--accent3); }
-.status-missed { background: rgba(255, 77, 77, 0.12); color: var(--accent); }
-.status-today { background: rgba(74, 158, 255, 0.12); color: var(--blue); }
-.status-overdue { background: rgba(255, 60, 96, 0.12); color: var(--red); }
+/* ─── STATUS BADGES ──────────────────────────────────────────────────────── */
+.status-done    { background: var(--status-done-bg);    color: var(--status-done-fg); }
+.status-pending { background: var(--status-pending-bg); color: var(--status-pending-fg); }
+.status-missed  { background: var(--status-missed-bg);  color: var(--status-missed-fg); }
+.status-today   { background: var(--status-today-bg);   color: var(--status-today-fg); }
+.status-overdue { background: var(--status-overdue-bg); color: var(--status-overdue-fg); }
 
-/* Animate in */
+/* ─── NAVBAR ─────────────────────────────────────────────────────────────── */
+.navbar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+.navbar .nav-link {
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+/* ─── ANIMATIONS ─────────────────────────────────────────────────────────── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes fadeIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
+}
+@keyframes pulse-subtle {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,239,239,0.12); }
+  50%       { box-shadow: 0 0 0 8px rgba(239,239,239,0); }
 }
 
-@keyframes pulse-red {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.3); }
-  50% { box-shadow: 0 0 0 8px rgba(255, 77, 77, 0); }
-}
-
-.animate-fadeUp {
-  animation: fadeUp 0.4s ease both;
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease both;
-}
-
-.pulse-red {
-  animation: pulse-red 2s infinite;
-}
+.animate-fadeUp  { animation: fadeUp  0.4s ease both; }
+.animate-fadeIn  { animation: fadeIn  0.3s ease both; }
+.pulse-subtle    { animation: pulse-subtle 2s infinite; }
 
 /* Stagger delays */
 .delay-1 { animation-delay: 0.05s; }
-.delay-2 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.10s; }
 .delay-3 { animation-delay: 0.15s; }
-.delay-4 { animation-delay: 0.2s; }
+.delay-4 { animation-delay: 0.20s; }
 .delay-5 { animation-delay: 0.25s; }

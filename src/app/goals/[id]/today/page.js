@@ -777,8 +777,8 @@ export default function TodayPage() {
             }}
           >
             {existingLog.completed
-              ? `✅ Logged as complete — ${existingLog.completedTopics?.length || 0} topics done.`
-              : `📋 ${existingLog.completedTopics?.length || 0} topics done, ${existingLog.skippedTopics?.length || 0} skipped.`}
+              ? `Logged as complete. ${existingLog.completedTopics?.length || 0} topics done.`
+              : `${existingLog.completedTopics?.length || 0} topics done, ${existingLog.skippedTopics?.length || 0} skipped.`}
           </div>
         )}
 
@@ -933,18 +933,8 @@ export default function TodayPage() {
                     transition: "all 0.2s",
                     boxShadow: isDone ? "0 0 10px rgba(6,214,160,0.3)" : "none",
                   }}
-                >
-                  {isDone && (
-                    <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
-                      <path
-                        d="M1 4L4.5 7.5L11 1"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
+                 >
+                  
                 </div>
                 <span
                   style={{
@@ -1004,7 +994,7 @@ export default function TodayPage() {
               }}
             >
               {hasBacklog && !backlogCleared ? (
-                <>⚠️ Clear backlog first to submit</>
+                <>Clear backlog first to submit</>
               ) : (
                 <>
                   Submit{" "}
