@@ -231,7 +231,7 @@ body {
   border: 1px solid var(--border);
 }
 
-/* ─── STATUS BADGES ──────────────────────────────────────────────────────── */
+
 .status-done    { background: var(--status-done-bg);    color: var(--status-done-fg); }
 .status-pending { background: var(--status-pending-bg); color: var(--status-pending-fg); }
 .status-missed  { background: var(--status-missed-bg);  color: var(--status-missed-fg); }
