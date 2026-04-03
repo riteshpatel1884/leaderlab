@@ -643,3 +643,139 @@ html, body {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Bottom sidebar for mobile */
+
+/* Mobile Bottom Nav */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    padding: 16px;
+    padding-bottom: 80px; /* space for bottom nav */
+    max-width: 100vw;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* Show bottom nav on mobile */
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    z-index: 100;
+    align-items: stretch;
+  }
+
+  .mobile-tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 6px 4px;
+    transition: color 0.15s;
+    position: relative;
+  }
+
+  .mobile-tab-item.active {
+    color: var(--accent);
+  }
+
+  .mobile-tab-item.active .mobile-tab-icon {
+    background: var(--accent-dim);
+    border-radius: 8px;
+  }
+
+  .mobile-tab-icon {
+    font-size: 16px;
+    width: 32px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+
+  .mobile-tab-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 56px;
+  }
+
+  /* More drawer */
+  .more-backdrop {
+    position: fixed;
+    inset: 0;
+    bottom: 64px;
+    z-index: 98;
+  }
+
+  .more-drawer {
+    position: fixed;
+    bottom: 68px;
+    right: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 6px;
+    z-index: 99;
+    min-width: 180px;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+    animation: slideUp 0.15s ease;
+  }
+
+  .more-drawer-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.12s;
+  }
+
+  .more-drawer-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+
+  .more-drawer-item.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+  }
+}
+
+/* Bottom sidebar ends */
