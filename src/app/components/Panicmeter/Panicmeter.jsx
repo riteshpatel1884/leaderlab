@@ -1,6 +1,20 @@
 "use client";
 
-export default function PanicMeter({ level, compact = false }) {
+import { useEffect } from "react";
+
+export default function PanicMeter({
+  level,
+  compact = false,
+  backlogCount = 0,
+  onLevelChange = null,
+}) {
+  // Auto-reset panic level when backlogs are cleared
+  useEffect(() => {
+    if (backlogCount === 0 && level > 0 && onLevelChange) {
+      onLevelChange(0);
+    }
+  }, [backlogCount, level, onLevelChange]);
+
   const getColor = () => {
     if (level >= 70) return "var(--accent)";
     if (level >= 40) return "var(--accent2)";
@@ -125,6 +139,19 @@ export default function PanicMeter({ level, compact = false }) {
           {level >= 70
             ? "Critical backlog detected. You must act today to stay on track."
             : "You have pending topics. Clear them before they pile up."}
+        </p>
+      )}
+
+      {level === 0 && backlogCount === 0 && (
+        <p
+          style={{
+            marginTop: 10,
+            fontSize: 12,
+            color: "var(--green)",
+            fontWeight: 500,
+          }}
+        >
+          ✓ All clear! No backlogs pending.
         </p>
       )}
     </div>

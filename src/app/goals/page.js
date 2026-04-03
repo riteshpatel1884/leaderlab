@@ -1,11 +1,25 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useGoals } from "../hooks/useGoals";
 import GoalCard from "../components/Goalcard/Goalcard";
 import Link from "next/link";
 
 export default function GoalsPage() {
   const { goals, loaded, deleteGoal } = useGoals();
+  const [panicLevel, setPanicLevel] = useState(0);
+
+  // Calculate total backlog count across all goals
+  const totalBacklogCount = goals.reduce((sum, goal) => {
+    return sum + (goal.backlog?.length || 0);
+  }, 0);
+
+  // Auto-reset panic level when all backlogs are cleared
+  useEffect(() => {
+    if (totalBacklogCount === 0 && panicLevel > 0) {
+      setPanicLevel(0);
+    }
+  }, [totalBacklogCount, panicLevel]);
 
   if (!loaded) return null;
 
@@ -65,7 +79,14 @@ export default function GoalsPage() {
           }}
         >
           {goals.map((g) => (
-            <GoalCard key={g.id} goal={g} onDelete={deleteGoal} />
+            <GoalCard
+              key={g.id}
+              goal={g}
+              onDelete={deleteGoal}
+              panicLevel={panicLevel}
+              setPanicLevel={setPanicLevel}
+              totalBacklogCount={totalBacklogCount}
+            />
           ))}
         </div>
       )}

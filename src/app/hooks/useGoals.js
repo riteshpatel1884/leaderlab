@@ -18,7 +18,6 @@ function daysBetween(a, b) {
   return Math.floor((new Date(b) - new Date(a)) / 86400000);
 }
 
-/** Sum of all topic days */
 export function totalTopicDays(topics) {
   return topics.reduce(
     (sum, t) => sum + (typeof t === "object" ? t.days || 1 : 1),
@@ -26,35 +25,21 @@ export function totalTopicDays(topics) {
   );
 }
 
-/** Note 1
- * Build the daily schedule for a goal.
- *
- * Distribution logic:
- * - Each topic has a `.days` field (default 1).
- * - We build a "slot" array: each topic repeated for its duration.
- * - We map all slots across ALL deadlineDays using a ratio so every day has content.
- * - Result: 50 days / 21 topics → each day shows the topic being studied that day.
- * - Topics needing 3 days appear across 3 consecutive days, etc.
- */
-
 export function buildSchedule(goal) {
   const { topics, startDate, deadlineDays, mode, dailyLogs } = goal;
   const today = todayStr();
   const endDate = addDays(startDate, deadlineDays - 1);
 
-  // Note 2 Normalize topics
   const normalizedTopics = topics.map((t) =>
     typeof t === "string"
       ? { name: t, days: 1 }
       : { name: t.name || t, days: t.days || 1 },
   );
 
-  // Note 3: Build slot array: topic name repeated for its duration
   const slots = normalizedTopics.flatMap((t) => Array(t.days).fill(t.name));
   const totalSlots = slots.length;
   const totalDays = deadlineDays;
 
-  // Note 4:  Map each slot to a day index using ratio
   const dayTopicMap = Array.from({ length: totalDays }, () => []);
 
   if (totalSlots > 0) {
@@ -63,13 +48,11 @@ export function buildSchedule(goal) {
         Math.floor((slotIdx * totalDays) / totalSlots),
         totalDays - 1,
       );
-      // Note 5: Only add if not already present for this day
       if (!dayTopicMap[dayIdx].includes(topicName)) {
         dayTopicMap[dayIdx].push(topicName);
       }
     });
 
-    // Note 6: Fill any empty days by inheriting from the nearest previous non-empty day
     for (let i = 0; i < totalDays; i++) {
       if (dayTopicMap[i].length === 0) {
         for (let back = i - 1; back >= 0; back--) {
@@ -88,7 +71,6 @@ export function buildSchedule(goal) {
     extra: [],
   }));
 
-  //Note 7: Process logs & collect backlog
   let pendingBacklog = [];
 
   plan = plan.map((day) => {
@@ -97,6 +79,7 @@ export function buildSchedule(goal) {
     if (!log) {
       const isPast = day.date < today;
       if (isPast) {
+        // Push all topics from this missed day into backlog
         pendingBacklog.push(...day.topics);
         return { ...day, status: "missed", completedTopics: [] };
       }
@@ -107,9 +90,19 @@ export function buildSchedule(goal) {
       };
     }
 
+    // ── KEY FIX ──────────────────────────────────────────────────────────────
+    // If this day has a log, check for skipped topics BUT exclude anything
+    // already marked as clearedBacklog. This prevents cleared backlog items
+    // from being re-added to pendingBacklog on every render.
+    const clearedBacklog = log.clearedBacklogTopics || [];
+
     if (!log.completed) {
-      pendingBacklog.push(...(log.skippedTopics || []));
+      const skipped = (log.skippedTopics || []).filter(
+        (t) => !clearedBacklog.includes(t),
+      );
+      pendingBacklog.push(...skipped);
     }
+    // ─────────────────────────────────────────────────────────────────────────
 
     return {
       ...day,
@@ -119,7 +112,7 @@ export function buildSchedule(goal) {
     };
   });
 
-  //Note 8: Redistribute backlog
+  // Redistribute backlog
   if (pendingBacklog.length > 0) {
     const futureDays = plan.filter(
       (d) => d.date >= today && d.status !== "done",
@@ -201,8 +194,6 @@ export function computeStats(goal) {
   };
 }
 
-// hook part code 
-
 export function useGoals() {
   const [goals, setGoals] = useState([]);
   const [loaded, setLoaded] = useState(false);
@@ -268,5 +259,59 @@ export function useGoals() {
     [goals, updateGoal],
   );
 
-  return { goals, loaded, addGoal, updateGoal, deleteGoal, logDay };
+  // ── NEW: persist which backlog topics were cleared so they don't reappear ──
+  // Called from BacklogModal after the user marks topics as done.
+  // We find the original date each topic came from and store it in that day's log.
+  const clearBacklogTopics = useCallback(
+    (goalId, clearedTopics) => {
+      if (!clearedTopics.length) return;
+      const goal = goals.find((g) => g.id === goalId);
+      if (!goal) return;
+
+      const { plan } = buildSchedule(goal);
+      const today = todayStr();
+
+      // For each cleared topic, find the past day that originally had it
+      // and record it as clearedBacklog in that day's log.
+      const updatedLogs = { ...goal.dailyLogs };
+
+      clearedTopics.forEach((topic) => {
+        // Find the earliest past day whose scheduled topics include this topic
+        // and which doesn't already have a "done" log
+        const originDay = plan.find(
+          (d) =>
+            d.date < today && d.topics.includes(topic) && d.status !== "done",
+        );
+
+        const dateKey = originDay ? originDay.date : today;
+        const existing = updatedLogs[dateKey] || {};
+        const alreadyCleared = existing.clearedBacklogTopics || [];
+
+        if (!alreadyCleared.includes(topic)) {
+          updatedLogs[dateKey] = {
+            completed: existing.completed || false,
+            completedTopics: existing.completedTopics || [],
+            skippedTopics: existing.skippedTopics || [],
+            ...existing,
+            clearedBacklogTopics: [...alreadyCleared, topic],
+            loggedAt: existing.loggedAt || new Date().toISOString(),
+          };
+        }
+      });
+
+      updateGoal(goalId, { dailyLogs: updatedLogs });
+    },
+    [goals, updateGoal],
+  );
+  // ─────────────────────────────────────────────────────────────────────────
+
+  return {
+    goals,
+    loaded,
+    addGoal,
+    updateGoal,
+    deleteGoal,
+    logDay,
+    clearBacklogTopics,
+  };
 }

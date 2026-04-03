@@ -250,7 +250,6 @@ function BacklogModal({ backlogTopics, onClose, onComplete }) {
                     userSelect: "none",
                   }}
                 >
-                  {/* Checkbox */}
                   <div
                     style={{
                       width: 22,
@@ -387,7 +386,8 @@ function BacklogModal({ backlogTopics, onClose, onComplete }) {
 export default function TodayPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { goals, logDay } = useGoals();
+  // ── pull clearBacklogTopics from the hook ──
+  const { goals, logDay, clearBacklogTopics } = useGoals();
   const goal = goals.find((g) => g.id === id);
   const today = todayStr();
 
@@ -494,9 +494,14 @@ export default function TodayPage() {
     setChecked({});
   };
 
+  // ── FIXED: persist cleared backlog topics to localStorage immediately ──
   const handleBacklogComplete = (completed, remaining) => {
     setClearedBacklogTopics(completed);
     setBacklogCleared(true);
+    // Save to storage right away so buildSchedule won't re-add them
+    if (completed.length > 0) {
+      clearBacklogTopics(id, completed);
+    }
   };
 
   const handleSubmit = () => {
@@ -595,7 +600,6 @@ export default function TodayPage() {
             overflow: "hidden",
           }}
         >
-          {/* Decorative glow */}
           <div
             style={{
               position: "absolute",

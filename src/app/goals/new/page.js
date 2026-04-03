@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useGoals, totalTopicDays } from "@/app/hooks/useGoals";
 import { searchLibrary, TOPIC_LIBRARY } from "./topics";
+import PanicMeter from "@/app/components/Panicmeter/Panicmeter";
 
 // ─── Step dot ───────────────────────────────────────────────────────────────
 function StepDot({ n, active, done }) {
@@ -335,6 +336,7 @@ export default function NewGoalPage() {
   const [error, setError] = useState("");
   const [editingIdx, setEditingIdx] = useState(null);
   const [editDays, setEditDays] = useState(1);
+  const [panicLevel, setPanicLevel] = useState(0);
 
   const [titleSuggestions, setTitleSuggestions] = useState([]);
   const [importedLibEntry, setImportedLibEntry] = useState(null);
@@ -1009,7 +1011,6 @@ export default function NewGoalPage() {
                     marginTop: 4,
                   }}
                 >
-                  <div style={{ fontSize: 28, marginBottom: 8 }}>📝</div>
                   <p style={{ color: "var(--text3)", fontSize: 13 }}>
                     No topics yet. Import from a library above or add manually.
                   </p>
@@ -1017,7 +1018,7 @@ export default function NewGoalPage() {
               )}
             </div>
 
-            {/* ── SECTION 3: Deadline ── */}
+            {/* ─ SECTION 3: Deadline ─ */}
             <div
               style={{
                 background: "var(--surface)",
@@ -1252,6 +1253,13 @@ export default function NewGoalPage() {
                 <span>⚠️</span> {error}
               </div>
             )}
+
+            {/* Panic Meter */}
+            <PanicMeter
+              level={panicLevel}
+              onLevelChange={setPanicLevel}
+              backlogCount={0}
+            />
 
             {/* Summary card */}
             {title && topics.length > 0 && (
