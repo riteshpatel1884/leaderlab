@@ -1,6 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+const GROQ_API_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY;
+const DAILY_LIMIT = 2;
+const STORAGE_KEY = "resumeMatcher_usage";
+
+function getTodayStr() {
+  return new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+}
+
+function getUsageData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { count: 0, date: getTodayStr() };
+    return JSON.parse(raw);
+  } catch {
+    return { count: 0, date: getTodayStr() };
+  }
+}
+
+function saveUsageData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function getRemainingUses() {
+  const usage = getUsageData();
+  if (usage.date !== getTodayStr()) return DAILY_LIMIT; // new day → full reset
+  return Math.max(0, DAILY_LIMIT - usage.count);
+}
+
+function incrementUsage() {
+  const today = getTodayStr();
+  const usage = getUsageData();
+  if (usage.date !== today) {
+    saveUsageData({ count: 1, date: today });
+  } else {
+    saveUsageData({ count: usage.count + 1, date: today });
+  }
+}
 
 export default function ResumeMatcher() {
   const [resume, setResume] = useState("");
@@ -8,12 +46,24 @@ export default function ResumeMatcher() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [remaining, setRemaining] = useState(DAILY_LIMIT);
+
+  useEffect(() => {
+    setRemaining(getRemainingUses());
+  }, []);
+
+  const isLimitReached = remaining <= 0;
 
   const analyze = async () => {
     if (!resume.trim() || !jobDesc.trim()) {
       setError("Please paste both your resume and the job description.");
       return;
     }
+    if (getRemainingUses() <= 0) {
+      setError("Daily limit reached. Come back tomorrow.");
+      return;
+    }
+
     setError("");
     setLoading(true);
     setResult(null);
@@ -41,23 +91,46 @@ Return this exact JSON structure:
   "recommendation": "<1-2 sentence actionable advice to improve the resume for this job>"
 }`;
 
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
+      const response = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${GROQ_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.3,
+            max_tokens: 1000,
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are an ATS analyzer. Always respond with only valid JSON. No markdown, no explanation, no extra text.",
+              },
+              { role: "user", content: prompt },
+            ],
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData?.error?.message || "Groq API error");
+      }
 
       const data = await response.json();
-      const text = data.content?.map((c) => c.text || "").join("") || "";
+      const text = data.choices?.[0]?.message?.content || "";
       const clean = text.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
+
+      // Deduct only after successful response
+      incrementUsage();
+      setRemaining(getRemainingUses());
       setResult(parsed);
     } catch (err) {
-      setError("Analysis failed. Please try again.");
+      setError(err.message || "Analysis failed. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -79,11 +152,131 @@ Return this exact JSON structure:
 
   return (
     <div>
-      <div className="insight-box">
-        Paste your resume and a job description to get an AI-powered match
-        analysis. Find missing keywords, skill gaps, and actionable advice.
+      {/* Top row: insight box + usage counter */}
+      <div
+        style={{
+          display: "flex",
+          gap: 14,
+          alignItems: "stretch",
+          marginBottom: 16,
+        }}
+      >
+        <div className="insight-box" style={{ margin: 0, flex: 1 }}>
+          Paste your resume and a job description to get match
+          analysis. Find missing keywords, skill gaps, and actionable advice.
+        </div>
+
+        {/* Usage pill */}
+        <div
+          style={{
+            flexShrink: 0,
+            background: isLimitReached
+              ? "var(--red-dim)"
+              : remaining === 1
+                ? "var(--yellow-dim)"
+                : "var(--green-dim)",
+            border: `1px solid ${
+              isLimitReached
+                ? "rgba(239,68,68,0.25)"
+                : remaining === 1
+                  ? "rgba(234,179,8,0.25)"
+                  : "rgba(34,197,94,0.25)"
+            }`,
+            borderRadius: "var(--radius)",
+            padding: "12px 18px",
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minWidth: 100,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 26,
+              fontFamily: "Syne, sans-serif",
+              fontWeight: 800,
+              lineHeight: 1,
+              color: isLimitReached
+                ? "var(--red)"
+                : remaining === 1
+                  ? "var(--yellow)"
+                  : "var(--green)",
+            }}
+          >
+            {remaining}/{DAILY_LIMIT}
+          </div>
+          <div
+            style={{
+              fontSize: 10,
+              color: "var(--text-muted)",
+              marginTop: 5,
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+            }}
+          >
+            Left Today
+          </div>
+        </div>
       </div>
 
+      {/* Limit reached banner */}
+      {isLimitReached && (
+        <div
+          style={{
+            background: "var(--red-dim)",
+            border: "1px solid rgba(239,68,68,0.2)",
+            borderRadius: "var(--radius)",
+            padding: "14px 18px",
+            marginBottom: 16,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <span style={{ fontSize: 20 }}>🚫</span>
+          <div>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "var(--red)",
+                marginBottom: 2,
+              }}
+            >
+              Daily limit reached
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              You&apos;ve used both your free analyses for today. Resets at
+              midnight.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 1 remaining warning */}
+      {remaining === 1 && (
+        <div
+          style={{
+            background: "var(--yellow-dim)",
+            border: "1px solid rgba(234,179,8,0.2)",
+            borderRadius: "var(--radius)",
+            padding: "10px 16px",
+            marginBottom: 16,
+            fontSize: 12,
+            color: "var(--yellow)",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <span>⚠️</span>
+          Last analysis for today — use it on your best resume + JD combo.
+        </div>
+      )}
+
+      {/* Text areas */}
       <div
         style={{
           display: "grid",
@@ -96,9 +289,15 @@ Return this exact JSON structure:
           <label className="form-label">Your Resume</label>
           <textarea
             className="form-textarea"
-            style={{ minHeight: 220, fontFamily: "monospace", fontSize: 12 }}
+            style={{
+              minHeight: 220,
+              fontFamily: "monospace",
+              fontSize: 12,
+              opacity: isLimitReached ? 0.45 : 1,
+            }}
             placeholder="Paste your resume text here..."
             value={resume}
+            disabled={isLimitReached}
             onChange={(e) => setResume(e.target.value)}
           />
           <div
@@ -111,9 +310,15 @@ Return this exact JSON structure:
           <label className="form-label">Job Description</label>
           <textarea
             className="form-textarea"
-            style={{ minHeight: 220, fontFamily: "monospace", fontSize: 12 }}
+            style={{
+              minHeight: 220,
+              fontFamily: "monospace",
+              fontSize: 12,
+              opacity: isLimitReached ? 0.45 : 1,
+            }}
             placeholder="Paste the job description here..."
             value={jobDesc}
+            disabled={isLimitReached}
             onChange={(e) => setJobDesc(e.target.value)}
           />
           <div
@@ -124,6 +329,7 @@ Return this exact JSON structure:
         </div>
       </div>
 
+      {/* Error */}
       {error && (
         <div
           style={{
@@ -140,12 +346,23 @@ Return this exact JSON structure:
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
+      {/* Actions */}
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          marginBottom: 24,
+          alignItems: "center",
+        }}
+      >
         <button
           className="btn-primary"
           onClick={analyze}
-          disabled={loading}
-          style={{ opacity: loading ? 0.7 : 1 }}
+          disabled={loading || isLimitReached}
+          style={{
+            opacity: loading || isLimitReached ? 0.5 : 1,
+            cursor: isLimitReached ? "not-allowed" : "pointer",
+          }}
         >
           {loading ? (
             <>
@@ -165,6 +382,7 @@ Return this exact JSON structure:
             </>
           )}
         </button>
+
         {(resume || jobDesc || result) && (
           <button
             className="btn-ghost"
@@ -178,6 +396,13 @@ Return this exact JSON structure:
             Clear All
           </button>
         )}
+
+        {!isLimitReached && (
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+            {remaining} free {remaining === 1 ? "analysis" : "analyses"} left
+            today
+          </span>
+        )}
       </div>
 
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
@@ -185,7 +410,6 @@ Return this exact JSON structure:
       {/* Results */}
       {result && (
         <div>
-          {/* Score */}
           <div
             style={{
               display: "grid",
@@ -291,7 +515,6 @@ Return this exact JSON structure:
             </div>
           </div>
 
-          {/* Summary */}
           <div className="insight-box" style={{ marginBottom: 16 }}>
             {result.summary}
           </div>
@@ -304,7 +527,6 @@ Return this exact JSON structure:
               marginBottom: 16,
             }}
           >
-            {/* Strengths */}
             <div className="card">
               <div className="card-title">✓ Strengths</div>
               <ul
@@ -340,8 +562,6 @@ Return this exact JSON structure:
                 ))}
               </ul>
             </div>
-
-            {/* Gaps */}
             <div className="card">
               <div className="card-title">✗ Gaps</div>
               <ul
@@ -379,7 +599,6 @@ Return this exact JSON structure:
             </div>
           </div>
 
-          {/* Keywords */}
           <div className="card" style={{ marginBottom: 16 }}>
             <div className="card-title">Keyword Analysis</div>
             <div style={{ marginBottom: 14 }}>
@@ -444,7 +663,6 @@ Return this exact JSON structure:
             </div>
           </div>
 
-          {/* Recommendation */}
           <div className="card" style={{ borderColor: "var(--accent-border)" }}>
             <div className="card-title">💡 Recommendation</div>
             <p
