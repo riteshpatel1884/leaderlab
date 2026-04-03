@@ -163,7 +163,7 @@ Return this exact JSON structure:
       >
         <div className="insight-box" style={{ margin: 0, flex: 1 }}>
           Paste your resume and a job description to get match
-          analysis. Find missing keywords, skill gaps, and actionable advice.
+          analysis. Find missing keywords, skill gaps and actionable advice.
         </div>
 
         {/* Usage pill */}
