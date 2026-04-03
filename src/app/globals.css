@@ -1061,3 +1061,9 @@ html, body {
 
 
 /* application detail ends */
+
+a.nav-item,
+a.mobile-tab-item,
+a.more-drawer-item {
+  text-decoration: none;
+}
