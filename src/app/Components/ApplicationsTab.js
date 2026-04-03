@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import ApplicationDetailModal from "./ApplicationDetailModal";
 
 const STATUSES = ["All", "Applied", "Interview", "Offer", "Rejected"];
 const PLATFORMS = [
@@ -40,6 +41,7 @@ export default function ApplicationsTable({
   const [jobTypeFilter, setJobTypeFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [sortBy, setSortBy] = useState("date");
+  const [selectedApp, setSelectedApp] = useState(null);
 
   const filtered = useMemo(() => {
     return applications
@@ -233,9 +235,22 @@ export default function ApplicationsTable({
                 return (
                   <tr
                     key={app.id}
-                    style={
-                      followUpDue ? { background: "rgba(234,179,8,0.04)" } : {}
-                    }
+                    style={{
+                      ...(followUpDue
+                        ? { background: "rgba(234,179,8,0.04)" }
+                        : {}),
+                      cursor: "pointer",
+                    }}
+                    onClick={(e) => {
+                      if (
+                        e.target.tagName === "SELECT" ||
+                        e.target.tagName === "BUTTON" ||
+                        e.target.closest("button") ||
+                        e.target.closest("a")
+                      )
+                        return;
+                      setSelectedApp(app);
+                    }}
                   >
                     <td className="company-cell">
                       <div
@@ -453,6 +468,17 @@ export default function ApplicationsTable({
             </tbody>
           </table>
         </div>
+      )}
+
+      {selectedApp && (
+        <ApplicationDetailModal
+          app={selectedApp}
+          onClose={() => setSelectedApp(null)}
+          onEdit={(app) => {
+            setSelectedApp(null);
+            onEdit(app);
+          }}
+        />
       )}
     </div>
   );
