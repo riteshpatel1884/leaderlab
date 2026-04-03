@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Statuscode  ",
+  title: "LeaderLab",
   description: "Track your job applications, interviews, and offers",
 };
 

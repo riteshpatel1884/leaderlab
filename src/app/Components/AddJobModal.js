@@ -17,16 +17,28 @@ const PLATFORMS = [
 ];
 const STATUSES = ["Applied", "Interview", "Offer", "Rejected"];
 const WORK_TYPES = ["Remote", "Onsite", "Hybrid"];
+const JOB_TYPES = ["Job", "Internship"];
+const APPLY_TYPES = ["Direct Apply", "Referral", "Cold Apply"];
+const PRIORITIES = ["High", "Medium", "Low"];
 
 export default function AddJobModal({ onClose, onSave, initialData }) {
   const [form, setForm] = useState({
     company: "",
     role: "",
+    jobType: "Job",
+    applyType: "Direct Apply",
     platform: "",
     jobLink: "",
     dateApplied: new Date().toISOString().split("T")[0],
     status: "Applied",
     workType: "Onsite",
+    priority: "Medium",
+    recruiterName: "",
+    recruiterContact: "",
+    followUpDate: "",
+    salary: "",
+    resumeVersion: "",
+    attachmentLink: "",
     notes: "",
   });
 
@@ -35,12 +47,21 @@ export default function AddJobModal({ onClose, onSave, initialData }) {
       setForm({
         company: initialData.company || "",
         role: initialData.role || "",
+        jobType: initialData.jobType || "Job",
+        applyType: initialData.applyType || "Direct Apply",
         platform: initialData.platform || "",
         jobLink: initialData.jobLink || "",
         dateApplied:
           initialData.dateApplied || new Date().toISOString().split("T")[0],
         status: initialData.status || "Applied",
         workType: initialData.workType || "Onsite",
+        priority: initialData.priority || "Medium",
+        recruiterName: initialData.recruiterName || "",
+        recruiterContact: initialData.recruiterContact || "",
+        followUpDate: initialData.followUpDate || "",
+        salary: initialData.salary || "",
+        resumeVersion: initialData.resumeVersion || "",
+        attachmentLink: initialData.attachmentLink || "",
         notes: initialData.notes || "",
       });
     }
@@ -68,6 +89,8 @@ export default function AddJobModal({ onClose, onSave, initialData }) {
           </button>
         </div>
         <div className="modal-body">
+          {/* Section: Basic Info */}
+          <div className="modal-section-label">Basic Info</div>
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Company *</label>
@@ -86,6 +109,39 @@ export default function AddJobModal({ onClose, onSave, initialData }) {
                 value={form.role}
                 onChange={(e) => set("role", e.target.value)}
               />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Type</label>
+              <div className="toggle-group">
+                {JOB_TYPES.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    className={`toggle-btn ${form.jobType === t ? "active" : ""}`}
+                    onClick={() => set("jobType", t)}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Apply Method</label>
+              <div className="toggle-group">
+                {APPLY_TYPES.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    className={`toggle-btn ${form.applyType === t ? "active" : ""}`}
+                    onClick={() => set("applyType", t)}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -121,16 +177,6 @@ export default function AddJobModal({ onClose, onSave, initialData }) {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Job Link</label>
-            <input
-              className="form-input"
-              placeholder="https://..."
-              value={form.jobLink}
-              onChange={(e) => set("jobLink", e.target.value)}
-            />
-          </div>
-
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Date Applied</label>
@@ -157,11 +203,124 @@ export default function AddJobModal({ onClose, onSave, initialData }) {
             </div>
           </div>
 
-          <div className="form-group">
+          {/* Section: Priority & Follow-up */}
+          <div className="modal-section-label" style={{ marginTop: 8 }}>
+            Priority & Follow-up
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Priority</label>
+              <div className="toggle-group">
+                {PRIORITIES.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    className={`toggle-btn priority-${p.toLowerCase()} ${form.priority === p ? "active" : ""}`}
+                    onClick={() => set("priority", p)}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Next Follow-up Date</label>
+              <input
+                className="form-input"
+                type="date"
+                value={form.followUpDate}
+                onChange={(e) => set("followUpDate", e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Section: Recruiter Info */}
+          <div className="modal-section-label" style={{ marginTop: 8 }}>
+            Recruiter Info{" "}
+            <span
+              style={{
+                color: "var(--text-muted)",
+                fontWeight: 400,
+                textTransform: "none",
+                fontSize: 11,
+              }}
+            >
+              (optional)
+            </span>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Recruiter Name</label>
+              <input
+                className="form-input"
+                placeholder="e.g. Priya Sharma"
+                value={form.recruiterName}
+                onChange={(e) => set("recruiterName", e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Email / LinkedIn</label>
+              <input
+                className="form-input"
+                placeholder="email or linkedin.com/in/..."
+                value={form.recruiterContact}
+                onChange={(e) => set("recruiterContact", e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Section: Salary & Resume */}
+          <div className="modal-section-label" style={{ marginTop: 8 }}>
+            Salary & Resume
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Salary / Stipend</label>
+              <input
+                className="form-input"
+                placeholder="e.g. ₹8 LPA or ₹15,000/mo"
+                value={form.salary}
+                onChange={(e) => set("salary", e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Resume Version</label>
+              <input
+                className="form-input"
+                placeholder="e.g. Resume v2, SDE-focused"
+                value={form.resumeVersion}
+                onChange={(e) => set("resumeVersion", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Job Link</label>
+              <input
+                className="form-input"
+                placeholder="https://..."
+                value={form.jobLink}
+                onChange={(e) => set("jobLink", e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Resume Link</label>
+              <input
+                className="form-input"
+                placeholder="Drive / Notion / Portfolio link"
+                value={form.attachmentLink}
+                onChange={(e) => set("attachmentLink", e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div className="form-group" style={{ marginTop: 4 }}>
             <label className="form-label">Notes</label>
             <textarea
               className="form-textarea"
-              placeholder="Interview rounds, salary, recruiter name..."
+              placeholder="Interview rounds, CTC, hiring manager name..."
               value={form.notes}
               onChange={(e) => set("notes", e.target.value)}
             />
