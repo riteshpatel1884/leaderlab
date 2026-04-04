@@ -14,6 +14,25 @@ const navItems = [
 
 const CHANGELOG = [
   {
+    version: "v1.2.0",
+    date: "Coming Soon",
+    tag: "next",
+    changes: [
+      {
+        type: "upcoming",
+        text: "User authentication — sign up & log in to your account securely",
+      },
+      {
+        type: "upcoming",
+        text: "Cloud database sync — your applications backed up and accessible from any device",
+      },
+      {
+        type: "upcoming",
+        text: "No more local storage limits — unlimited applications stored in the cloud",
+      },
+    ],
+  },
+  {
     version: "v1.1.0",
     date: "April 2025",
     tag: null,
@@ -26,14 +45,6 @@ const CHANGELOG = [
       {
         type: "improved",
         text: "Dashboard cards now show streak and active application count",
-      },
-      {
-        type: "upcoming",
-        text: "Some major features.",
-      },
-      {
-        type: "upcoming",
-        text: "Email reminders for follow-ups on stale applications",
       },
     ],
   },
@@ -204,6 +215,24 @@ function ChangelogModal({ onClose }) {
                   >
                     {release.version}
                   </span>
+
+                  {release.tag === "next" && (
+                    <span
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.8px",
+                        padding: "2px 7px",
+                        borderRadius: 4,
+                        background: "rgba(244,114,182,0.12)",
+                        color: "#f472b6",
+                        border: "1px solid rgba(244,114,182,0.25)",
+                      }}
+                    >
+                      Next
+                    </span>
+                  )}
                   {release.tag === "latest" && (
                     <span
                       style={{
@@ -239,6 +268,7 @@ function ChangelogModal({ onClose }) {
                       Initial
                     </span>
                   )}
+
                   <span
                     style={{
                       marginLeft: "auto",
@@ -251,60 +281,64 @@ function ChangelogModal({ onClose }) {
                 </div>
 
                 {/* Regular changes */}
-                <div
-                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
-                >
-                  {regularChanges.map((c, j) => {
-                    const cfg = TYPE_CONFIG[c.type];
-                    return (
-                      <div
-                        key={j}
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: 10,
-                          padding: "9px 12px",
-                          borderRadius: 8,
-                          background:
-                            "var(--surface-2, rgba(255,255,255,0.03))",
-                          border:
-                            "1px solid var(--border, rgba(255,255,255,0.05))",
-                        }}
-                      >
-                        <span
+                {regularChanges.length > 0 && (
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                  >
+                    {regularChanges.map((c, j) => {
+                      const cfg = TYPE_CONFIG[c.type];
+                      return (
+                        <div
+                          key={j}
                           style={{
-                            fontSize: 9,
-                            fontWeight: 700,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.6px",
-                            padding: "2px 6px",
-                            borderRadius: 4,
-                            background: cfg.bg,
-                            color: cfg.color,
-                            flexShrink: 0,
-                            marginTop: 1,
-                            border: `1px solid ${cfg.border}`,
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 10,
+                            padding: "9px 12px",
+                            borderRadius: 8,
+                            background:
+                              "var(--surface-2, rgba(255,255,255,0.03))",
+                            border:
+                              "1px solid var(--border, rgba(255,255,255,0.05))",
                           }}
                         >
-                          {cfg.label}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 12,
-                            color: "var(--text-secondary, #94a3b8)",
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          {c.text}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+                          <span
+                            style={{
+                              fontSize: 9,
+                              fontWeight: 700,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.6px",
+                              padding: "2px 6px",
+                              borderRadius: 4,
+                              background: cfg.bg,
+                              color: cfg.color,
+                              flexShrink: 0,
+                              marginTop: 1,
+                              border: `1px solid ${cfg.border}`,
+                            }}
+                          >
+                            {cfg.label}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: 12,
+                              color: "var(--text-secondary, #94a3b8)",
+                              lineHeight: 1.6,
+                            }}
+                          >
+                            {c.text}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* Upcoming features — visually separated */}
                 {upcomingChanges.length > 0 && (
-                  <div style={{ marginTop: 16 }}>
+                  <div
+                    style={{ marginTop: regularChanges.length > 0 ? 16 : 0 }}
+                  >
                     {/* "Coming Soon" divider */}
                     <div
                       style={{
@@ -332,7 +366,7 @@ function ChangelogModal({ onClose }) {
                           opacity: 0.75,
                         }}
                       >
-                        Coming Soon
+                        ✦ Coming Soon
                       </span>
                       <div
                         style={{
@@ -428,7 +462,10 @@ function ChangelogModal({ onClose }) {
 export default function Sidebar() {
   const pathname = usePathname();
   const [showChangelog, setShowChangelog] = useState(false);
-  const currentVersion = CHANGELOG[0].version;
+
+  // Show the first shipped (non-"next") version in the badge
+  const currentVersion =
+    CHANGELOG.find((r) => r.tag !== "next")?.version ?? CHANGELOG[0].version;
 
   return (
     <>
