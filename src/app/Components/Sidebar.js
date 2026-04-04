@@ -20,33 +20,49 @@ const CHANGELOG = [
     changes: [
       {
         type: "new",
-        text: "Resume tab updated updated with only 2 limits per day.",
+        text: "Resume tab updated with only 2 limits per day.",
       },
       { type: "fix", text: "Minor bugs fixed" },
       {
         type: "improved",
         text: "Dashboard cards now show streak and active application count",
       },
+      {
+        type: "upcoming",
+        text: "Some major features.",
+      },
+      {
+        type: "upcoming",
+        text: "Email reminders for follow-ups on stale applications",
+      },
     ],
   },
-  
 ];
 
 const TYPE_CONFIG = {
   new: {
     label: "New",
-    color: "var(--green,  #4ade80)",
+    color: "var(--green, #4ade80)",
     bg: "rgba(74,222,128,0.08)",
+    border: "rgba(74,222,128,0.2)",
   },
   improved: {
     label: "Improved",
     color: "var(--accent, #818cf8)",
     bg: "rgba(129,140,248,0.08)",
+    border: "rgba(129,140,248,0.2)",
   },
   fix: {
     label: "Fix",
     color: "var(--yellow, #facc15)",
     bg: "rgba(250,204,21,0.08)",
+    border: "rgba(250,204,21,0.2)",
+  },
+  upcoming: {
+    label: "Upcoming",
+    color: "#f472b6",
+    bg: "rgba(244,114,182,0.07)",
+    border: "rgba(244,114,182,0.2)",
   },
 };
 
@@ -159,134 +175,245 @@ function ChangelogModal({ onClose }) {
             gap: 28,
           }}
         >
-          {CHANGELOG.map((release, i) => (
-            <div key={release.version}>
-              {/* Version header */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  marginBottom: 14,
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: "sans-serif",
-                    fontSize: 13,
-                    fontWeight: 800,
-                    color: "var(--text-primary, #f1f5f9)",
-                  }}
-                >
-                  {release.version}
-                </span>
-                {release.tag === "latest" && (
-                  <span
-                    style={{
-                      fontSize: 9,
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.8px",
-                      padding: "2px 7px",
-                      borderRadius: 4,
-                      background: "rgba(129,140,248,0.15)",
-                      color: "var(--accent, #818cf8)",
-                      border:
-                        "1px solid var(--accent-border, rgba(129,140,248,0.25))",
-                    }}
-                  >
-                    Latest
-                  </span>
-                )}
-                {release.tag === "initial" && (
-                  <span
-                    style={{
-                      fontSize: 9,
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.8px",
-                      padding: "2px 7px",
-                      borderRadius: 4,
-                      background: "rgba(100,116,139,0.12)",
-                      color: "var(--text-muted, #64748b)",
-                      border: "1px solid rgba(100,116,139,0.2)",
-                    }}
-                  >
-                    Initial
-                  </span>
-                )}
-                <span
-                  style={{
-                    marginLeft: "auto",
-                    fontSize: 11,
-                    color: "var(--text-muted, #64748b)",
-                  }}
-                >
-                  {release.date}
-                </span>
-              </div>
+          {CHANGELOG.map((release, i) => {
+            const regularChanges = release.changes.filter(
+              (c) => c.type !== "upcoming",
+            );
+            const upcomingChanges = release.changes.filter(
+              (c) => c.type === "upcoming",
+            );
 
-              {/* Changes list */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {release.changes.map((c, j) => {
-                  const cfg = TYPE_CONFIG[c.type];
-                  return (
-                    <div
-                      key={j}
+            return (
+              <div key={release.version}>
+                {/* Version header */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    marginBottom: 14,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: "sans-serif",
+                      fontSize: 13,
+                      fontWeight: 800,
+                      color: "var(--text-primary, #f1f5f9)",
+                    }}
+                  >
+                    {release.version}
+                  </span>
+                  {release.tag === "latest" && (
+                    <span
                       style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: 10,
-                        padding: "9px 12px",
-                        borderRadius: 8,
-                        background: "var(--surface-2, rgba(255,255,255,0.03))",
+                        fontSize: 9,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.8px",
+                        padding: "2px 7px",
+                        borderRadius: 4,
+                        background: "rgba(129,140,248,0.15)",
+                        color: "var(--accent, #818cf8)",
                         border:
-                          "1px solid var(--border, rgba(255,255,255,0.05))",
+                          "1px solid var(--accent-border, rgba(129,140,248,0.25))",
                       }}
                     >
+                      Latest
+                    </span>
+                  )}
+                  {release.tag === "initial" && (
+                    <span
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.8px",
+                        padding: "2px 7px",
+                        borderRadius: 4,
+                        background: "rgba(100,116,139,0.12)",
+                        color: "var(--text-muted, #64748b)",
+                        border: "1px solid rgba(100,116,139,0.2)",
+                      }}
+                    >
+                      Initial
+                    </span>
+                  )}
+                  <span
+                    style={{
+                      marginLeft: "auto",
+                      fontSize: 11,
+                      color: "var(--text-muted, #64748b)",
+                    }}
+                  >
+                    {release.date}
+                  </span>
+                </div>
+
+                {/* Regular changes */}
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                >
+                  {regularChanges.map((c, j) => {
+                    const cfg = TYPE_CONFIG[c.type];
+                    return (
+                      <div
+                        key={j}
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 10,
+                          padding: "9px 12px",
+                          borderRadius: 8,
+                          background:
+                            "var(--surface-2, rgba(255,255,255,0.03))",
+                          border:
+                            "1px solid var(--border, rgba(255,255,255,0.05))",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: 9,
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.6px",
+                            padding: "2px 6px",
+                            borderRadius: 4,
+                            background: cfg.bg,
+                            color: cfg.color,
+                            flexShrink: 0,
+                            marginTop: 1,
+                            border: `1px solid ${cfg.border}`,
+                          }}
+                        >
+                          {cfg.label}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: "var(--text-secondary, #94a3b8)",
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          {c.text}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Upcoming features — visually separated */}
+                {upcomingChanges.length > 0 && (
+                  <div style={{ marginTop: 16 }}>
+                    {/* "Coming Soon" divider */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginBottom: 10,
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: 1,
+                          flex: 1,
+                          background:
+                            "linear-gradient(to right, rgba(244,114,182,0.35), transparent)",
+                        }}
+                      />
                       <span
                         style={{
                           fontSize: 9,
                           fontWeight: 700,
                           textTransform: "uppercase",
-                          letterSpacing: "0.6px",
-                          padding: "2px 6px",
-                          borderRadius: 4,
-                          background: cfg.bg,
-                          color: cfg.color,
-                          flexShrink: 0,
-                          marginTop: 1,
-                          border: `1px solid ${cfg.color}22`,
+                          letterSpacing: "1px",
+                          color: "#f472b6",
+                          opacity: 0.75,
                         }}
                       >
-                        {cfg.label}
+                        Coming Soon
                       </span>
-                      <span
+                      <div
                         style={{
-                          fontSize: 12,
-                          color: "var(--text-secondary, #94a3b8)",
-                          lineHeight: 1.6,
+                          height: 1,
+                          flex: 1,
+                          background:
+                            "linear-gradient(to left, rgba(244,114,182,0.35), transparent)",
                         }}
-                      >
-                        {c.text}
-                      </span>
+                      />
                     </div>
-                  );
-                })}
-              </div>
 
-              {/* Divider between releases */}
-              {i < CHANGELOG.length - 1 && (
-                <div
-                  style={{
-                    height: 1,
-                    background: "var(--border, rgba(255,255,255,0.06))",
-                    marginTop: 24,
-                  }}
-                />
-              )}
-            </div>
-          ))}
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                      }}
+                    >
+                      {upcomingChanges.map((c, j) => {
+                        const cfg = TYPE_CONFIG.upcoming;
+                        return (
+                          <div
+                            key={j}
+                            style={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: 10,
+                              padding: "9px 12px",
+                              borderRadius: 8,
+                              background: "rgba(244,114,182,0.04)",
+                              border: "1px dashed rgba(244,114,182,0.25)",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 9,
+                                fontWeight: 700,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.6px",
+                                padding: "2px 6px",
+                                borderRadius: 4,
+                                background: cfg.bg,
+                                color: cfg.color,
+                                flexShrink: 0,
+                                marginTop: 1,
+                                border: `1px solid ${cfg.border}`,
+                              }}
+                            >
+                              {cfg.label}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 12,
+                                color: "var(--text-secondary, #94a3b8)",
+                                lineHeight: 1.6,
+                                opacity: 0.75,
+                                fontStyle: "italic",
+                              }}
+                            >
+                              {c.text}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Divider between releases */}
+                {i < CHANGELOG.length - 1 && (
+                  <div
+                    style={{
+                      height: 1,
+                      background: "var(--border, rgba(255,255,255,0.06))",
+                      marginTop: 24,
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
