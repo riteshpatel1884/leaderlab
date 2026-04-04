@@ -566,15 +566,23 @@ export default function ResumeMatcher() {
 
   const isLimitReached = remaining <= 0;
 
+  const expYears = experience === "" ? null : parseInt(experience);
+
+  // If experience > 0, internship is not applicable — show only job
+  const isFresherOrUnset = expYears === null || expYears === 0;
+
   // Validate experience input — only allow whole numbers
   const handleExperienceChange = (e) => {
     const val = e.target.value;
     if (val === "" || (/^\d+$/.test(val) && parseInt(val) <= 50)) {
       setExperience(val);
+      // Auto-reset to "job" if user enters experience > 0
+      if (val !== "" && parseInt(val) > 0) {
+        setJobType("job");
+      }
     }
   };
 
-  const expYears = experience === "" ? null : parseInt(experience);
   const experienceLabel =
     expYears === null
       ? ""
@@ -611,40 +619,10 @@ export default function ResumeMatcher() {
         ? "0 years (Fresher — no professional work experience at all)"
         : `${expYears} year${expYears === 1 ? "" : "s"} of professional experience`;
 
-    const prompt = `You are a brutally honest senior technical recruiter. Your job is to give a surgical, context-aware analysis. You do NOT sugarcoat. You penalize hard for gaps between what the candidate claims and what the JD demands.
+    const prompt = `You are a senior technical recruiter and ATS specialist. Your job is to give a surgical, honest analysis — not a feel-good report. Be direct, specific, and ruthless about gaps.
 
-CANDIDATE CONTEXT:
-- Position Type: ${positionType}
-- Target Role: ${role}
-- Years of Experience: ${expContext}
-
-STRICT SCORING RULES — no exceptions:
-${
-  expYears === 0
-    ? `
-- Candidate is a FRESHER with ZERO professional experience.
-- For a Full-Time Job: matchScore CANNOT exceed 52. Projects and certs do not substitute for real work.
-- For an Internship: matchScore can go up to 75 max. Academics and projects are acceptable signals.
-- experienceRelevance score must be 0 and verdict must be "missing" since there is no professional experience.
-- Gap #1 in criticalGaps MUST be: zero professional work experience.
-`
-    : `
-- Candidate has ${expYears} year(s) of experience.
-- Score based on whether their ${expYears} year(s) of experience actually matches the seniority, domain, and depth required by this JD.
-- If the JD requires more years than the candidate has, penalize the score proportionally.
-- experienceRelevance must reflect how well their ${expYears} year(s) maps to what the role requires.
-`
-}
-- Projects are a weak signal only — never strong proof of job-readiness.
-- Certifications are minor positives, not experience substitutes.
-- Be CONSISTENT: same inputs must produce scores within ±3 points every time.
-- If any standard resume section is missing (Work Experience, Summary, Skills, Education), call it out in missingSections.
-
-MISSING SECTION PENALTIES (apply before final score):
-- No Work Experience section: -25 points
-- No quantified achievements: -10 points
-- No relevant tech stack match: -15 points
-- Skills listed but not demonstrated anywhere: -5 each (max -15)
+Position Type: ${positionType}
+Target Role: ${role}
 
 Resume:
 ${resume}
@@ -655,44 +633,42 @@ ${jobDesc}
 Return ONLY a valid JSON object with no extra text, markdown, or explanation:
 
 {
-  "matchScore": <integer 0-100. Apply ALL rules and penalties above strictly.>,
-  "verdict": "<one blunt sentence: direct hiring recommendation. Mention experience level explicitly.>",
+  "matchScore": <integer 0-100, be realistic — 60+ means genuinely strong>,
+  "verdict": "<one sentence: direct hiring recommendation>",
 
   "roleAlignment": {
     "score": <0-100>,
     "verdict": "strong|weak|missing",
-    "detail": "<does their experience level and title actually match the seniority this role demands?>"
+    "detail": "<specific: does their title/experience level actually fit the seniority and domain of this role?>"
   },
   "technicalDepth": {
     "score": <0-100>,
     "verdict": "strong|weak|missing",
-    "detail": "<which required skills are proven vs. surface-mentioned vs. absent? Be specific with tool/skill names.>"
+    "detail": "<specific: which required skills are demonstrated at depth vs. surface-mentioned vs. missing entirely?>"
   },
   "experienceRelevance": {
     "score": <0-100>,
     "verdict": "strong|weak|missing",
-    "detail": "<${expYears === 0 ? "Candidate has zero professional experience. Score is 0. Call this out directly." : `does their ${expYears} year(s) of experience actually reflect the work this role requires?`}>"
+    "detail": "<specific: do past employers / projects actually reflect the work this role requires?>"
   },
   "achievementQuality": {
     "score": <0-100>,
     "verdict": "strong|weak|missing",
-    "detail": "<are results quantified in a professional context? Name specific strong or weak bullets.>"
+    "detail": "<specific: are results quantified and meaningful, or are they vague duty-lists? Name actual bullets that stand out or that are weak.>"
   },
 
-  "missingSections": ["<every standard resume section that is absent, e.g. Work Experience, Summary>"],
-
   "criticalGaps": [
-    "<gap 1: ${expYears === 0 ? "MUST be: No professional work experience — projects and certs are not a substitute." : "most critical experience or skill gap vs. the JD."}>",
+    "<gap 1: be specific — name the missing skill, tool, domain, or experience. Max 6 items.>",
     "<gap 2>",
-    "<gap 3: max 6 total>"
+    "<gap 3>"
   ],
 
   "missingKeywords": ["<exact keyword from JD not in resume>"],
   "matchedKeywords": ["<exact keyword present in both>"],
 
-  "atsRisk": "<one sentence: will this resume pass ATS for this role, and why?>",
+  "atsRisk": "<one sentence: will this resume likely pass ATS filters for this specific role, and why?>",
 
-  "oneThingToFix": "<${expYears === 0 ? "MUST be: Get real work experience through an internship — no resume edit matters more than this." : "the single most impactful edit before applying."}>"
+  "oneThingToFix": "<the single most impactful edit the candidate should make to this resume before applying>"
 }`;
 
     try {
@@ -1102,7 +1078,8 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
+                // Show 2 columns only for freshers or when experience is unset
+                gridTemplateColumns: isFresherOrUnset ? "1fr 1fr" : "1fr",
                 gap: 8,
                 borderRadius: 6,
                 border: "1px solid rgba(255,255,255,0.1)",
@@ -1113,45 +1090,61 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
               {[
                 { value: "job", label: "Job" },
                 { value: "internship", label: "Internship" },
-              ].map(({ value, label }) => (
-                <button
-                  key={value}
-                  onClick={() => setJobType(value)}
-                  disabled={isLimitReached}
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: 4,
-                    border: `1px solid ${jobType === value ? "rgba(34,197,94,0.3)" : "transparent"}`,
-                    background:
-                      jobType === value
-                        ? "rgba(34,197,94,0.15)"
-                        : "transparent",
-                    color:
-                      jobType === value
-                        ? "var(--green)"
-                        : "var(--text-secondary)",
-                    fontSize: isMobile ? 11 : 12,
-                    fontWeight: jobType === value ? 700 : 600,
-                    cursor: isLimitReached ? "not-allowed" : "pointer",
-                    transition: "all 0.2s ease",
-                    opacity: isLimitReached ? 0.4 : 1,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isLimitReached && jobType !== value)
+              ]
+                // Hide internship button entirely when experience > 0
+                .filter(({ value }) => value === "job" || isFresherOrUnset)
+                .map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => setJobType(value)}
+                    disabled={isLimitReached}
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: 4,
+                      border: `1px solid ${jobType === value ? "rgba(34,197,94,0.3)" : "transparent"}`,
+                      background:
+                        jobType === value
+                          ? "rgba(34,197,94,0.15)"
+                          : "transparent",
+                      color:
+                        jobType === value
+                          ? "var(--green)"
+                          : "var(--text-secondary)",
+                      fontSize: isMobile ? 11 : 12,
+                      fontWeight: jobType === value ? 700 : 600,
+                      cursor: isLimitReached ? "not-allowed" : "pointer",
+                      transition: "all 0.2s ease",
+                      opacity: isLimitReached ? 0.4 : 1,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isLimitReached && jobType !== value)
+                        e.currentTarget.style.background =
+                          "rgba(255,255,255,0.05)";
+                    }}
+                    onMouseLeave={(e) => {
                       e.currentTarget.style.background =
-                        "rgba(255,255,255,0.05)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background =
-                      jobType === value
-                        ? "rgba(34,197,94,0.15)"
-                        : "transparent";
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
+                        jobType === value
+                          ? "rgba(34,197,94,0.15)"
+                          : "transparent";
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
             </div>
+            {/* Hint shown only when internship is hidden */}
+            {!isFresherOrUnset && (
+              <p
+                style={{
+                  margin: "5px 0 0",
+                  fontSize: 10,
+                  color: "var(--text-muted)",
+                }}
+              >
+                Internship option is only available for freshers (0 years
+                experience).
+              </p>
+            )}
           </div>
         </div>
 
