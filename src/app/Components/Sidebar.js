@@ -17,7 +17,7 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <div className="logo-mark">Statuscode</div>
+        <div className="logo-mark">LeaderLab</div>
       </div>
       <nav className="sidebar-nav">
         <div className="nav-section-label">Navigation</div>

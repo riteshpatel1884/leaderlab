@@ -3,7 +3,7 @@ import { ApplicationsProvider } from "./context/ApplicationsContext";
 import Sidebar from "./Components/Sidebar";
 import BottomNav from "./Components/BottomNav";
 
-export const metadata = { title: "Statuscode" };
+export const metadata = { title: "LeaderLab" };
 
 export default function RootLayout({ children }) {
   return (

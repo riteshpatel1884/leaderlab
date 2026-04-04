@@ -447,7 +447,7 @@ html, body {
 }
 
 .logo-mark {
-  font-family: 'Syne', sans-serif;
+  font-family: sans-serif;
   font-size: 16px;
   font-weight: 800;
   color: var(--text-primary);
