@@ -7,48 +7,27 @@ const DAILY_LIMIT = 2;
 const STORAGE_KEY = "resumeMatcher_usage";
 const HISTORY_KEY = "resumeMatcher_history";
 
-
-
 // Mobile detection
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
-
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
   return isMobile;
 }
 
 // IST timezone utilities
 function getISTNow() {
   const date = new Date();
-  const istDate = new Date(
-    date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }),
-  );
-  return istDate;
+  return new Date(date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
 }
 
 function getISTDateStr(date = null) {
   const d = date || getISTNow();
   return d.toISOString().split("T")[0];
-}
-
-function getISTTimeStr(date = null) {
-  const d = date || getISTNow();
-  return d.toLocaleString("en-US", {
-    timeZone: "Asia/Kolkata",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
 }
 
 function getFormattedDateTime(date = null) {
@@ -64,7 +43,7 @@ function getFormattedDateTime(date = null) {
   });
 }
 
-// Usage tracking with IST
+// Usage tracking
 function getUsageData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -115,17 +94,13 @@ function saveToHistory(analysis) {
     formattedTime: getFormattedDateTime(),
     role: analysis.role,
     resumeVersion: analysis.resumeVersion,
-    company: analysis.company,
+    experience: analysis.experience,
     matchScore: analysis.matchScore,
     verdict: analysis.verdict,
     fullAnalysis: analysis,
   };
   history.unshift(entry);
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 50)));
-}
-
-function clearHistory() {
-  localStorage.removeItem(HISTORY_KEY);
 }
 
 // Components
@@ -340,7 +315,6 @@ function ImpactRow({ label, value, verdict, detail }) {
 
 function HistoryModal({ isOpen, onClose, history }) {
   if (!isOpen) return null;
-
   return (
     <>
       <div
@@ -470,8 +444,9 @@ function HistoryModal({ isOpen, onClose, history }) {
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: 10,
+                        gap: 8,
                         marginBottom: 6,
+                        flexWrap: "wrap",
                       }}
                     >
                       <span
@@ -483,19 +458,24 @@ function HistoryModal({ isOpen, onClose, history }) {
                       >
                         {entry.role}
                       </span>
-                      {entry.company && (
-                        <span
-                          style={{
-                            fontSize: 11,
-                            color: "var(--text-muted)",
-                            background: "rgba(255,255,255,0.05)",
-                            padding: "2px 8px",
-                            borderRadius: 3,
-                          }}
-                        >
-                          @ {entry.company}
-                        </span>
-                      )}
+                      {entry.experience !== null &&
+                        entry.experience !== undefined &&
+                        entry.experience !== "" && (
+                          <span
+                            style={{
+                              fontSize: 11,
+                              color: "var(--text-muted)",
+                              background: "rgba(34,197,94,0.08)",
+                              border: "1px solid rgba(34,197,94,0.2)",
+                              padding: "2px 8px",
+                              borderRadius: 3,
+                            }}
+                          >
+                            {entry.experience === "0" || entry.experience === 0
+                              ? "Fresher"
+                              : `${entry.experience} yr${entry.experience == 1 ? "" : "s"}`}
+                          </span>
+                        )}
                       {entry.resumeVersion && (
                         <span
                           style={{
@@ -531,12 +511,7 @@ function HistoryModal({ isOpen, onClose, history }) {
                       "{entry.verdict}"
                     </p>
                   </div>
-                  <div
-                    style={{
-                      textAlign: "right",
-                      flexShrink: 0,
-                    }}
-                  >
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
                     <div
                       style={{
                         fontSize: 20,
@@ -561,16 +536,9 @@ function HistoryModal({ isOpen, onClose, history }) {
           </div>
         )}
       </div>
-
       <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideUp {
-          from { transform: translate(-50%, calc(-50% + 20px)); opacity: 0; }
-          to { transform: translate(-50%, -50%); opacity: 1; }
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translate(-50%, calc(-50% + 20px)); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
       `}</style>
     </>
   );
@@ -581,8 +549,9 @@ export default function ResumeMatcher() {
   const [resume, setResume] = useState("");
   const [jobDesc, setJobDesc] = useState("");
   const [role, setRole] = useState("");
-  const [jobType, setJobType] = useState("job"); // "job" or "internship"
+  const [jobType, setJobType] = useState("job");
   const [resumeVersion, setResumeVersion] = useState("");
+  const [experience, setExperience] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -597,9 +566,33 @@ export default function ResumeMatcher() {
 
   const isLimitReached = remaining <= 0;
 
+  // Validate experience input — only allow whole numbers
+  const handleExperienceChange = (e) => {
+    const val = e.target.value;
+    if (val === "" || (/^\d+$/.test(val) && parseInt(val) <= 50)) {
+      setExperience(val);
+    }
+  };
+
+  const expYears = experience === "" ? null : parseInt(experience);
+  const experienceLabel =
+    expYears === null
+      ? ""
+      : expYears === 0
+        ? "Fresher / No Experience"
+        : expYears === 1
+          ? "1 year"
+          : `${expYears} years`;
+
   const analyze = async () => {
     if (!resume.trim() || !jobDesc.trim() || !role.trim()) {
       setError("Resume, job description, and role are required.");
+      return;
+    }
+    if (experience === "") {
+      setError(
+        "Years of experience is required. Enter 0 if you are a fresher.",
+      );
       return;
     }
     if (getRemainingUses() <= 0) {
@@ -613,11 +606,45 @@ export default function ResumeMatcher() {
 
     const positionType =
       jobType === "internship" ? "Internship Position" : "Full-Time Job";
+    const expContext =
+      expYears === 0
+        ? "0 years (Fresher — no professional work experience at all)"
+        : `${expYears} year${expYears === 1 ? "" : "s"} of professional experience`;
 
-    const prompt = `You are a senior technical recruiter and ATS specialist. Your job is to give a surgical, honest analysis — not a feel-good report. Be direct, specific, and ruthless about gaps.
+    const prompt = `You are a brutally honest senior technical recruiter. Your job is to give a surgical, context-aware analysis. You do NOT sugarcoat. You penalize hard for gaps between what the candidate claims and what the JD demands.
 
-Position Type: ${positionType}
-Target Role: ${role}
+CANDIDATE CONTEXT:
+- Position Type: ${positionType}
+- Target Role: ${role}
+- Years of Experience: ${expContext}
+
+STRICT SCORING RULES — no exceptions:
+${
+  expYears === 0
+    ? `
+- Candidate is a FRESHER with ZERO professional experience.
+- For a Full-Time Job: matchScore CANNOT exceed 52. Projects and certs do not substitute for real work.
+- For an Internship: matchScore can go up to 75 max. Academics and projects are acceptable signals.
+- experienceRelevance score must be 0 and verdict must be "missing" since there is no professional experience.
+- Gap #1 in criticalGaps MUST be: zero professional work experience.
+`
+    : `
+- Candidate has ${expYears} year(s) of experience.
+- Score based on whether their ${expYears} year(s) of experience actually matches the seniority, domain, and depth required by this JD.
+- If the JD requires more years than the candidate has, penalize the score proportionally.
+- experienceRelevance must reflect how well their ${expYears} year(s) maps to what the role requires.
+`
+}
+- Projects are a weak signal only — never strong proof of job-readiness.
+- Certifications are minor positives, not experience substitutes.
+- Be CONSISTENT: same inputs must produce scores within ±3 points every time.
+- If any standard resume section is missing (Work Experience, Summary, Skills, Education), call it out in missingSections.
+
+MISSING SECTION PENALTIES (apply before final score):
+- No Work Experience section: -25 points
+- No quantified achievements: -10 points
+- No relevant tech stack match: -15 points
+- Skills listed but not demonstrated anywhere: -5 each (max -15)
 
 Resume:
 ${resume}
@@ -628,42 +655,44 @@ ${jobDesc}
 Return ONLY a valid JSON object with no extra text, markdown, or explanation:
 
 {
-  "matchScore": <integer 0-100, be realistic — 60+ means genuinely strong>,
-  "verdict": "<one sentence: direct hiring recommendation>",
+  "matchScore": <integer 0-100. Apply ALL rules and penalties above strictly.>,
+  "verdict": "<one blunt sentence: direct hiring recommendation. Mention experience level explicitly.>",
 
   "roleAlignment": {
     "score": <0-100>,
     "verdict": "strong|weak|missing",
-    "detail": "<specific: does their title/experience level actually fit the seniority and domain of this role?>"
+    "detail": "<does their experience level and title actually match the seniority this role demands?>"
   },
   "technicalDepth": {
     "score": <0-100>,
     "verdict": "strong|weak|missing",
-    "detail": "<specific: which required skills are demonstrated at depth vs. surface-mentioned vs. missing entirely?>"
+    "detail": "<which required skills are proven vs. surface-mentioned vs. absent? Be specific with tool/skill names.>"
   },
   "experienceRelevance": {
     "score": <0-100>,
     "verdict": "strong|weak|missing",
-    "detail": "<specific: do past employers / projects actually reflect the work this role requires?>"
+    "detail": "<${expYears === 0 ? "Candidate has zero professional experience. Score is 0. Call this out directly." : `does their ${expYears} year(s) of experience actually reflect the work this role requires?`}>"
   },
   "achievementQuality": {
     "score": <0-100>,
     "verdict": "strong|weak|missing",
-    "detail": "<specific: are results quantified and meaningful, or are they vague duty-lists? Name actual bullets that stand out or that are weak.>"
+    "detail": "<are results quantified in a professional context? Name specific strong or weak bullets.>"
   },
 
+  "missingSections": ["<every standard resume section that is absent, e.g. Work Experience, Summary>"],
+
   "criticalGaps": [
-    "<gap 1: be specific — name the missing skill, tool, domain, or experience. Max 6 items.>",
+    "<gap 1: ${expYears === 0 ? "MUST be: No professional work experience — projects and certs are not a substitute." : "most critical experience or skill gap vs. the JD."}>",
     "<gap 2>",
-    "<gap 3>"
+    "<gap 3: max 6 total>"
   ],
 
   "missingKeywords": ["<exact keyword from JD not in resume>"],
   "matchedKeywords": ["<exact keyword present in both>"],
 
-  "atsRisk": "<one sentence: will this resume likely pass ATS filters for this specific role, and why?>",
+  "atsRisk": "<one sentence: will this resume pass ATS for this role, and why?>",
 
-  "oneThingToFix": "<the single most impactful edit the candidate should make to this resume before applying>"
+  "oneThingToFix": "<${expYears === 0 ? "MUST be: Get real work experience through an internship — no resume edit matters more than this." : "the single most impactful edit before applying."}>"
 }`;
 
     try {
@@ -677,13 +706,13 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
           },
           body: JSON.stringify({
             model: "llama-3.3-70b-versatile",
-            temperature: 0.2,
+            temperature: 0.1,
             max_tokens: 1400,
             messages: [
               {
                 role: "system",
                 content:
-                  "You are a blunt, expert technical recruiter. Return ONLY valid JSON — no markdown, no preamble, no explanation.",
+                  "You are a blunt, expert technical recruiter. Return ONLY valid JSON — no markdown, no preamble, no explanation. Follow all scoring rules exactly as given.",
               },
               { role: "user", content: prompt },
             ],
@@ -701,10 +730,10 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
       const clean = text.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
 
-      // Save to history with all metadata
       saveToHistory({
         role,
-        jobType: jobType,
+        jobType,
+        experience: experience,
         resumeVersion: resumeVersion || null,
         matchScore: parsed.matchScore,
         verdict: parsed.verdict,
@@ -721,14 +750,6 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
       setLoading(false);
     }
   };
-
-  const scoreColor = result
-    ? result.matchScore >= 75
-      ? "var(--green)"
-      : result.matchScore >= 50
-        ? "var(--yellow)"
-        : "var(--red)"
-    : "var(--text-muted)";
 
   return (
     <div>
@@ -770,21 +791,19 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
               lineHeight: 1.5,
             }}
           >
-            Role-targeted analysis with history & version control.
+            Role-targeted analysis with experience-aware scoring.
           </p>
         </div>
 
-        {/* Top Right Actions */}
         <div
           style={{
             display: "flex",
             flexDirection: isMobile ? "row" : "column",
             alignItems: isMobile ? "center" : "flex-end",
-            gap: isMobile ? 12 : 12,
+            gap: 12,
             flexShrink: 0,
           }}
         >
-          {/* Usage counter */}
           <div
             style={{
               fontSize: isMobile ? 16 : 20,
@@ -812,8 +831,6 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
               left
             </div>
           </div>
-
-          {/* History button */}
           <button
             onClick={() => setShowHistory(true)}
             style={{
@@ -831,19 +848,19 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
               gap: 6,
               whiteSpace: "nowrap",
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.12)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "rgba(255,255,255,0.12)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "rgba(255,255,255,0.08)")
+            }
           >
             📊 {history.length}
           </button>
         </div>
       </div>
 
-      {/* Features overview */}
+      {/* Features strip */}
       <div
         style={{
           background: "rgba(255,255,255,0.02)",
@@ -857,8 +874,8 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
         }}
       >
         {[
-          { label: "Role targeting", sub: "context-aware" },
-          { label: "Job/Internship", sub: "position type" },
+          { label: "Experience-aware", sub: "0 = fresher scoring" },
+          { label: "Job / Internship", sub: "separate scoring" },
           { label: "Version tracking", sub: "iterations" },
           { label: "Full history", sub: "50 analyses" },
         ].map((item, i, arr) => (
@@ -894,7 +911,7 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
         ))}
       </div>
 
-      {/* Limit banner */}
+      {/* Limit banners */}
       {isLimitReached && (
         <div
           style={{
@@ -927,7 +944,7 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
         </div>
       )}
 
-      {/* Input Section */}
+      {/* Input grid */}
       <div
         style={{
           display: "grid",
@@ -936,54 +953,139 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
           marginBottom: 16,
         }}
       >
-        {/* Left column: Metadata */}
+        {/* Left column */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {[
-            {
-              label: "Target Role",
-              value: role,
-              setter: setRole,
-              placeholder: "e.g., Senior Frontend Engineer",
-            },
-            {
-              label: "Resume Version/Link (optional)",
-              value: resumeVersion,
-              setter: setResumeVersion,
-              placeholder: "e.g., v1.2, Final",
-            },
-          ].map(({ label, value, setter, placeholder }) => (
-            <div key={label} className="form-group" style={{ margin: 0 }}>
-              <label
-                className="form-label"
-                style={{
-                  margin: "0 0 6px 0",
-                  display: "block",
-                  fontSize: isMobile ? 11 : 12,
-                }}
-              >
-                {label}
-              </label>
+          {/* Target Role */}
+          <div className="form-group" style={{ margin: 0 }}>
+            <label
+              className="form-label"
+              style={{
+                margin: "0 0 6px 0",
+                display: "block",
+                fontSize: isMobile ? 11 : 12,
+              }}
+            >
+              Target Role
+            </label>
+            <input
+              type="text"
+              className="form-input"
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 6,
+                color: "var(--text-primary)",
+                fontSize: isMobile ? 11 : 12,
+                fontFamily: "sans-serif",
+                opacity: isLimitReached ? 0.4 : 1,
+              }}
+              placeholder="e.g., ML Engineer, Frontend Dev"
+              value={role}
+              disabled={isLimitReached}
+              onChange={(e) => setRole(e.target.value)}
+            />
+          </div>
+
+          {/* Years of Experience */}
+          <div className="form-group" style={{ margin: 0 }}>
+            <label
+              className="form-label"
+              style={{
+                margin: "0 0 6px 0",
+                display: "block",
+                fontSize: isMobile ? 11 : 12,
+              }}
+            >
+              Years of Experience
+              <span style={{ color: "var(--red)", marginLeft: 3 }}>*</span>
+            </label>
+            <div style={{ position: "relative" }}>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 className="form-input"
                 style={{
                   width: "100%",
                   padding: "10px 12px",
+                  paddingRight: experienceLabel ? "110px" : "12px",
                   background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.1)",
+                  border: `1px solid ${experience === "" ? "rgba(255,255,255,0.1)" : expYears === 0 ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.3)"}`,
                   borderRadius: 6,
                   color: "var(--text-primary)",
                   fontSize: isMobile ? 11 : 12,
                   fontFamily: "sans-serif",
                   opacity: isLimitReached ? 0.4 : 1,
+                  boxSizing: "border-box",
                 }}
-                placeholder={placeholder}
-                value={value}
+                placeholder="Enter 0, 1, 2, 3 ..."
+                value={experience}
                 disabled={isLimitReached}
-                onChange={(e) => setter(e.target.value)}
+                onChange={handleExperienceChange}
               />
+              {experienceLabel && (
+                <span
+                  style={{
+                    position: "absolute",
+                    right: 10,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: expYears === 0 ? "var(--red)" : "var(--green)",
+                    pointerEvents: "none",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {experienceLabel}
+                </span>
+              )}
             </div>
-          ))}
+            <p
+              style={{
+                margin: "5px 0 0",
+                fontSize: 10,
+                color: "var(--text-muted)",
+              }}
+            >
+              Enter 0 if you are a fresher with no work experience.
+            </p>
+          </div>
+
+          {/* Resume Version */}
+          <div className="form-group" style={{ margin: 0 }}>
+            <label
+              className="form-label"
+              style={{
+                margin: "0 0 6px 0",
+                display: "block",
+                fontSize: isMobile ? 11 : 12,
+              }}
+            >
+              Resume Version (optional)
+            </label>
+            <input
+              type="text"
+              className="form-input"
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 6,
+                color: "var(--text-primary)",
+                fontSize: isMobile ? 11 : 12,
+                fontFamily: "sans-serif",
+                opacity: isLimitReached ? 0.4 : 1,
+              }}
+              placeholder="e.g., v1.2, Final, ML-focused"
+              value={resumeVersion}
+              disabled={isLimitReached}
+              onChange={(e) => setResumeVersion(e.target.value)}
+            />
+          </div>
 
           {/* Job Type Toggle */}
           <div className="form-group" style={{ margin: 0 }}>
@@ -1009,8 +1111,8 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
               }}
             >
               {[
-                { value: "job", label: "Job"},
-                { value: "internship", label: "Internship"},
+                { value: "job", label: "Job" },
+                { value: "internship", label: "Internship" },
               ].map(({ value, label }) => (
                 <button
                   key={value}
@@ -1019,7 +1121,7 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                   style={{
                     padding: "10px 12px",
                     borderRadius: 4,
-                    border: "1px solid transparent",
+                    border: `1px solid ${jobType === value ? "rgba(34,197,94,0.3)" : "transparent"}`,
                     background:
                       jobType === value
                         ? "rgba(34,197,94,0.15)"
@@ -1032,15 +1134,12 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                     fontWeight: jobType === value ? 700 : 600,
                     cursor: isLimitReached ? "not-allowed" : "pointer",
                     transition: "all 0.2s ease",
-                    borderColor:
-                      jobType === value ? "rgba(34,197,94,0.3)" : "transparent",
                     opacity: isLimitReached ? 0.4 : 1,
                   }}
                   onMouseEnter={(e) => {
-                    if (!isLimitReached && jobType !== value) {
+                    if (!isLimitReached && jobType !== value)
                       e.currentTarget.style.background =
                         "rgba(255,255,255,0.05)";
-                    }
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background =
@@ -1056,7 +1155,7 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
           </div>
         </div>
 
-        {/* Right column: Content areas */}
+        {/* Right column: Resume + JD */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {[
             {
@@ -1185,6 +1284,7 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
               setJobDesc("");
               setRole("");
               setResumeVersion("");
+              setExperience("");
               setJobType("job");
               setResult(null);
               setError("");
@@ -1241,18 +1341,69 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
               >
                 {result.verdict}
               </p>
-              {role && (
-                <p
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  marginTop: 8,
+                  flexWrap: "wrap",
+                }}
+              >
+                {role && (
+                  <span
+                    style={{
+                      fontSize: isMobile ? 11 : 12,
+                      color: "var(--text-muted)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {role}
+                  </span>
+                )}
+                <span
                   style={{
-                    margin: "8px 0 0",
-                    fontSize: isMobile ? 11 : 12,
-                    color: "var(--text-muted)",
+                    fontSize: 11,
+                    padding: "2px 8px",
+                    borderRadius: 3,
+                    background:
+                      jobType === "internship"
+                        ? "rgba(129,140,248,0.1)"
+                        : "rgba(34,197,94,0.08)",
+                    color:
+                      jobType === "internship"
+                        ? "var(--accent, #818cf8)"
+                        : "var(--green)",
+                    border:
+                      jobType === "internship"
+                        ? "1px solid rgba(129,140,248,0.2)"
+                        : "1px solid rgba(34,197,94,0.2)",
                   }}
                 >
-                  <strong>{role}</strong>
-                  {jobType === "internship" ? " (Internship)" : " (Job)"}
-                </p>
-              )}
+                  {jobType === "internship" ? "Internship" : "Job"}
+                </span>
+                {experience !== "" && (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      padding: "2px 8px",
+                      borderRadius: 3,
+                      background:
+                        expYears === 0
+                          ? "rgba(239,68,68,0.08)"
+                          : "rgba(34,197,94,0.08)",
+                      color: expYears === 0 ? "var(--red)" : "var(--green)",
+                      border:
+                        expYears === 0
+                          ? "1px solid rgba(239,68,68,0.2)"
+                          : "1px solid rgba(34,197,94,0.2)",
+                    }}
+                  >
+                    {expYears === 0
+                      ? "Fresher"
+                      : `${expYears} yr${expYears === 1 ? "" : "s"} exp`}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1294,7 +1445,6 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
 
           {/* Dimension breakdown */}
           <Divider label="Dimension Analysis" />
-
           <div style={{ display: "flex", flexDirection: "column" }}>
             {[
               { key: "roleAlignment", label: "Role Alignment" },
@@ -1315,6 +1465,38 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
               );
             })}
           </div>
+
+          {/* Missing sections */}
+          {result.missingSections?.length > 0 && (
+            <>
+              <Divider label="Missing Sections" />
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  marginBottom: 8,
+                }}
+              >
+                {result.missingSections.map((s, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      padding: "6px 12px",
+                      background: "rgba(239,68,68,0.06)",
+                      border: "1px solid rgba(239,68,68,0.18)",
+                      borderRadius: 5,
+                      fontSize: 12,
+                      color: "var(--red)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    ✕ {s}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* Critical gaps */}
           {result.criticalGaps?.length > 0 && (
@@ -1364,7 +1546,6 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
 
           {/* Keywords */}
           <Divider label="Keyword Coverage" />
-
           <div
             style={{
               display: "grid",
@@ -1455,7 +1636,6 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
         </div>
       )}
 
-      {/* History Modal */}
       <HistoryModal
         isOpen={showHistory}
         onClose={() => setShowHistory(false)}
