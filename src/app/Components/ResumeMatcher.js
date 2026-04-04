@@ -7,9 +7,8 @@ const DAILY_LIMIT = 2;
 const STORAGE_KEY = "resumeMatcher_usage";
 
 function getTodayStr() {
-  return new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+  return new Date().toISOString().split("T")[0];
 }
-
 function getUsageData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -19,17 +18,14 @@ function getUsageData() {
     return { count: 0, date: getTodayStr() };
   }
 }
-
 function saveUsageData(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
-
 function getRemainingUses() {
   const usage = getUsageData();
-  if (usage.date !== getTodayStr()) return DAILY_LIMIT; // new day → full reset
+  if (usage.date !== getTodayStr()) return DAILY_LIMIT;
   return Math.max(0, DAILY_LIMIT - usage.count);
 }
-
 function incrementUsage() {
   const today = getTodayStr();
   const usage = getUsageData();
@@ -38,6 +34,217 @@ function incrementUsage() {
   } else {
     saveUsageData({ count: usage.count + 1, date: today });
   }
+}
+
+// Score ring — pure CSS, no emoji
+function ScoreRing({ score, size = 100 }) {
+  const r = 38;
+  const circ = 2 * Math.PI * r;
+  const fill = circ - (score / 100) * circ;
+  const color =
+    score >= 75 ? "var(--green)" : score >= 50 ? "var(--yellow)" : "var(--red)";
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100">
+      <circle
+        cx="50"
+        cy="50"
+        r={r}
+        fill="none"
+        stroke="rgba(255,255,255,0.06)"
+        strokeWidth="8"
+      />
+      <circle
+        cx="50"
+        cy="50"
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth="8"
+        strokeDasharray={circ}
+        strokeDashoffset={fill}
+        strokeLinecap="round"
+        transform="rotate(-90 50 50)"
+        style={{ transition: "stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1)" }}
+      />
+      <text
+        x="50"
+        y="46"
+        textAnchor="middle"
+        fill={color}
+        style={{
+          fontSize: 18,
+          fontWeight: 800,
+          fontFamily: "var(--font-display, sans-serif)",
+        }}
+      >
+        {score}%
+      </text>
+      <text
+        x="50"
+        y="60"
+        textAnchor="middle"
+        fill="var(--text-muted)"
+        style={{ fontSize: 8, fontFamily: "sans-serif", letterSpacing: 0.5 }}
+      >
+        MATCH
+      </text>
+    </svg>
+  );
+}
+
+function Divider({ label }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        margin: "28px 0 20px",
+      }}
+    >
+      <div
+        style={{
+          height: 1,
+          flex: 1,
+          background: "var(--border, rgba(255,255,255,0.07))",
+        }}
+      />
+      <span
+        style={{
+          fontSize: 9,
+          fontWeight: 700,
+          letterSpacing: "1.2px",
+          textTransform: "uppercase",
+          color: "var(--text-muted)",
+        }}
+      >
+        {label}
+      </span>
+      <div
+        style={{
+          height: 1,
+          flex: 1,
+          background: "var(--border, rgba(255,255,255,0.07))",
+        }}
+      />
+    </div>
+  );
+}
+
+function Tag({ text, variant }) {
+  const styles = {
+    miss: {
+      bg: "rgba(239,68,68,0.08)",
+      color: "var(--red, #ef4444)",
+      border: "rgba(239,68,68,0.2)",
+    },
+    hit: {
+      bg: "rgba(34,197,94,0.08)",
+      color: "var(--green, #22c55e)",
+      border: "rgba(34,197,94,0.2)",
+    },
+    neutral: {
+      bg: "rgba(255,255,255,0.04)",
+      color: "var(--text-secondary)",
+      border: "rgba(255,255,255,0.1)",
+    },
+  };
+  const s = styles[variant] || styles.neutral;
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        padding: "3px 10px",
+        borderRadius: 4,
+        fontSize: 11,
+        fontWeight: 500,
+        letterSpacing: "0.2px",
+        background: s.bg,
+        color: s.color,
+        border: `1px solid ${s.border}`,
+      }}
+    >
+      {text}
+    </span>
+  );
+}
+
+function ImpactRow({ label, value, verdict, detail }) {
+  // verdict: "strong" | "weak" | "missing"
+  const barColor =
+    verdict === "strong"
+      ? "var(--green)"
+      : verdict === "weak"
+        ? "var(--yellow)"
+        : "var(--red)";
+  return (
+    <div
+      style={{
+        padding: "12px 0",
+        borderBottom: "1px solid var(--border, rgba(255,255,255,0.05))",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          marginBottom: 6,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            color: "var(--text-primary)",
+          }}
+        >
+          {label}
+        </span>
+        <span
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.6px",
+            color: barColor,
+          }}
+        >
+          {verdict}
+        </span>
+      </div>
+      <div
+        style={{
+          height: 3,
+          background: "rgba(255,255,255,0.06)",
+          borderRadius: 2,
+          marginBottom: 6,
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${value}%`,
+            background: barColor,
+            borderRadius: 2,
+            transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)",
+          }}
+        />
+      </div>
+      {detail && (
+        <p
+          style={{
+            fontSize: 11,
+            color: "var(--text-muted)",
+            margin: 0,
+            lineHeight: 1.6,
+          }}
+        >
+          {detail}
+        </p>
+      )}
+    </div>
+  );
 }
 
 export default function ResumeMatcher() {
@@ -56,11 +263,11 @@ export default function ResumeMatcher() {
 
   const analyze = async () => {
     if (!resume.trim() || !jobDesc.trim()) {
-      setError("Please paste both your resume and the job description.");
+      setError("Paste both your resume and the job description to continue.");
       return;
     }
     if (getRemainingUses() <= 0) {
-      setError("Daily limit reached. Come back tomorrow.");
+      setError("Daily limit reached. Resets at midnight.");
       return;
     }
 
@@ -68,10 +275,7 @@ export default function ResumeMatcher() {
     setLoading(true);
     setResult(null);
 
-    try {
-      const prompt = `You are an expert ATS (Applicant Tracking System) analyzer and career coach.
-
-Analyze the match between this resume and job description. Return ONLY a valid JSON object with no extra text, markdown, or explanation.
+    const prompt = `You are a senior technical recruiter and ATS specialist. Your job is to give a surgical, honest analysis — not a feel-good report. Be direct, specific, and ruthless about gaps.
 
 Resume:
 ${resume}
@@ -79,18 +283,48 @@ ${resume}
 Job Description:
 ${jobDesc}
 
-Return this exact JSON structure:
+Return ONLY a valid JSON object with no extra text, markdown, or explanation:
+
 {
-  "matchScore": <number 0-100>,
-  "mismatchScore": <number 0-100, complement of matchScore>,
-  "summary": "<2-3 sentence overview of the match>",
-  "strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],
-  "gaps": ["<gap 1>", "<gap 2>", "<gap 3>"],
-  "missingKeywords": ["<keyword 1>", "<keyword 2>", "<keyword 3>", "<keyword 4>", "<keyword 5>"],
-  "matchedKeywords": ["<keyword 1>", "<keyword 2>", "<keyword 3>"],
-  "recommendation": "<1-2 sentence actionable advice to improve the resume for this job>"
+  "matchScore": <integer 0-100, be realistic — 60+ means genuinely strong>,
+  "verdict": "<one sentence: direct hiring recommendation>",
+
+  "roleAlignment": {
+    "score": <0-100>,
+    "verdict": "strong|weak|missing",
+    "detail": "<specific: does their title/experience level actually fit the seniority and domain of this role?>"
+  },
+  "technicalDepth": {
+    "score": <0-100>,
+    "verdict": "strong|weak|missing",
+    "detail": "<specific: which required skills are demonstrated at depth vs. surface-mentioned vs. missing entirely?>"
+  },
+  "experienceRelevance": {
+    "score": <0-100>,
+    "verdict": "strong|weak|missing",
+    "detail": "<specific: do past employers / projects actually reflect the work this role requires?>"
+  },
+  "achievementQuality": {
+    "score": <0-100>,
+    "verdict": "strong|weak|missing",
+    "detail": "<specific: are results quantified and meaningful, or are they vague duty-lists? Name actual bullets that stand out or that are weak.>"
+  },
+
+  "criticalGaps": [
+    "<gap 1: be specific — name the missing skill, tool, domain, or experience. Max 6 items.>",
+    "<gap 2>",
+    "<gap 3>"
+  ],
+
+  "missingKeywords": ["<exact keyword from JD not in resume>"],
+  "matchedKeywords": ["<exact keyword present in both>"],
+
+  "atsRisk": "<one sentence: will this resume likely pass ATS filters for this specific role, and why?>",
+
+  "oneThingToFix": "<the single most impactful edit the candidate should make to this resume before applying>"
 }`;
 
+    try {
       const response = await fetch(
         "https://api.groq.com/openai/v1/chat/completions",
         {
@@ -101,13 +335,13 @@ Return this exact JSON structure:
           },
           body: JSON.stringify({
             model: "llama-3.3-70b-versatile",
-            temperature: 0.3,
-            max_tokens: 1000,
+            temperature: 0.2,
+            max_tokens: 1400,
             messages: [
               {
                 role: "system",
                 content:
-                  "You are an ATS analyzer. Always respond with only valid JSON. No markdown, no explanation, no extra text.",
+                  "You are a blunt, expert technical recruiter. Return ONLY valid JSON — no markdown, no preamble, no explanation.",
               },
               { role: "user", content: prompt },
             ],
@@ -117,7 +351,7 @@ Return this exact JSON structure:
 
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData?.error?.message || "Groq API error");
+        throw new Error(errData?.error?.message || "API error");
       }
 
       const data = await response.json();
@@ -125,79 +359,77 @@ Return this exact JSON structure:
       const clean = text.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
 
-      // Deduct only after successful response
       incrementUsage();
       setRemaining(getRemainingUses());
       setResult(parsed);
     } catch (err) {
       setError(err.message || "Analysis failed. Please try again.");
-      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const getScoreColor = (score) => {
-    if (score >= 75) return "var(--green)";
-    if (score >= 50) return "var(--yellow)";
-    return "var(--red)";
-  };
-
-  const getScoreLabel = (score) => {
-    if (score >= 75) return "Strong Match";
-    if (score >= 50) return "Moderate Match";
-    if (score >= 25) return "Weak Match";
-    return "Poor Match";
-  };
+  const scoreColor = result
+    ? result.matchScore >= 75
+      ? "var(--green)"
+      : result.matchScore >= 50
+        ? "var(--yellow)"
+        : "var(--red)"
+    : "var(--text-muted)";
 
   return (
     <div>
-      {/* Top row: insight box + usage counter */}
+      {/* Header row */}
       <div
         style={{
           display: "flex",
-          gap: 14,
-          alignItems: "stretch",
-          marginBottom: 16,
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: 20,
         }}
       >
-        <div className="insight-box" style={{ margin: 0, flex: 1 }}>
-          Paste your resume and a job description to get match
-          analysis. Find missing keywords, skill gaps and actionable advice.
+        <div>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 18,
+              fontWeight: 800,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.4px",
+              fontFamily: "var(--font-display, sans-serif)",
+            }}
+          >
+            Resume Matcher
+          </h2>
+          <p
+            style={{
+              margin: "4px 0 0",
+              fontSize: 12,
+              color: "var(--text-muted)",
+              lineHeight: 1.5,
+            }}
+          >
+            Surgical match analysis — role alignment, technical depth, ATS risk,
+            and one fix that matters.
+          </p>
         </div>
 
-        {/* Usage pill */}
+        {/* Usage counter */}
         <div
           style={{
-            flexShrink: 0,
-            background: isLimitReached
-              ? "var(--red-dim)"
-              : remaining === 1
-                ? "var(--yellow-dim)"
-                : "var(--green-dim)",
-            border: `1px solid ${
-              isLimitReached
-                ? "rgba(239,68,68,0.25)"
-                : remaining === 1
-                  ? "rgba(234,179,8,0.25)"
-                  : "rgba(34,197,94,0.25)"
-            }`,
-            borderRadius: "var(--radius)",
-            padding: "12px 18px",
-            textAlign: "center",
             display: "flex",
             flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minWidth: 100,
+            alignItems: "flex-end",
+            gap: 2,
+            flexShrink: 0,
           }}
         >
           <div
             style={{
-              fontSize: 26,
-              fontFamily: "Syne, sans-serif",
+              fontSize: 20,
               fontWeight: 800,
               lineHeight: 1,
+              fontFamily: "var(--font-display, sans-serif)",
               color: isLimitReached
                 ? "var(--red)"
                 : remaining === 1
@@ -211,68 +443,91 @@ Return this exact JSON structure:
             style={{
               fontSize: 10,
               color: "var(--text-muted)",
-              marginTop: 5,
               textTransform: "uppercase",
               letterSpacing: "0.5px",
             }}
           >
-            Left Today
+            left today
           </div>
         </div>
       </div>
 
-      {/* Limit reached banner */}
-      {isLimitReached && (
-        <div
-          style={{
-            background: "var(--red-dim)",
-            border: "1px solid rgba(239,68,68,0.2)",
-            borderRadius: "var(--radius)",
-            padding: "14px 18px",
-            marginBottom: 16,
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
-          <span style={{ fontSize: 20 }}>🚫</span>
-          <div>
+      {/* Why this is different — minimal, factual */}
+      <div
+        style={{
+          background: "rgba(255,255,255,0.02)",
+          border: "1px solid var(--border, rgba(255,255,255,0.07))",
+          borderRadius: 8,
+          padding: "14px 18px",
+          marginBottom: 20,
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: 0,
+        }}
+      >
+        {[
+          { label: "Role alignment", sub: "seniority & domain fit" },
+          { label: "Technical depth", sub: "skills that actually match" },
+          { label: "Achievement quality", sub: "impact vs. duty-lists" },
+          { label: "One fix", sub: "highest-leverage edit" },
+        ].map((item, i, arr) => (
+          <div
+            key={item.label}
+            style={{
+              padding: "0 16px",
+              borderRight:
+                i < arr.length - 1
+                  ? "1px solid var(--border, rgba(255,255,255,0.07))"
+                  : "none",
+            }}
+          >
             <div
               style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: "var(--red)",
+                fontSize: 11,
+                fontWeight: 700,
+                color: "var(--text-primary)",
                 marginBottom: 2,
               }}
             >
-              Daily limit reached
+              {item.label}
             </div>
-            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-              You&apos;ve used both your free analyses for today. Resets at
-              midnight.
+            <div style={{ fontSize: 10, color: "var(--text-muted)" }}>
+              {item.sub}
             </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
 
-      {/* 1 remaining warning */}
-      {remaining === 1 && (
+      {/* Limit banner */}
+      {isLimitReached && (
         <div
           style={{
-            background: "var(--yellow-dim)",
-            border: "1px solid rgba(234,179,8,0.2)",
-            borderRadius: "var(--radius)",
+            background: "rgba(239,68,68,0.06)",
+            border: "1px solid rgba(239,68,68,0.18)",
+            borderRadius: 8,
+            padding: "12px 16px",
+            marginBottom: 16,
+            fontSize: 12,
+            color: "var(--red)",
+            lineHeight: 1.6,
+          }}
+        >
+          Daily limit reached — both analyses used. Resets at midnight.
+        </div>
+      )}
+      {remaining === 1 && !isLimitReached && (
+        <div
+          style={{
+            background: "rgba(234,179,8,0.06)",
+            border: "1px solid rgba(234,179,8,0.18)",
+            borderRadius: 8,
             padding: "10px 16px",
             marginBottom: 16,
             fontSize: 12,
             color: "var(--yellow)",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
           }}
         >
-          <span>⚠️</span>
-          Last analysis for today — use it on your best resume + JD combo.
+          Last analysis for today — use it on your best resume + JD pair.
         </div>
       )}
 
@@ -285,59 +540,63 @@ Return this exact JSON structure:
           marginBottom: 16,
         }}
       >
-        <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label">Your Resume</label>
-          <textarea
-            className="form-textarea"
-            style={{
-              minHeight: 220,
-              fontFamily: "monospace",
-              fontSize: 12,
-              opacity: isLimitReached ? 0.45 : 1,
-            }}
-            placeholder="Paste your resume text here..."
-            value={resume}
-            disabled={isLimitReached}
-            onChange={(e) => setResume(e.target.value)}
-          />
-          <div
-            style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}
-          >
-            {resume.trim().split(/\s+/).filter(Boolean).length} words
+        {[
+          {
+            label: "Resume",
+            value: resume,
+            setter: setResume,
+            placeholder: "Paste your resume text here...",
+          },
+          {
+            label: "Job Description",
+            value: jobDesc,
+            setter: setJobDesc,
+            placeholder: "Paste the job description here...",
+          },
+        ].map(({ label, value, setter, placeholder }) => (
+          <div key={label} className="form-group" style={{ margin: 0 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 6,
+              }}
+            >
+              <label className="form-label" style={{ margin: 0 }}>
+                {label}
+              </label>
+              <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                {value.trim().split(/\s+/).filter(Boolean).length} words
+              </span>
+            </div>
+            <textarea
+              className="form-textarea"
+              style={{
+                minHeight: 210,
+                fontFamily: "monospace",
+                fontSize: 11,
+                lineHeight: 1.7,
+                opacity: isLimitReached ? 0.4 : 1,
+              }}
+              placeholder={placeholder}
+              value={value}
+              disabled={isLimitReached}
+              onChange={(e) => setter(e.target.value)}
+            />
           </div>
-        </div>
-        <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label">Job Description</label>
-          <textarea
-            className="form-textarea"
-            style={{
-              minHeight: 220,
-              fontFamily: "monospace",
-              fontSize: 12,
-              opacity: isLimitReached ? 0.45 : 1,
-            }}
-            placeholder="Paste the job description here..."
-            value={jobDesc}
-            disabled={isLimitReached}
-            onChange={(e) => setJobDesc(e.target.value)}
-          />
-          <div
-            style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}
-          >
-            {jobDesc.trim().split(/\s+/).filter(Boolean).length} words
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Error */}
       {error && (
         <div
           style={{
-            background: "var(--red-dim)",
-            border: "1px solid rgba(239,68,68,0.2)",
-            borderRadius: "var(--radius-sm)",
+            background: "rgba(239,68,68,0.06)",
+            border: "1px solid rgba(239,68,68,0.18)",
+            borderRadius: 6,
             padding: "10px 14px",
-            fontSize: 13,
+            fontSize: 12,
             color: "var(--red)",
             marginBottom: 14,
           }}
@@ -351,7 +610,7 @@ Return this exact JSON structure:
         style={{
           display: "flex",
           gap: 10,
-          marginBottom: 24,
+          marginBottom: 32,
           alignItems: "center",
         }}
       >
@@ -360,12 +619,12 @@ Return this exact JSON structure:
           onClick={analyze}
           disabled={loading || isLimitReached}
           style={{
-            opacity: loading || isLimitReached ? 0.5 : 1,
+            opacity: loading || isLimitReached ? 0.45 : 1,
             cursor: isLimitReached ? "not-allowed" : "pointer",
           }}
         >
           {loading ? (
-            <>
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span
                 style={{
                   display: "inline-block",
@@ -375,11 +634,9 @@ Return this exact JSON structure:
                 ◌
               </span>
               Analyzing...
-            </>
+            </span>
           ) : (
-            <>
-              <span>⬡</span> Analyze Match
-            </>
+            "Analyze Match"
           )}
         </button>
 
@@ -393,288 +650,253 @@ Return this exact JSON structure:
               setError("");
             }}
           >
-            Clear All
+            Clear
           </button>
-        )}
-
-        {!isLimitReached && (
-          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            {remaining} free {remaining === 1 ? "analysis" : "analyses"} left
-            today
-          </span>
         )}
       </div>
 
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* Results */}
+      {/* ── Results ── */}
       {result && (
         <div>
+          {/* Score + verdict */}
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 16,
-              marginBottom: 16,
+              display: "flex",
+              gap: 24,
+              alignItems: "center",
+              padding: "24px 28px",
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid var(--border, rgba(255,255,255,0.07))",
+              borderRadius: 12,
+              marginBottom: 8,
             }}
           >
-            <div
-              className="card"
-              style={{ textAlign: "center", padding: "28px 20px" }}
-            >
+            <ScoreRing score={result.matchScore} size={110} />
+            <div style={{ flex: 1 }}>
               <div
                 style={{
                   fontSize: 11,
-                  color: "var(--text-muted)",
+                  fontWeight: 700,
                   textTransform: "uppercase",
-                  letterSpacing: "0.6px",
+                  letterSpacing: "1px",
+                  color: "var(--text-muted)",
                   marginBottom: 8,
                 }}
               >
-                Match Score
+                Verdict
               </div>
-              <div
+              <p
                 style={{
-                  fontSize: 52,
-                  fontFamily: "Syne, sans-serif",
-                  fontWeight: 800,
-                  color: getScoreColor(result.matchScore),
-                  lineHeight: 1,
-                }}
-              >
-                {result.matchScore}%
-              </div>
-              <div
-                style={{
-                  marginTop: 8,
-                  fontSize: 13,
-                  color: getScoreColor(result.matchScore),
+                  margin: 0,
+                  fontSize: 15,
                   fontWeight: 600,
+                  color: "var(--text-primary)",
+                  lineHeight: 1.5,
                 }}
               >
-                {getScoreLabel(result.matchScore)}
-              </div>
-              <div style={{ marginTop: 16 }}>
-                <div className="progress-bar-wrap">
-                  <div
-                    className="progress-bar"
-                    style={{
-                      width: `${result.matchScore}%`,
-                      background: getScoreColor(result.matchScore),
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-            <div
-              className="card"
-              style={{ textAlign: "center", padding: "28px 20px" }}
-            >
-              <div
-                style={{
-                  fontSize: 11,
-                  color: "var(--text-muted)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.6px",
-                  marginBottom: 8,
-                }}
-              >
-                Mismatch
-              </div>
-              <div
-                style={{
-                  fontSize: 52,
-                  fontFamily: "Syne, sans-serif",
-                  fontWeight: 800,
-                  color: "var(--red)",
-                  lineHeight: 1,
-                }}
-              >
-                {result.mismatchScore}%
-              </div>
-              <div
-                style={{
-                  marginTop: 8,
-                  fontSize: 13,
-                  color: "var(--text-muted)",
-                }}
-              >
-                Skills/keywords gap
-              </div>
-              <div style={{ marginTop: 16 }}>
-                <div className="progress-bar-wrap">
-                  <div
-                    className="progress-bar"
-                    style={{
-                      width: `${result.mismatchScore}%`,
-                      background: "var(--red)",
-                    }}
-                  />
-                </div>
-              </div>
+                {result.verdict}
+              </p>
             </div>
           </div>
 
-          <div className="insight-box" style={{ marginBottom: 16 }}>
-            {result.summary}
+          {/* ATS risk */}
+          {result.atsRisk && (
+            <div
+              style={{
+                padding: "10px 16px",
+                background: "rgba(255,255,255,0.015)",
+                border: "1px solid var(--border, rgba(255,255,255,0.06))",
+                borderTop: "none",
+                borderRadius: "0 0 8px 8px",
+                marginBottom: 28,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.8px",
+                  color: "var(--text-muted)",
+                  marginRight: 10,
+                }}
+              >
+                ATS Risk
+              </span>
+              <span
+                style={{
+                  fontSize: 12,
+                  color: "var(--text-secondary)",
+                  lineHeight: 1.6,
+                }}
+              >
+                {result.atsRisk}
+              </span>
+            </div>
+          )}
+
+          {/* Dimension breakdown */}
+          <Divider label="Dimension Analysis" />
+
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {[
+              { key: "roleAlignment", label: "Role Alignment" },
+              { key: "technicalDepth", label: "Technical Depth" },
+              { key: "experienceRelevance", label: "Experience Relevance" },
+              { key: "achievementQuality", label: "Achievement Quality" },
+            ].map(({ key, label }) => {
+              const d = result[key];
+              if (!d) return null;
+              return (
+                <ImpactRow
+                  key={key}
+                  label={label}
+                  value={d.score}
+                  verdict={d.verdict}
+                  detail={d.detail}
+                />
+              );
+            })}
           </div>
+
+          {/* Critical gaps */}
+          {result.criticalGaps?.length > 0 && (
+            <>
+              <Divider label="Critical Gaps" />
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {result.criticalGaps.map((gap, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      alignItems: "flex-start",
+                      padding: "10px 14px",
+                      background: "rgba(239,68,68,0.04)",
+                      border: "1px solid rgba(239,68,68,0.12)",
+                      borderRadius: 6,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 800,
+                        color: "var(--red)",
+                        flexShrink: 0,
+                        marginTop: 1,
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 12,
+                        color: "var(--text-secondary)",
+                        lineHeight: 1.65,
+                      }}
+                    >
+                      {gap}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Keywords */}
+          <Divider label="Keyword Coverage" />
 
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
-              gap: 16,
-              marginBottom: 16,
+              gap: 20,
+              marginBottom: 8,
             }}
           >
-            <div className="card">
-              <div className="card-title">✓ Strengths</div>
-              <ul
-                style={{
-                  listStyle: "none",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                }}
-              >
-                {(result.strengths || []).map((s, i) => (
-                  <li
-                    key={i}
-                    style={{
-                      fontSize: 13,
-                      color: "var(--text-secondary)",
-                      display: "flex",
-                      gap: 8,
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: "var(--green)",
-                        fontWeight: 700,
-                        flexShrink: 0,
-                      }}
-                    >
-                      +
-                    </span>
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="card">
-              <div className="card-title">✗ Gaps</div>
-              <ul
-                style={{
-                  listStyle: "none",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                }}
-              >
-                {(result.gaps || []).map((g, i) => (
-                  <li
-                    key={i}
-                    style={{
-                      fontSize: 13,
-                      color: "var(--text-secondary)",
-                      display: "flex",
-                      gap: 8,
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: "var(--red)",
-                        fontWeight: 700,
-                        flexShrink: 0,
-                      }}
-                    >
-                      −
-                    </span>
-                    {g}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          <div className="card" style={{ marginBottom: 16 }}>
-            <div className="card-title">Keyword Analysis</div>
-            <div style={{ marginBottom: 14 }}>
+            <div>
               <div
                 style={{
-                  fontSize: 11,
-                  color: "var(--text-muted)",
-                  marginBottom: 8,
+                  fontSize: 10,
+                  fontWeight: 700,
                   textTransform: "uppercase",
-                  letterSpacing: "0.5px",
+                  letterSpacing: "0.8px",
+                  color: "var(--text-muted)",
+                  marginBottom: 10,
                 }}
               >
-                Missing Keywords
+                Missing from resume
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {(result.missingKeywords || []).map((kw, i) => (
-                  <span
-                    key={i}
-                    style={{
-                      background: "var(--red-dim)",
-                      color: "var(--red)",
-                      border: "1px solid rgba(239,68,68,0.2)",
-                      padding: "3px 10px",
-                      borderRadius: 20,
-                      fontSize: 12,
-                    }}
-                  >
-                    {kw}
-                  </span>
+                  <Tag key={i} text={kw} variant="miss" />
                 ))}
               </div>
             </div>
             <div>
               <div
                 style={{
-                  fontSize: 11,
-                  color: "var(--text-muted)",
-                  marginBottom: 8,
+                  fontSize: 10,
+                  fontWeight: 700,
                   textTransform: "uppercase",
-                  letterSpacing: "0.5px",
+                  letterSpacing: "0.8px",
+                  color: "var(--text-muted)",
+                  marginBottom: 10,
                 }}
               >
-                Matched Keywords
+                Present in both
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {(result.matchedKeywords || []).map((kw, i) => (
-                  <span
-                    key={i}
-                    style={{
-                      background: "var(--green-dim)",
-                      color: "var(--green)",
-                      border: "1px solid rgba(34,197,94,0.2)",
-                      padding: "3px 10px",
-                      borderRadius: 20,
-                      fontSize: 12,
-                    }}
-                  >
-                    {kw}
-                  </span>
+                  <Tag key={i} text={kw} variant="hit" />
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="card" style={{ borderColor: "var(--accent-border)" }}>
-            <div className="card-title">💡 Recommendation</div>
-            <p
-              style={{
-                fontSize: 13,
-                color: "var(--text-secondary)",
-                lineHeight: 1.7,
-              }}
-            >
-              {result.recommendation}
-            </p>
-          </div>
+          {/* One thing to fix */}
+          {result.oneThingToFix && (
+            <>
+              <Divider label="Highest-Leverage Edit" />
+              <div
+                style={{
+                  padding: "16px 20px",
+                  background: "rgba(129,140,248,0.05)",
+                  border:
+                    "1px solid var(--accent-border, rgba(129,140,248,0.2))",
+                  borderRadius: 8,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                    color: "var(--accent)",
+                    marginBottom: 8,
+                  }}
+                >
+                  Do this before applying
+                </div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 13,
+                    color: "var(--text-secondary)",
+                    lineHeight: 1.7,
+                    fontWeight: 500,
+                  }}
+                >
+                  {result.oneThingToFix}
+                </p>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
