@@ -7,32 +7,38 @@ const DAILY_LIMIT = 2;
 const STORAGE_KEY = "resumeMatcher_usage";
 const HISTORY_KEY = "resumeMatcher_history";
 
-// Mobile detection
+// Section weights — total 100 points
+const SECTION_WEIGHTS = [
+  { key: "experience", label: "Work Experience", points: 25 },
+  { key: "projects", label: "Projects", points: 20 },
+  { key: "technicalSkills", label: "Technical Skills", points: 15 },
+  { key: "certifications", label: "Certifications", points: 15 },
+  { key: "education", label: "Education", points: 10 },
+  { key: "summary", label: "Bio / Professional Summary", points: 10 },
+  { key: "achievements", label: "Achievements / Awards", points: 5 },
+];
+
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
   return isMobile;
 }
 
-// IST timezone utilities
 function getISTNow() {
-  const date = new Date();
-  return new Date(date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  return new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }),
+  );
 }
-
-function getISTDateStr(date = null) {
-  const d = date || getISTNow();
-  return d.toISOString().split("T")[0];
+function getISTDateStr() {
+  return getISTNow().toISOString().split("T")[0];
 }
-
-function getFormattedDateTime(date = null) {
-  const d = date || getISTNow();
-  return d.toLocaleString("en-US", {
+function getFormattedDateTime() {
+  return getISTNow().toLocaleString("en-US", {
     timeZone: "Asia/Kolkata",
     year: "numeric",
     month: "short",
@@ -43,54 +49,46 @@ function getFormattedDateTime(date = null) {
   });
 }
 
-// Usage tracking
 function getUsageData() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { count: 0, date: getISTDateStr() };
-    return JSON.parse(raw);
+    return (
+      JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+        count: 0,
+        date: getISTDateStr(),
+      }
+    );
   } catch {
     return { count: 0, date: getISTDateStr() };
   }
 }
-
-function saveUsageData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+function saveUsageData(d) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
 }
-
 function getRemainingUses() {
-  const usage = getUsageData();
-  const today = getISTDateStr();
-  if (usage.date !== today) return DAILY_LIMIT;
-  return Math.max(0, DAILY_LIMIT - usage.count);
+  const u = getUsageData(),
+    today = getISTDateStr();
+  return u.date !== today ? DAILY_LIMIT : Math.max(0, DAILY_LIMIT - u.count);
 }
-
 function incrementUsage() {
-  const today = getISTDateStr();
-  const usage = getUsageData();
-  if (usage.date !== today) {
-    saveUsageData({ count: 1, date: today });
-  } else {
-    saveUsageData({ count: usage.count + 1, date: today });
-  }
+  const today = getISTDateStr(),
+    u = getUsageData();
+  saveUsageData(
+    u.date !== today
+      ? { count: 1, date: today }
+      : { count: u.count + 1, date: today },
+  );
 }
-
-// History management
 function getHistory() {
   try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw);
+    return JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
   } catch {
     return [];
   }
 }
-
 function saveToHistory(analysis) {
   const history = getHistory();
-  const entry = {
+  history.unshift({
     id: Date.now(),
-    timestamp: getISTNow().toISOString(),
     formattedTime: getFormattedDateTime(),
     role: analysis.role,
     resumeVersion: analysis.resumeVersion,
@@ -98,18 +96,17 @@ function saveToHistory(analysis) {
     matchScore: analysis.matchScore,
     verdict: analysis.verdict,
     fullAnalysis: analysis,
-  };
-  history.unshift(entry);
+  });
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 50)));
 }
 
-// Components
+// ── UI primitives ──────────────────────────────────────────────────────────
+
 function ScoreRing({ score, size = 100 }) {
-  const r = 38;
-  const circ = 2 * Math.PI * r;
+  const r = 38,
+    circ = 2 * Math.PI * r;
   const fill = circ - (score / 100) * circ;
-  const color =
-    score >= 75 ? "var(--green)" : score >= 50 ? "var(--yellow)" : "var(--red)";
+  const color = score >= 75 ? "#22c55e" : score >= 50 ? "#eab308" : "#ef4444";
   return (
     <svg width={size} height={size} viewBox="0 0 100 100">
       <circle
@@ -138,11 +135,7 @@ function ScoreRing({ score, size = 100 }) {
         y="46"
         textAnchor="middle"
         fill={color}
-        style={{
-          fontSize: 18,
-          fontWeight: 800,
-          fontFamily: "var(--font-display, sans-serif)",
-        }}
+        style={{ fontSize: 18, fontWeight: 800, fontFamily: "sans-serif" }}
       >
         {score}%
       </text>
@@ -150,13 +143,129 @@ function ScoreRing({ score, size = 100 }) {
         x="50"
         y="60"
         textAnchor="middle"
-        fill="var(--text-muted)"
-        style={{ fontSize: 8, fontFamily: "sans-serif", letterSpacing: 0.5 }}
+        fill="rgba(255,255,255,0.35)"
+        style={{ fontSize: 8, letterSpacing: 0.5, fontFamily: "sans-serif" }}
       >
         MATCH
       </text>
     </svg>
   );
+}
+
+function SectionBreakdown({ sections }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {SECTION_WEIGHTS.map(({ key, label, points }) => {
+        const s = sections?.[key];
+        if (!s) return null;
+        const present = s.present;
+        const qualityPct = s.qualityScore ?? (present ? 80 : 0);
+        const earned = present
+          ? Math.round(points * qualityScore(qualityPct))
+          : 0;
+        const barColor = present
+          ? qualityPct >= 70
+            ? "#22c55e"
+            : qualityPct >= 40
+              ? "#eab308"
+              : "#ef4444"
+          : "#ef4444";
+        return (
+          <div
+            key={key}
+            style={{
+              padding: "12px 14px",
+              background: "rgba(255,255,255,0.02)",
+              border: `1px solid ${present ? "rgba(255,255,255,0.07)" : "rgba(239,68,68,0.15)"}`,
+              borderRadius: 7,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 6,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: "2px 7px",
+                    borderRadius: 3,
+                    background: present
+                      ? "rgba(255,255,255,0.05)"
+                      : "rgba(239,68,68,0.08)",
+                    color: present ? "rgba(255,255,255,0.5)" : "#ef4444",
+                    border: present
+                      ? "1px solid rgba(255,255,255,0.08)"
+                      : "1px solid rgba(239,68,68,0.2)",
+                  }}
+                >
+                  {present ? `${earned}/${points}` : `0/${points}`}
+                </span>
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "rgba(255,255,255,0.85)",
+                  }}
+                >
+                  {label}
+                </span>
+              </div>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                  color: present ? barColor : "#ef4444",
+                }}
+              >
+                {present ? s.quality || "present" : "missing"}
+              </span>
+            </div>
+            <div
+              style={{
+                height: 3,
+                background: "rgba(255,255,255,0.06)",
+                borderRadius: 2,
+              }}
+            >
+              <div
+                style={{
+                  height: "100%",
+                  width: `${present ? qualityPct : 0}%`,
+                  background: barColor,
+                  borderRadius: 2,
+                  transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)",
+                }}
+              />
+            </div>
+            {s.note && (
+              <p
+                style={{
+                  margin: "6px 0 0",
+                  fontSize: 11,
+                  color: "rgba(255,255,255,0.4)",
+                  lineHeight: 1.55,
+                }}
+              >
+                {s.note}
+              </p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function qualityScore(pct) {
+  return Math.min(1, Math.max(0, pct / 100));
 }
 
 function Divider({ label }) {
@@ -166,15 +275,11 @@ function Divider({ label }) {
         display: "flex",
         alignItems: "center",
         gap: 12,
-        margin: "28px 0 20px",
+        margin: "24px 0 16px",
       }}
     >
       <div
-        style={{
-          height: 1,
-          flex: 1,
-          background: "var(--border, rgba(255,255,255,0.07))",
-        }}
+        style={{ height: 1, flex: 1, background: "rgba(255,255,255,0.07)" }}
       />
       <span
         style={{
@@ -182,17 +287,13 @@ function Divider({ label }) {
           fontWeight: 700,
           letterSpacing: "1.2px",
           textTransform: "uppercase",
-          color: "var(--text-muted)",
+          color: "rgba(255,255,255,0.3)",
         }}
       >
         {label}
       </span>
       <div
-        style={{
-          height: 1,
-          flex: 1,
-          background: "var(--border, rgba(255,255,255,0.07))",
-        }}
+        style={{ height: 1, flex: 1, background: "rgba(255,255,255,0.07)" }}
       />
     </div>
   );
@@ -202,21 +303,16 @@ function Tag({ text, variant }) {
   const styles = {
     miss: {
       bg: "rgba(239,68,68,0.08)",
-      color: "var(--red, #ef4444)",
+      color: "#ef4444",
       border: "rgba(239,68,68,0.2)",
     },
     hit: {
       bg: "rgba(34,197,94,0.08)",
-      color: "var(--green, #22c55e)",
+      color: "#22c55e",
       border: "rgba(34,197,94,0.2)",
     },
-    neutral: {
-      bg: "rgba(255,255,255,0.04)",
-      color: "var(--text-secondary)",
-      border: "rgba(255,255,255,0.1)",
-    },
   };
-  const s = styles[variant] || styles.neutral;
+  const s = styles[variant];
   return (
     <span
       style={{
@@ -225,7 +321,6 @@ function Tag({ text, variant }) {
         borderRadius: 4,
         fontSize: 11,
         fontWeight: 500,
-        letterSpacing: "0.2px",
         background: s.bg,
         color: s.color,
         border: `1px solid ${s.border}`,
@@ -233,83 +328,6 @@ function Tag({ text, variant }) {
     >
       {text}
     </span>
-  );
-}
-
-function ImpactRow({ label, value, verdict, detail }) {
-  const barColor =
-    verdict === "strong"
-      ? "var(--green)"
-      : verdict === "weak"
-        ? "var(--yellow)"
-        : "var(--red)";
-  return (
-    <div
-      style={{
-        padding: "12px 0",
-        borderBottom: "1px solid var(--border, rgba(255,255,255,0.05))",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-          marginBottom: 6,
-        }}
-      >
-        <span
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: "var(--text-primary)",
-          }}
-        >
-          {label}
-        </span>
-        <span
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.6px",
-            color: barColor,
-          }}
-        >
-          {verdict}
-        </span>
-      </div>
-      <div
-        style={{
-          height: 3,
-          background: "rgba(255,255,255,0.06)",
-          borderRadius: 2,
-          marginBottom: 6,
-        }}
-      >
-        <div
-          style={{
-            height: "100%",
-            width: `${value}%`,
-            background: barColor,
-            borderRadius: 2,
-            transition: "width 0.8s cubic-bezier(0.4,0,0.2,1)",
-          }}
-        />
-      </div>
-      {detail && (
-        <p
-          style={{
-            fontSize: 11,
-            color: "var(--text-muted)",
-            margin: 0,
-            lineHeight: 1.6,
-          }}
-        >
-          {detail}
-        </p>
-      )}
-    </div>
   );
 }
 
@@ -321,10 +339,9 @@ function HistoryModal({ isOpen, onClose, history }) {
         style={{
           position: "fixed",
           inset: 0,
-          background: "rgba(0,0,0,0.5)",
+          background: "rgba(0,0,0,0.6)",
           backdropFilter: "blur(4px)",
           zIndex: 999,
-          animation: "fadeIn 0.2s ease-out",
         }}
         onClick={onClose}
       />
@@ -333,53 +350,50 @@ function HistoryModal({ isOpen, onClose, history }) {
           position: "fixed",
           top: "50%",
           left: "50%",
-          transform: "translate(-50%, -50%)",
-          background: "var(--bg-secondary, rgba(10,10,10,0.95))",
-          border: "1px solid var(--border, rgba(255,255,255,0.07))",
+          transform: "translate(-50%,-50%)",
+          background: "#0a0a0a",
+          border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: 12,
           width: "90%",
-          maxWidth: 700,
+          maxWidth: 660,
           maxHeight: "85vh",
           overflowY: "auto",
           zIndex: 1000,
-          animation: "slideUp 0.3s cubic-bezier(0.4,0,0.2,1)",
           boxShadow: "0 20px 60px rgba(0,0,0,0.8)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            padding: "20px 24px",
-            borderBottom: "1px solid var(--border, rgba(255,255,255,0.07))",
+            padding: "18px 22px",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
             position: "sticky",
             top: 0,
-            background: "var(--bg-secondary)",
-            backdropFilter: "blur(10px)",
+            background: "#0a0a0a",
           }}
         >
           <div>
             <h3
               style={{
                 margin: 0,
-                fontSize: 18,
-                fontWeight: 800,
-                color: "var(--text-primary)",
+                fontSize: 16,
+                fontWeight: 700,
+                color: "rgba(255,255,255,0.9)",
               }}
             >
               Analysis History
             </h3>
             <p
               style={{
-                margin: "4px 0 0",
-                fontSize: 12,
-                color: "var(--text-muted)",
+                margin: "3px 0 0",
+                fontSize: 11,
+                color: "rgba(255,255,255,0.35)",
               }}
             >
-              {history.length} analyses saved (Last 50)
+              {history.length} saved (last 50)
             </p>
           </div>
           <button
@@ -387,162 +401,151 @@ function HistoryModal({ isOpen, onClose, history }) {
             style={{
               background: "none",
               border: "none",
-              fontSize: 24,
-              color: "var(--text-muted)",
+              fontSize: 20,
+              color: "rgba(255,255,255,0.4)",
               cursor: "pointer",
-              padding: 0,
             }}
           >
             ✕
           </button>
         </div>
-
-        {/* Content */}
         {history.length === 0 ? (
           <div
             style={{
               padding: "60px 24px",
               textAlign: "center",
-              color: "var(--text-muted)",
+              color: "rgba(255,255,255,0.3)",
+              fontSize: 13,
             }}
           >
-            <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
-            <p style={{ margin: 0 }}>No analyses yet. Run your first match!</p>
+            No analyses yet.
           </div>
         ) : (
-          <div style={{ padding: "16px 20px" }}>
-            {history.map((entry) => (
-              <div
-                key={entry.id}
-                style={{
-                  padding: "14px 16px",
-                  background: "rgba(255,255,255,0.02)",
-                  border: "1px solid var(--border, rgba(255,255,255,0.06))",
-                  borderRadius: 8,
-                  marginBottom: 10,
-                  transition: "all 0.2s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.02)";
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
-                }}
-              >
+          <div style={{ padding: "14px 18px" }}>
+            {history.map((entry) => {
+              const expYears =
+                entry.experience === "" || entry.experience === null
+                  ? null
+                  : parseInt(entry.experience);
+              return (
                 <div
+                  key={entry.id}
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    gap: 12,
+                    padding: "12px 14px",
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    borderRadius: 7,
+                    marginBottom: 8,
                   }}
                 >
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        marginBottom: 6,
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <span
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      gap: 12,
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div
                         style={{
-                          fontSize: 13,
-                          fontWeight: 700,
-                          color: "var(--text-primary)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 7,
+                          marginBottom: 4,
+                          flexWrap: "wrap",
                         }}
                       >
-                        {entry.role}
-                      </span>
-                      {entry.experience !== null &&
-                        entry.experience !== undefined &&
-                        entry.experience !== "" && (
+                        <span
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: "rgba(255,255,255,0.85)",
+                          }}
+                        >
+                          {entry.role}
+                        </span>
+                        {expYears !== null && (
                           <span
                             style={{
                               fontSize: 11,
-                              color: "var(--text-muted)",
-                              background: "rgba(34,197,94,0.08)",
-                              border: "1px solid rgba(34,197,94,0.2)",
-                              padding: "2px 8px",
+                              color: "rgba(255,255,255,0.4)",
+                              background: "rgba(255,255,255,0.05)",
+                              padding: "2px 7px",
                               borderRadius: 3,
                             }}
                           >
-                            {entry.experience === "0" || entry.experience === 0
-                              ? "Fresher"
-                              : `${entry.experience} yr${entry.experience == 1 ? "" : "s"}`}
+                            {expYears === 0 ? "Fresher" : `${expYears}yr`}
                           </span>
                         )}
-                      {entry.resumeVersion && (
-                        <span
-                          style={{
-                            fontSize: 11,
-                            color: "var(--text-muted)",
-                            background: "rgba(129,140,248,0.1)",
-                            padding: "2px 8px",
-                            borderRadius: 3,
-                          }}
-                        >
-                          v{entry.resumeVersion}
-                        </span>
-                      )}
+                        {entry.resumeVersion && (
+                          <span
+                            style={{
+                              fontSize: 11,
+                              color: "rgba(129,140,248,0.7)",
+                              background: "rgba(129,140,248,0.08)",
+                              padding: "2px 7px",
+                              borderRadius: 3,
+                            }}
+                          >
+                            v{entry.resumeVersion}
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: "rgba(255,255,255,0.25)",
+                          marginBottom: 6,
+                        }}
+                      >
+                        {entry.formattedTime}
+                      </div>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: 12,
+                          color: "rgba(255,255,255,0.45)",
+                          lineHeight: 1.5,
+                          fontStyle: "italic",
+                        }}
+                      >
+                        "{entry.verdict}"
+                      </p>
                     </div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: "var(--text-muted)",
-                        marginBottom: 8,
-                      }}
-                    >
-                      {entry.formattedTime}
-                    </div>
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: 12,
-                        color: "var(--text-secondary)",
-                        lineHeight: 1.5,
-                        fontStyle: "italic",
-                      }}
-                    >
-                      "{entry.verdict}"
-                    </p>
-                  </div>
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div
-                      style={{
-                        fontSize: 20,
-                        fontWeight: 800,
-                        color:
-                          entry.matchScore >= 75
-                            ? "var(--green)"
-                            : entry.matchScore >= 50
-                              ? "var(--yellow)"
-                              : "var(--red)",
-                      }}
-                    >
-                      {entry.matchScore}%
-                    </div>
-                    <div style={{ fontSize: 10, color: "var(--text-muted)" }}>
-                      match
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 20,
+                          fontWeight: 800,
+                          color:
+                            entry.matchScore >= 75
+                              ? "#22c55e"
+                              : entry.matchScore >= 50
+                                ? "#eab308"
+                                : "#ef4444",
+                        }}
+                      >
+                        {entry.matchScore}%
+                      </div>
+                      <div
+                        style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}
+                      >
+                        match
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translate(-50%, calc(-50% + 20px)); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
-      `}</style>
     </>
   );
 }
+
+// ── Main Component ─────────────────────────────────────────────────────────
 
 export default function ResumeMatcher() {
   const isMobile = useIsMobile();
@@ -565,32 +568,16 @@ export default function ResumeMatcher() {
   }, []);
 
   const isLimitReached = remaining <= 0;
-
   const expYears = experience === "" ? null : parseInt(experience);
-
-  // If experience > 0, internship is not applicable — show only job
   const isFresherOrUnset = expYears === null || expYears === 0;
 
-  // Validate experience input — only allow whole numbers
   const handleExperienceChange = (e) => {
     const val = e.target.value;
     if (val === "" || (/^\d+$/.test(val) && parseInt(val) <= 50)) {
       setExperience(val);
-      // Auto-reset to "job" if user enters experience > 0
-      if (val !== "" && parseInt(val) > 0) {
-        setJobType("job");
-      }
+      if (val !== "" && parseInt(val) > 0) setJobType("job");
     }
   };
-
-  const experienceLabel =
-    expYears === null
-      ? ""
-      : expYears === 0
-        ? "Fresher / No Experience"
-        : expYears === 1
-          ? "1 year"
-          : `${expYears} years`;
 
   const analyze = async () => {
     if (!resume.trim() || !jobDesc.trim() || !role.trim()) {
@@ -598,9 +585,7 @@ export default function ResumeMatcher() {
       return;
     }
     if (experience === "") {
-      setError(
-        "Years of experience is required. Enter 0 if you are a fresher.",
-      );
+      setError("Years of experience required. Enter 0 if fresher.");
       return;
     }
     if (getRemainingUses() <= 0) {
@@ -613,16 +598,21 @@ export default function ResumeMatcher() {
     setResult(null);
 
     const positionType =
-      jobType === "internship" ? "Internship Position" : "Full-Time Job";
+      jobType === "internship" ? "Internship" : "Full-Time Job";
     const expContext =
       expYears === 0
-        ? "0 years (Fresher — no professional work experience at all)"
+        ? "0 years (Fresher — no work experience)"
         : `${expYears} year${expYears === 1 ? "" : "s"} of professional experience`;
 
-    const prompt = `You are a senior technical recruiter and ATS specialist. Your job is to give a surgical, honest analysis — not a feel-good report. Be direct, specific, and ruthless about gaps.
+    const sectionWeightsDesc = SECTION_WEIGHTS.map(
+      (s) => `  - ${s.label}: ${s.points} points`,
+    ).join("\n");
+
+    const prompt = `You are a senior technical recruiter and ATS specialist. Give a surgical, honest analysis — not a feel-good report.
 
 Position Type: ${positionType}
 Target Role: ${role}
+Candidate Experience: ${expContext}
 
 Resume:
 ${resume}
@@ -630,35 +620,39 @@ ${resume}
 Job Description:
 ${jobDesc}
 
-Return ONLY a valid JSON object with no extra text, markdown, or explanation:
+## SCORING SYSTEM — 100 points total
+
+The resume is scored using these fixed section weights. For each section:
+1. Detect if it is present in the resume.
+2. If MISSING → award 0 points for that section.
+3. If PRESENT → award points based on quality relative to this specific JD (0–100% quality scale).
+
+Section weights:
+${sectionWeightsDesc}
+
+TOTAL MATCH SCORE = sum of (weight × quality%) for each present section. Cap at 100.
+Be realistic. A score of 60+ means genuinely competitive. Don't inflate.
+
+Return ONLY a valid JSON object — no markdown, no explanation:
 
 {
-  "matchScore": <integer 0-100, be realistic — 60+ means genuinely strong>,
-  "verdict": "<one sentence: direct hiring recommendation>",
+  "matchScore": <integer 0-100, calculated from section weights above>,
+  "verdict": "<one direct sentence: hiring recommendation>",
 
-  "roleAlignment": {
-    "score": <0-100>,
-    "verdict": "strong|weak|missing",
-    "detail": "<specific: does their title/experience level actually fit the seniority and domain of this role?>"
+  "sectionScores": {
+    "experience":      { "present": <bool>, "qualityScore": <0-100>, "quality": "strong|weak|missing", "note": "<brief specific note about this section vs JD>" },
+    "projects":        { "present": <bool>, "qualityScore": <0-100>, "quality": "strong|weak|missing", "note": "<brief specific note>" },
+    "technicalSkills": { "present": <bool>, "qualityScore": <0-100>, "quality": "strong|weak|missing", "note": "<brief specific note>" },
+    "certifications":  { "present": <bool>, "qualityScore": <0-100>, "quality": "strong|weak|missing", "note": "<brief specific note>" },
+    "education":       { "present": <bool>, "qualityScore": <0-100>, "quality": "strong|weak|missing", "note": "<brief specific note>" },
+    "summary":         { "present": <bool>, "qualityScore": <0-100>, "quality": "strong|weak|missing", "note": "<brief specific note>" },
+    "achievements":    { "present": <bool>, "qualityScore": <0-100>, "quality": "strong|weak|missing", "note": "<brief specific note>" }
   },
-  "technicalDepth": {
-    "score": <0-100>,
-    "verdict": "strong|weak|missing",
-    "detail": "<specific: which required skills are demonstrated at depth vs. surface-mentioned vs. missing entirely?>"
-  },
-  "experienceRelevance": {
-    "score": <0-100>,
-    "verdict": "strong|weak|missing",
-    "detail": "<specific: do past employers / projects actually reflect the work this role requires?>"
-  },
-  "achievementQuality": {
-    "score": <0-100>,
-    "verdict": "strong|weak|missing",
-    "detail": "<specific: are results quantified and meaningful, or are they vague duty-lists? Name actual bullets that stand out or that are weak.>"
-  },
+
+  "missingSections": ["<section name if not found in resume>"],
 
   "criticalGaps": [
-    "<gap 1: be specific — name the missing skill, tool, domain, or experience. Max 6 items.>",
+    "<gap 1: specific missing skill, tool, or experience — max 5 items>",
     "<gap 2>",
     "<gap 3>"
   ],
@@ -666,9 +660,9 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
   "missingKeywords": ["<exact keyword from JD not in resume>"],
   "matchedKeywords": ["<exact keyword present in both>"],
 
-  "atsRisk": "<one sentence: will this resume likely pass ATS filters for this specific role, and why?>",
+  "atsRisk": "<one sentence: ATS pass likelihood and why>",
 
-  "oneThingToFix": "<the single most impactful edit the candidate should make to this resume before applying>"
+  "oneThingToFix": "<the single most impactful change before applying>"
 }`;
 
     try {
@@ -683,12 +677,12 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
           body: JSON.stringify({
             model: "llama-3.3-70b-versatile",
             temperature: 0.1,
-            max_tokens: 1400,
+            max_tokens: 1600,
             messages: [
               {
                 role: "system",
                 content:
-                  "You are a blunt, expert technical recruiter. Return ONLY valid JSON — no markdown, no preamble, no explanation. Follow all scoring rules exactly as given.",
+                  "You are a blunt expert technical recruiter. Return ONLY valid JSON — no markdown, no preamble.",
               },
               { role: "user", content: prompt },
             ],
@@ -709,13 +703,10 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
       saveToHistory({
         role,
         jobType,
-        experience: experience,
+        experience,
         resumeVersion: resumeVersion || null,
-        matchScore: parsed.matchScore,
-        verdict: parsed.verdict,
         ...parsed,
       });
-
       incrementUsage();
       setRemaining(getRemainingUses());
       setHistory(getHistory());
@@ -727,12 +718,20 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
     }
   };
 
+  const expLabel =
+    expYears === null
+      ? ""
+      : expYears === 0
+        ? "Fresher"
+        : `${expYears}yr${expYears === 1 ? "" : "s"}`;
+
   return (
     <div>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translate(-50%, calc(-50% + 20px)); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
+        * { box-sizing: border-box; }
+        textarea, input { outline: none; }
+        textarea:focus, input:focus { border-color: rgba(255,255,255,0.22) !important; }
       `}</style>
 
       {/* Header */}
@@ -742,163 +741,130 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
           justifyContent: "space-between",
           alignItems: "flex-start",
           marginBottom: 20,
-          gap: isMobile ? 12 : 20,
-          flexDirection: isMobile ? "column" : "row",
         }}
       >
         <div>
           <h2
             style={{
               margin: 0,
-              fontSize: isMobile ? 16 : 18,
+              fontSize: 17,
               fontWeight: 800,
-              color: "var(--text-primary)",
-              letterSpacing: "-0.4px",
-              fontFamily: "var(--font-display, sans-serif)",
+              color: "rgba(255,255,255,0.9)",
+              letterSpacing: "-0.3px",
             }}
           >
-            Resume Matcher Pro
+            Resume Matcher
           </h2>
           <p
             style={{
-              margin: "4px 0 0",
-              fontSize: isMobile ? 11 : 12,
-              color: "var(--text-muted)",
-              lineHeight: 1.5,
+              margin: "3px 0 0",
+              fontSize: 11,
+              color: "rgba(255,255,255,0.35)",
             }}
           >
-            Role-targeted analysis with experience-aware scoring.
+            Section-weighted scoring against job description
           </p>
         </div>
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: isMobile ? "row" : "column",
-            alignItems: isMobile ? "center" : "flex-end",
-            gap: 12,
-            flexShrink: 0,
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div
             style={{
-              fontSize: isMobile ? 16 : 20,
+              fontSize: 18,
               fontWeight: 800,
-              lineHeight: 1,
-              fontFamily: "var(--font-display, sans-serif)",
               color: isLimitReached
-                ? "var(--red)"
+                ? "#ef4444"
                 : remaining === 1
-                  ? "var(--yellow)"
-                  : "var(--green)",
-              textAlign: isMobile ? "center" : "right",
+                  ? "#eab308"
+                  : "#22c55e",
+              textAlign: "right",
             }}
           >
             {remaining}/{DAILY_LIMIT}
             <div
               style={{
-                fontSize: isMobile ? 9 : 10,
-                color: "var(--text-muted)",
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
+                fontSize: 9,
+                color: "rgba(255,255,255,0.3)",
                 fontWeight: 600,
+                letterSpacing: "0.5px",
               }}
             >
-              left
+              left today
             </div>
           </div>
           <button
             onClick={() => setShowHistory(true)}
             style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.15)",
-              color: "var(--text-primary)",
-              padding: isMobile ? "6px 10px" : "8px 12px",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              color: "rgba(255,255,255,0.7)",
+              padding: "7px 12px",
               borderRadius: 6,
-              fontSize: isMobile ? 10 : 11,
+              fontSize: 11,
               fontWeight: 600,
               cursor: "pointer",
-              transition: "all 0.2s ease",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              whiteSpace: "nowrap",
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.background = "rgba(255,255,255,0.12)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.background = "rgba(255,255,255,0.08)")
-            }
           >
-            📊 {history.length}
+            📊 History ({history.length})
           </button>
         </div>
       </div>
 
-      {/* Features strip */}
+      {/* Section weights info strip */}
       <div
         style={{
           background: "rgba(255,255,255,0.02)",
-          border: "1px solid var(--border, rgba(255,255,255,0.07))",
+          border: "1px solid rgba(255,255,255,0.06)",
           borderRadius: 8,
-          padding: isMobile ? "12px 14px" : "14px 18px",
+          padding: "12px 16px",
           marginBottom: 20,
-          display: "grid",
-          gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)",
-          gap: isMobile ? 12 : 0,
         }}
       >
-        {[
-          { label: "Experience-aware", sub: "0 = fresher scoring" },
-          { label: "Job / Internship", sub: "separate scoring" },
-          { label: "Version tracking", sub: "iterations" },
-          { label: "Full history", sub: "50 analyses" },
-        ].map((item, i, arr) => (
-          <div
-            key={item.label}
-            style={{
-              padding: isMobile ? "0" : "0 16px",
-              borderRight:
-                !isMobile && i < arr.length - 1
-                  ? "1px solid var(--border, rgba(255,255,255,0.07))"
-                  : "none",
-            }}
-          >
-            <div
+        <div
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            color: "rgba(255,255,255,0.3)",
+            marginBottom: 10,
+          }}
+        >
+          Scoring breakdown (100 pts total)
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {SECTION_WEIGHTS.map(({ label, points }) => (
+            <span
+              key={label}
               style={{
-                fontSize: isMobile ? 10 : 11,
-                fontWeight: 700,
-                color: "var(--text-primary)",
-                marginBottom: 2,
+                fontSize: 11,
+                padding: "3px 9px",
+                borderRadius: 4,
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.6)",
               }}
             >
-              {item.label}
-            </div>
-            <div
-              style={{
-                fontSize: isMobile ? 9 : 10,
-                color: "var(--text-muted)",
-              }}
-            >
-              {item.sub}
-            </div>
-          </div>
-        ))}
+              {label}{" "}
+              <span
+                style={{ fontWeight: 700, color: "rgba(255,255,255,0.85)" }}
+              >
+                {points}pt
+              </span>
+            </span>
+          ))}
+        </div>
       </div>
 
-      {/* Limit banners */}
+      {/* Banners */}
       {isLimitReached && (
         <div
           style={{
             background: "rgba(239,68,68,0.06)",
             border: "1px solid rgba(239,68,68,0.18)",
-            borderRadius: 8,
-            padding: "12px 16px",
-            marginBottom: 16,
+            borderRadius: 7,
+            padding: "10px 14px",
+            marginBottom: 14,
             fontSize: 12,
-            color: "var(--red)",
-            lineHeight: 1.6,
+            color: "#ef4444",
           }}
         >
           Daily limit reached — resets at midnight IST.
@@ -909,11 +875,11 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
           style={{
             background: "rgba(234,179,8,0.06)",
             border: "1px solid rgba(234,179,8,0.18)",
-            borderRadius: 8,
-            padding: "10px 16px",
-            marginBottom: 16,
+            borderRadius: 7,
+            padding: "10px 14px",
+            marginBottom: 14,
             fontSize: 12,
-            color: "var(--yellow)",
+            color: "#eab308",
           }}
         >
           Last analysis for today — use it wisely.
@@ -925,83 +891,78 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
         style={{
           display: "grid",
           gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-          gap: isMobile ? 12 : 16,
-          marginBottom: 16,
+          gap: 16,
+          marginBottom: 14,
         }}
       >
-        {/* Left column */}
+        {/* Left */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {/* Target Role */}
-          <div className="form-group" style={{ margin: 0 }}>
+          {/* Role */}
+          <div>
             <label
-              className="form-label"
               style={{
-                margin: "0 0 6px 0",
                 display: "block",
-                fontSize: isMobile ? 11 : 12,
+                fontSize: 11,
+                fontWeight: 600,
+                color: "rgba(255,255,255,0.5)",
+                marginBottom: 6,
               }}
             >
               Target Role
             </label>
             <input
               type="text"
-              className="form-input"
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 6,
-                color: "var(--text-primary)",
-                fontSize: isMobile ? 11 : 12,
-                fontFamily: "sans-serif",
-                opacity: isLimitReached ? 0.4 : 1,
-              }}
-              placeholder="e.g., ML Engineer, Frontend Dev"
               value={role}
               disabled={isLimitReached}
               onChange={(e) => setRole(e.target.value)}
+              placeholder="e.g. ML Engineer, Frontend Dev"
+              style={{
+                width: "100%",
+                padding: "9px 12px",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 6,
+                color: "rgba(255,255,255,0.85)",
+                fontSize: 12,
+                opacity: isLimitReached ? 0.4 : 1,
+              }}
             />
           </div>
 
-          {/* Years of Experience */}
-          <div className="form-group" style={{ margin: 0 }}>
+          {/* Experience */}
+          <div>
             <label
-              className="form-label"
               style={{
-                margin: "0 0 6px 0",
                 display: "block",
-                fontSize: isMobile ? 11 : 12,
+                fontSize: 11,
+                fontWeight: 600,
+                color: "rgba(255,255,255,0.5)",
+                marginBottom: 6,
               }}
             >
-              Years of Experience
-              <span style={{ color: "var(--red)", marginLeft: 3 }}>*</span>
+              Years of Experience <span style={{ color: "#ef4444" }}>*</span>
             </label>
             <div style={{ position: "relative" }}>
               <input
                 type="text"
                 inputMode="numeric"
-                pattern="[0-9]*"
-                className="form-input"
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  paddingRight: experienceLabel ? "110px" : "12px",
-                  background: "rgba(255,255,255,0.04)",
-                  border: `1px solid ${experience === "" ? "rgba(255,255,255,0.1)" : expYears === 0 ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.3)"}`,
-                  borderRadius: 6,
-                  color: "var(--text-primary)",
-                  fontSize: isMobile ? 11 : 12,
-                  fontFamily: "sans-serif",
-                  opacity: isLimitReached ? 0.4 : 1,
-                  boxSizing: "border-box",
-                }}
-                placeholder="Enter 0, 1, 2, 3 ..."
                 value={experience}
                 disabled={isLimitReached}
                 onChange={handleExperienceChange}
+                placeholder="0 for fresher"
+                style={{
+                  width: "100%",
+                  padding: "9px 12px",
+                  paddingRight: expLabel ? "80px" : "12px",
+                  background: "rgba(255,255,255,0.04)",
+                  border: `1px solid ${experience === "" ? "rgba(255,255,255,0.1)" : expYears === 0 ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.3)"}`,
+                  borderRadius: 6,
+                  color: "rgba(255,255,255,0.85)",
+                  fontSize: 12,
+                  opacity: isLimitReached ? 0.4 : 1,
+                }}
               />
-              {experienceLabel && (
+              {expLabel && (
                 <span
                   style={{
                     position: "absolute",
@@ -1009,68 +970,58 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                     top: "50%",
                     transform: "translateY(-50%)",
                     fontSize: 10,
-                    fontWeight: 600,
-                    color: expYears === 0 ? "var(--red)" : "var(--green)",
+                    fontWeight: 700,
+                    color: expYears === 0 ? "#ef4444" : "#22c55e",
                     pointerEvents: "none",
-                    whiteSpace: "nowrap",
                   }}
                 >
-                  {experienceLabel}
+                  {expLabel}
                 </span>
               )}
             </div>
-            <p
-              style={{
-                margin: "5px 0 0",
-                fontSize: 10,
-                color: "var(--text-muted)",
-              }}
-            >
-              Enter 0 if you are a fresher with no work experience.
-            </p>
           </div>
 
-          {/* Resume Version */}
-          <div className="form-group" style={{ margin: 0 }}>
+          {/* Version */}
+          <div>
             <label
-              className="form-label"
               style={{
-                margin: "0 0 6px 0",
                 display: "block",
-                fontSize: isMobile ? 11 : 12,
+                fontSize: 11,
+                fontWeight: 600,
+                color: "rgba(255,255,255,0.5)",
+                marginBottom: 6,
               }}
             >
               Resume Version (optional)
             </label>
             <input
               type="text"
-              className="form-input"
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 6,
-                color: "var(--text-primary)",
-                fontSize: isMobile ? 11 : 12,
-                fontFamily: "sans-serif",
-                opacity: isLimitReached ? 0.4 : 1,
-              }}
-              placeholder="e.g., v1.2, Final, ML-focused"
               value={resumeVersion}
               disabled={isLimitReached}
               onChange={(e) => setResumeVersion(e.target.value)}
+              placeholder="e.g. v1.2, ML-focused"
+              style={{
+                width: "100%",
+                padding: "9px 12px",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 6,
+                color: "rgba(255,255,255,0.85)",
+                fontSize: 12,
+                opacity: isLimitReached ? 0.4 : 1,
+              }}
             />
           </div>
 
-          {/* Job Type Toggle */}
-          <div className="form-group" style={{ margin: 0 }}>
+          {/* Job Type */}
+          <div>
             <label
-              className="form-label"
               style={{
-                margin: "0 0 8px 0",
                 display: "block",
-                fontSize: isMobile ? 11 : 12,
+                fontSize: 11,
+                fontWeight: 600,
+                color: "rgba(255,255,255,0.5)",
+                marginBottom: 6,
               }}
             >
               Position Type
@@ -1078,20 +1029,18 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
             <div
               style={{
                 display: "grid",
-                // Show 2 columns only for freshers or when experience is unset
                 gridTemplateColumns: isFresherOrUnset ? "1fr 1fr" : "1fr",
-                gap: 8,
-                borderRadius: 6,
-                border: "1px solid rgba(255,255,255,0.1)",
+                gap: 6,
                 padding: 4,
                 background: "rgba(255,255,255,0.02)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 6,
               }}
             >
               {[
-                { value: "job", label: "Job" },
+                { value: "job", label: "Full-Time Job" },
                 { value: "internship", label: "Internship" },
               ]
-                // Hide internship button entirely when experience > 0
                 .filter(({ value }) => value === "job" || isFresherOrUnset)
                 .map(({ value, label }) => (
                   <button
@@ -1099,56 +1048,41 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                     onClick={() => setJobType(value)}
                     disabled={isLimitReached}
                     style={{
-                      padding: "10px 12px",
+                      padding: "9px 12px",
                       borderRadius: 4,
                       border: `1px solid ${jobType === value ? "rgba(34,197,94,0.3)" : "transparent"}`,
                       background:
                         jobType === value
-                          ? "rgba(34,197,94,0.15)"
+                          ? "rgba(34,197,94,0.12)"
                           : "transparent",
                       color:
-                        jobType === value
-                          ? "var(--green)"
-                          : "var(--text-secondary)",
-                      fontSize: isMobile ? 11 : 12,
-                      fontWeight: jobType === value ? 700 : 600,
-                      cursor: isLimitReached ? "not-allowed" : "pointer",
-                      transition: "all 0.2s ease",
+                        jobType === value ? "#22c55e" : "rgba(255,255,255,0.4)",
+                      fontSize: 12,
+                      fontWeight: jobType === value ? 700 : 500,
+                      cursor: "pointer",
+                      transition: "all 0.2s",
                       opacity: isLimitReached ? 0.4 : 1,
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isLimitReached && jobType !== value)
-                        e.currentTarget.style.background =
-                          "rgba(255,255,255,0.05)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background =
-                        jobType === value
-                          ? "rgba(34,197,94,0.15)"
-                          : "transparent";
                     }}
                   >
                     {label}
                   </button>
                 ))}
             </div>
-            {/* Hint shown only when internship is hidden */}
             {!isFresherOrUnset && (
               <p
                 style={{
                   margin: "5px 0 0",
                   fontSize: 10,
-                  color: "var(--text-muted)",
+                  color: "rgba(255,255,255,0.3)",
                 }}
               >
-                Internship option is only available for freshers (0 years
-                experience).
+                Internship only available for freshers.
               </p>
             )}
           </div>
         </div>
 
-        {/* Right column: Resume + JD */}
+        {/* Right */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {[
             {
@@ -1164,49 +1098,46 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
               placeholder: "Paste the job description here...",
             },
           ].map(({ label, value, setter, placeholder }) => (
-            <div key={label} className="form-group" style={{ margin: 0 }}>
+            <div key={label}>
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  alignItems: "center",
                   marginBottom: 6,
                 }}
               >
                 <label
-                  className="form-label"
-                  style={{ margin: 0, fontSize: isMobile ? 11 : 12 }}
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "rgba(255,255,255,0.5)",
+                  }}
                 >
                   {label}
                 </label>
-                <span
-                  style={{
-                    fontSize: isMobile ? 9 : 10,
-                    color: "var(--text-muted)",
-                  }}
-                >
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>
                   {value.trim().split(/\s+/).filter(Boolean).length} words
                 </span>
               </div>
               <textarea
-                className="form-textarea"
-                style={{
-                  minHeight: isMobile ? 120 : 150,
-                  fontFamily: "monospace",
-                  fontSize: isMobile ? 10 : 11,
-                  lineHeight: 1.7,
-                  opacity: isLimitReached ? 0.4 : 1,
-                  padding: "10px 12px",
-                  borderRadius: 6,
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  background: "rgba(255,255,255,0.04)",
-                  color: "var(--text-primary)",
-                  resize: "vertical",
-                }}
-                placeholder={placeholder}
                 value={value}
                 disabled={isLimitReached}
                 onChange={(e) => setter(e.target.value)}
+                placeholder={placeholder}
+                style={{
+                  width: "100%",
+                  minHeight: isMobile ? 120 : 148,
+                  fontFamily: "monospace",
+                  fontSize: 11,
+                  lineHeight: 1.7,
+                  padding: "9px 12px",
+                  borderRadius: 6,
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(255,255,255,0.04)",
+                  color: "rgba(255,255,255,0.8)",
+                  resize: "vertical",
+                  opacity: isLimitReached ? 0.4 : 1,
+                }}
               />
             </div>
           ))}
@@ -1220,9 +1151,9 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
             background: "rgba(239,68,68,0.06)",
             border: "1px solid rgba(239,68,68,0.18)",
             borderRadius: 6,
-            padding: "10px 14px",
+            padding: "9px 14px",
             fontSize: 12,
-            color: "var(--red)",
+            color: "#ef4444",
             marginBottom: 14,
           }}
         >
@@ -1234,22 +1165,28 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
       <div
         style={{
           display: "flex",
-          gap: isMobile ? 8 : 10,
+          gap: 10,
           marginBottom: 32,
           alignItems: "center",
-          flexWrap: isMobile ? "wrap" : "nowrap",
         }}
       >
         <button
-          className="btn-primary"
           onClick={analyze}
           disabled={loading || isLimitReached}
           style={{
-            opacity: loading || isLimitReached ? 0.45 : 1,
+            padding: "10px 22px",
+            borderRadius: 6,
+            border: "none",
+            background:
+              loading || isLimitReached
+                ? "rgba(255,255,255,0.08)"
+                : "rgba(255,255,255,0.12)",
+            color: "rgba(255,255,255,0.85)",
+            fontSize: 13,
+            fontWeight: 700,
             cursor: isLimitReached ? "not-allowed" : "pointer",
-            fontSize: isMobile ? 12 : 14,
-            padding: isMobile ? "10px 16px" : "10px 20px",
-            flex: isMobile ? "1 1 auto" : "0 1 auto",
+            opacity: loading || isLimitReached ? 0.5 : 1,
+            transition: "all 0.2s",
           }}
         >
           {loading ? (
@@ -1262,16 +1199,14 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
               >
                 ◌
               </span>
-              {!isMobile && "Analyzing..."}
+              Analyzing…
             </span>
           ) : (
-            "Analyze"
+            "Analyze Resume"
           )}
         </button>
-
         {(resume || jobDesc || role || result) && (
           <button
-            className="btn-ghost"
             onClick={() => {
               setResume("");
               setJobDesc("");
@@ -1283,11 +1218,16 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
               setError("");
             }}
             style={{
-              fontSize: isMobile ? 12 : 14,
-              padding: isMobile ? "10px 16px" : "10px 20px",
+              padding: "10px 16px",
+              borderRadius: 6,
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: "transparent",
+              color: "rgba(255,255,255,0.4)",
+              fontSize: 13,
+              cursor: "pointer",
             }}
           >
-            {isMobile ? "Clear" : "Clear All"}
+            Clear
           </button>
         )}
       </div>
@@ -1301,24 +1241,24 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
               display: "flex",
               gap: isMobile ? 16 : 24,
               alignItems: "center",
-              padding: isMobile ? "16px 18px" : "24px 28px",
+              padding: isMobile ? "16px 18px" : "20px 24px",
               background: "rgba(255,255,255,0.02)",
-              border: "1px solid var(--border, rgba(255,255,255,0.07))",
-              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 10,
               marginBottom: 8,
               flexDirection: isMobile ? "column" : "row",
             }}
           >
-            <ScoreRing score={result.matchScore} size={isMobile ? 90 : 110} />
+            <ScoreRing score={result.matchScore} size={isMobile ? 90 : 100} />
             <div style={{ flex: 1 }}>
               <div
                 style={{
-                  fontSize: isMobile ? 10 : 11,
+                  fontSize: 10,
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "1px",
-                  color: "var(--text-muted)",
-                  marginBottom: 8,
+                  color: "rgba(255,255,255,0.3)",
+                  marginBottom: 6,
                 }}
               >
                 Verdict
@@ -1326,9 +1266,9 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
               <p
                 style={{
                   margin: 0,
-                  fontSize: isMobile ? 13 : 15,
+                  fontSize: 14,
                   fontWeight: 600,
-                  color: "var(--text-primary)",
+                  color: "rgba(255,255,255,0.85)",
                   lineHeight: 1.5,
                 }}
               >
@@ -1337,7 +1277,7 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
               <div
                 style={{
                   display: "flex",
-                  gap: 8,
+                  gap: 7,
                   marginTop: 8,
                   flexWrap: "wrap",
                 }}
@@ -1345,8 +1285,8 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                 {role && (
                   <span
                     style={{
-                      fontSize: isMobile ? 11 : 12,
-                      color: "var(--text-muted)",
+                      fontSize: 12,
+                      color: "rgba(255,255,255,0.4)",
                       fontWeight: 600,
                     }}
                   >
@@ -1362,10 +1302,7 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                       jobType === "internship"
                         ? "rgba(129,140,248,0.1)"
                         : "rgba(34,197,94,0.08)",
-                    color:
-                      jobType === "internship"
-                        ? "var(--accent, #818cf8)"
-                        : "var(--green)",
+                    color: jobType === "internship" ? "#818cf8" : "#22c55e",
                     border:
                       jobType === "internship"
                         ? "1px solid rgba(129,140,248,0.2)"
@@ -1374,7 +1311,7 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                 >
                   {jobType === "internship" ? "Internship" : "Job"}
                 </span>
-                {experience !== "" && (
+                {expYears !== null && (
                   <span
                     style={{
                       fontSize: 11,
@@ -1384,16 +1321,14 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                         expYears === 0
                           ? "rgba(239,68,68,0.08)"
                           : "rgba(34,197,94,0.08)",
-                      color: expYears === 0 ? "var(--red)" : "var(--green)",
+                      color: expYears === 0 ? "#ef4444" : "#22c55e",
                       border:
                         expYears === 0
                           ? "1px solid rgba(239,68,68,0.2)"
                           : "1px solid rgba(34,197,94,0.2)",
                     }}
                   >
-                    {expYears === 0
-                      ? "Fresher"
-                      : `${expYears} yr${expYears === 1 ? "" : "s"} exp`}
+                    {expYears === 0 ? "Fresher" : `${expYears}yr exp`}
                   </span>
                 )}
               </div>
@@ -1404,12 +1339,12 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
           {result.atsRisk && (
             <div
               style={{
-                padding: "10px 16px",
+                padding: "9px 16px",
                 background: "rgba(255,255,255,0.015)",
-                border: "1px solid var(--border, rgba(255,255,255,0.06))",
+                border: "1px solid rgba(255,255,255,0.06)",
                 borderTop: "none",
                 borderRadius: "0 0 8px 8px",
-                marginBottom: 28,
+                marginBottom: 24,
               }}
             >
               <span
@@ -1418,7 +1353,7 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.8px",
-                  color: "var(--text-muted)",
+                  color: "rgba(255,255,255,0.3)",
                   marginRight: 10,
                 }}
               >
@@ -1427,7 +1362,7 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
               <span
                 style={{
                   fontSize: 12,
-                  color: "var(--text-secondary)",
+                  color: "rgba(255,255,255,0.5)",
                   lineHeight: 1.6,
                 }}
               >
@@ -1436,66 +1371,61 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
             </div>
           )}
 
-          {/* Dimension breakdown */}
-          <Divider label="Dimension Analysis" />
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {[
-              { key: "roleAlignment", label: "Role Alignment" },
-              { key: "technicalDepth", label: "Technical Depth" },
-              { key: "experienceRelevance", label: "Experience Relevance" },
-              { key: "achievementQuality", label: "Achievement Quality" },
-            ].map(({ key, label }) => {
-              const d = result[key];
-              if (!d) return null;
-              return (
-                <ImpactRow
-                  key={key}
-                  label={label}
-                  value={d.score}
-                  verdict={d.verdict}
-                  detail={d.detail}
-                />
-              );
-            })}
-          </div>
+          {/* Section breakdown */}
+          <Divider label="Section Scores" />
+          {result.sectionScores && (
+            <SectionBreakdown sections={result.sectionScores} />
+          )}
 
-          {/* Missing sections */}
+          {/* Missing sections banner */}
           {result.missingSections?.length > 0 && (
-            <>
-              <Divider label="Missing Sections" />
+            <div
+              style={{
+                marginTop: 14,
+                padding: "10px 14px",
+                background: "rgba(239,68,68,0.05)",
+                border: "1px solid rgba(239,68,68,0.15)",
+                borderRadius: 7,
+              }}
+            >
               <div
                 style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 8,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "1px",
+                  color: "#ef4444",
                   marginBottom: 8,
                 }}
               >
+                Sections not found in resume
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {result.missingSections.map((s, i) => (
-                  <div
+                  <span
                     key={i}
                     style={{
-                      padding: "6px 12px",
-                      background: "rgba(239,68,68,0.06)",
-                      border: "1px solid rgba(239,68,68,0.18)",
-                      borderRadius: 5,
                       fontSize: 12,
-                      color: "var(--red)",
+                      padding: "4px 10px",
+                      borderRadius: 4,
                       fontWeight: 600,
+                      background: "rgba(239,68,68,0.08)",
+                      border: "1px solid rgba(239,68,68,0.2)",
+                      color: "#ef4444",
                     }}
                   >
                     ✕ {s}
-                  </div>
+                  </span>
                 ))}
               </div>
-            </>
+            </div>
           )}
 
           {/* Critical gaps */}
           {result.criticalGaps?.length > 0 && (
             <>
               <Divider label="Critical Gaps" />
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                 {result.criticalGaps.map((gap, i) => (
                   <div
                     key={i}
@@ -1504,8 +1434,8 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                       gap: 12,
                       alignItems: "flex-start",
                       padding: "10px 14px",
-                      background: "rgba(239,68,68,0.04)",
-                      border: "1px solid rgba(239,68,68,0.12)",
+                      background: "rgba(239,68,68,0.03)",
+                      border: "1px solid rgba(239,68,68,0.1)",
                       borderRadius: 6,
                     }}
                   >
@@ -1513,10 +1443,9 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                       style={{
                         fontSize: 10,
                         fontWeight: 800,
-                        color: "var(--red)",
+                        color: "#ef4444",
                         flexShrink: 0,
                         marginTop: 1,
-                        fontVariantNumeric: "tabular-nums",
                       }}
                     >
                       {String(i + 1).padStart(2, "0")}
@@ -1525,7 +1454,7 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                       style={{
                         margin: 0,
                         fontSize: 12,
-                        color: "var(--text-secondary)",
+                        color: "rgba(255,255,255,0.6)",
                         lineHeight: 1.65,
                       }}
                     >
@@ -1540,12 +1469,7 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
           {/* Keywords */}
           <Divider label="Keyword Coverage" />
           <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 20,
-              marginBottom: 8,
-            }}
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}
           >
             <div>
               <div
@@ -1554,11 +1478,11 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.8px",
-                  color: "var(--text-muted)",
-                  marginBottom: 10,
+                  color: "rgba(255,255,255,0.3)",
+                  marginBottom: 8,
                 }}
               >
-                Missing from resume
+                Missing
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {(result.missingKeywords || []).map((kw, i) => (
@@ -1573,11 +1497,11 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.8px",
-                  color: "var(--text-muted)",
-                  marginBottom: 10,
+                  color: "rgba(255,255,255,0.3)",
+                  marginBottom: 8,
                 }}
               >
-                Present in both
+                Matched
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {(result.matchedKeywords || []).map((kw, i) => (
@@ -1587,16 +1511,15 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
             </div>
           </div>
 
-          {/* One thing to fix */}
+          {/* One thing to fix. */}
           {result.oneThingToFix && (
             <>
-              <Divider label="Highest-Leverage Edit" />
+              <Divider label="Top Priority Fix" />
               <div
                 style={{
-                  padding: "16px 20px",
+                  padding: "14px 18px",
                   background: "rgba(129,140,248,0.05)",
-                  border:
-                    "1px solid var(--accent-border, rgba(129,140,248,0.2))",
+                  border: "1px solid rgba(129,140,248,0.18)",
                   borderRadius: 8,
                 }}
               >
@@ -1606,8 +1529,8 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                     fontWeight: 700,
                     textTransform: "uppercase",
                     letterSpacing: "1px",
-                    color: "var(--accent)",
-                    marginBottom: 8,
+                    color: "rgba(129,140,248,0.7)",
+                    marginBottom: 7,
                   }}
                 >
                   Do this before applying
@@ -1616,7 +1539,7 @@ Return ONLY a valid JSON object with no extra text, markdown, or explanation:
                   style={{
                     margin: 0,
                     fontSize: 13,
-                    color: "var(--text-secondary)",
+                    color: "rgba(255,255,255,0.7)",
                     lineHeight: 1.7,
                     fontWeight: 500,
                   }}
