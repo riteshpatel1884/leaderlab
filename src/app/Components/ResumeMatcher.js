@@ -1511,7 +1511,7 @@ Return ONLY a valid JSON object — no markdown, no explanation:
             </div>
           </div>
 
-          {/* One thing to fix. */}
+          {/* One thing to fix... */}
           {result.oneThingToFix && (
             <>
               <Divider label="Top Priority Fix" />
