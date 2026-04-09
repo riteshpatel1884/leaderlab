@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 
 const GROQ_API_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY;
-const DAILY_LIMIT = 2;
+const DAILY_LIMIT = 10;
 const STORAGE_KEY = "resumeMatcher_usage";
 const HISTORY_KEY = "resumeMatcher_history";
 
-// Section weights — total 100 points
-const SECTION_WEIGHTS = [
+
+const JOB_SECTION_WEIGHTS = [
   { key: "experience", label: "Work Experience", points: 25 },
   { key: "projects", label: "Projects", points: 20 },
   { key: "technicalSkills", label: "Technical Skills", points: 15 },
@@ -17,6 +17,23 @@ const SECTION_WEIGHTS = [
   { key: "summary", label: "Bio / Professional Summary", points: 10 },
   { key: "achievements", label: "Achievements / Awards", points: 5 },
 ];
+
+// Section weights for INTERNSHIP — total 100 points
+// Experience (25pts) redistributed: Projects +10, Technical Skills +5, Certifications +5, Achievements +5
+const INTERNSHIP_SECTION_WEIGHTS = [
+  { key: "projects", label: "Projects", points: 30 },
+  { key: "technicalSkills", label: "Technical Skills", points: 20 },
+  { key: "certifications", label: "Certifications", points: 20 },
+  { key: "education", label: "Education", points: 10 },
+  { key: "summary", label: "Bio / Professional Summary", points: 10 },
+  { key: "achievements", label: "Achievements / Awards", points: 10 },
+];
+
+function getSectionWeights(jobType) {
+  return jobType === "internship"
+    ? INTERNSHIP_SECTION_WEIGHTS
+    : JOB_SECTION_WEIGHTS;
+}
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -91,6 +108,7 @@ function saveToHistory(analysis) {
     id: Date.now(),
     formattedTime: getFormattedDateTime(),
     role: analysis.role,
+    jobType: analysis.jobType,
     resumeVersion: analysis.resumeVersion,
     experience: analysis.experience,
     matchScore: analysis.matchScore,
@@ -152,10 +170,15 @@ function ScoreRing({ score, size = 100 }) {
   );
 }
 
-function SectionBreakdown({ sections }) {
+function qualityScore(pct) {
+  return Math.min(1, Math.max(0, pct / 100));
+}
+
+function SectionBreakdown({ sections, jobType }) {
+  const weights = getSectionWeights(jobType);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {SECTION_WEIGHTS.map(({ key, label, points }) => {
+      {weights.map(({ key, label, points }) => {
         const s = sections?.[key];
         if (!s) return null;
         const present = s.present;
@@ -262,10 +285,6 @@ function SectionBreakdown({ sections }) {
       })}
     </div>
   );
-}
-
-function qualityScore(pct) {
-  return Math.min(1, Math.max(0, pct / 100));
 }
 
 function Divider({ label }) {
@@ -491,6 +510,31 @@ function HistoryModal({ isOpen, onClose, history }) {
                             v{entry.resumeVersion}
                           </span>
                         )}
+                        {entry.jobType && (
+                          <span
+                            style={{
+                              fontSize: 11,
+                              color:
+                                entry.jobType === "internship"
+                                  ? "rgba(129,140,248,0.8)"
+                                  : "rgba(34,197,94,0.8)",
+                              background:
+                                entry.jobType === "internship"
+                                  ? "rgba(129,140,248,0.08)"
+                                  : "rgba(34,197,94,0.08)",
+                              padding: "2px 7px",
+                              borderRadius: 3,
+                              border:
+                                entry.jobType === "internship"
+                                  ? "1px solid rgba(129,140,248,0.2)"
+                                  : "1px solid rgba(34,197,94,0.2)",
+                            }}
+                          >
+                            {entry.jobType === "internship"
+                              ? "Internship"
+                              : "Job"}
+                          </span>
+                        )}
                       </div>
                       <div
                         style={{
@@ -571,6 +615,9 @@ export default function ResumeMatcher() {
   const expYears = experience === "" ? null : parseInt(experience);
   const isFresherOrUnset = expYears === null || expYears === 0;
 
+  const currentWeights = getSectionWeights(jobType);
+  const isInternship = jobType === "internship";
+
   const handleExperienceChange = (e) => {
     const val = e.target.value;
     if (val === "" || (/^\d+$/.test(val) && parseInt(val) <= 50)) {
@@ -597,22 +644,47 @@ export default function ResumeMatcher() {
     setLoading(true);
     setResult(null);
 
-    const positionType =
-      jobType === "internship" ? "Internship" : "Full-Time Job";
+    const positionType = isInternship ? "Internship" : "Full-Time Job";
     const expContext =
       expYears === 0
         ? "0 years (Fresher — no work experience)"
         : `${expYears} year${expYears === 1 ? "" : "s"} of professional experience`;
 
-    const sectionWeightsDesc = SECTION_WEIGHTS.map(
-      (s) => `  - ${s.label}: ${s.points} points`,
-    ).join("\n");
+    // Build section weights description dynamically based on job type
+    const sectionWeightsDesc = currentWeights
+      .map((s) => `  - ${s.label}: ${s.points} points`)
+      .join("\n");
+
+    // For internship, experience section is not scored; for job it is
+    const sectionKeysToScore = currentWeights.map((w) => w.key);
+
+    // Build the sectionScores JSON schema dynamically
+    const allSectionKeys = [
+      "experience",
+      "projects",
+      "technicalSkills",
+      "certifications",
+      "education",
+      "summary",
+      "achievements",
+    ];
+
+    const sectionScoresTemplate = allSectionKeys
+      .map(
+        (key) =>
+          `    "${key}": { "present": <bool>, "qualityScore": <0-100 or null if not scored>, "quality": "strong|weak|missing", "note": "<brief specific note about this section vs JD>" }`,
+      )
+      .join(",\n");
+
+    const internshipNote = isInternship
+      ? `\n\nIMPORTANT — This is an INTERNSHIP role. The candidate is expected to have NO professional work experience. Do NOT penalize for missing work experience. The "experience" section should still be detected if present (e.g., part-time, freelance, volunteer work), but it carries 0 weight in scoring. Score only the sections listed in the weights above. Projects, technical skills, and certifications are the most critical factors.`
+      : "";
 
     const prompt = `You are a senior technical recruiter and ATS specialist. Give a surgical, honest analysis — not a feel-good report.
 
 Position Type: ${positionType}
 Target Role: ${role}
-Candidate Experience: ${expContext}
+Candidate Experience: ${expContext}${internshipNote}
 
 Resume:
 ${resume}
@@ -622,34 +694,33 @@ ${jobDesc}
 
 ## SCORING SYSTEM — 100 points total
 
-The resume is scored using these fixed section weights. For each section:
+The resume is scored using these fixed section weights. For each section listed below:
 1. Detect if it is present in the resume.
 2. If MISSING → award 0 points for that section.
 3. If PRESENT → award points based on quality relative to this specific JD (0–100% quality scale).
 
-Section weights:
+Section weights (ONLY these sections contribute to the score):
 ${sectionWeightsDesc}
 
-TOTAL MATCH SCORE = sum of (weight × quality%) for each present section. Cap at 100.
+${isInternship ? 'NOTE: "Work Experience" is NOT in the scoring weights for this internship role. Even if the candidate has some experience listed, projects, skills, certifications, education, summary and achievements are what matter here.' : ""}
+
+TOTAL MATCH SCORE = sum of (weight × quality%) for each present section from the list above. Cap at 100.
 Be realistic. A score of 60+ means genuinely competitive. Don't inflate.
+
+For ALL sections (including experience for internship — just note if present/absent), fill out sectionScores.
+For sections NOT in the scoring weights, set qualityScore to null and note they are not scored for this position type.
 
 Return ONLY a valid JSON object — no markdown, no explanation:
 
 {
-  "matchScore": <integer 0-100, calculated from section weights above>,
+  "matchScore": <integer 0-100, calculated only from the weighted sections above>,
   "verdict": "<one direct sentence: hiring recommendation>",
 
   "sectionScores": {
-    "experience":      { "present": <bool>, "qualityScore": <0-100>, "quality": "strong|weak|missing", "note": "<brief specific note about this section vs JD>" },
-    "projects":        { "present": <bool>, "qualityScore": <0-100>, "quality": "strong|weak|missing", "note": "<brief specific note>" },
-    "technicalSkills": { "present": <bool>, "qualityScore": <0-100>, "quality": "strong|weak|missing", "note": "<brief specific note>" },
-    "certifications":  { "present": <bool>, "qualityScore": <0-100>, "quality": "strong|weak|missing", "note": "<brief specific note>" },
-    "education":       { "present": <bool>, "qualityScore": <0-100>, "quality": "strong|weak|missing", "note": "<brief specific note>" },
-    "summary":         { "present": <bool>, "qualityScore": <0-100>, "quality": "strong|weak|missing", "note": "<brief specific note>" },
-    "achievements":    { "present": <bool>, "qualityScore": <0-100>, "quality": "strong|weak|missing", "note": "<brief specific note>" }
+${sectionScoresTemplate}
   },
 
-  "missingSections": ["<section name if not found in resume>"],
+  "missingSections": ["<section name if not found in resume AND it is in the scoring weights>"],
 
   "criticalGaps": [
     "<gap 1: specific missing skill, tool, or experience — max 5 items>",
@@ -710,7 +781,7 @@ Return ONLY a valid JSON object — no markdown, no explanation:
       incrementUsage();
       setRemaining(getRemainingUses());
       setHistory(getHistory());
-      setResult(parsed);
+      setResult({ ...parsed, _jobType: jobType });
     } catch (err) {
       setError(err.message || "Analysis failed. Please try again.");
     } finally {
@@ -808,11 +879,11 @@ Return ONLY a valid JSON object — no markdown, no explanation:
         </div>
       </div>
 
-      {/* Section weights info strip */}
+      {/* Section weights info strip — dynamic based on jobType */}
       <div
         style={{
           background: "rgba(255,255,255,0.02)",
-          border: "1px solid rgba(255,255,255,0.06)",
+          border: `1px solid ${isInternship ? "rgba(129,140,248,0.12)" : "rgba(255,255,255,0.06)"}`,
           borderRadius: 8,
           padding: "12px 16px",
           marginBottom: 20,
@@ -820,38 +891,87 @@ Return ONLY a valid JSON object — no markdown, no explanation:
       >
         <div
           style={{
-            fontSize: 10,
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "1px",
-            color: "rgba(255,255,255,0.3)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
             marginBottom: 10,
           }}
         >
-          Scoring breakdown (100 pts total)
+          <div
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              color: isInternship
+                ? "rgba(129,140,248,0.6)"
+                : "rgba(255,255,255,0.3)",
+            }}
+          >
+            Scoring breakdown — {isInternship ? "Internship" : "Full-Time Job"}{" "}
+            (100 pts total)
+          </div>
+          {isInternship && (
+            <span
+              style={{
+                fontSize: 10,
+                color: "rgba(129,140,248,0.7)",
+                background: "rgba(129,140,248,0.08)",
+                border: "1px solid rgba(129,140,248,0.2)",
+                padding: "2px 8px",
+                borderRadius: 3,
+                fontWeight: 600,
+              }}
+            >
+              Experience not scored
+            </span>
+          )}
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {SECTION_WEIGHTS.map(({ label, points }) => (
+          {currentWeights.map(({ label, points }) => (
             <span
               key={label}
               style={{
                 fontSize: 11,
                 padding: "3px 9px",
                 borderRadius: 4,
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: isInternship
+                  ? "rgba(129,140,248,0.05)"
+                  : "rgba(255,255,255,0.04)",
+                border: isInternship
+                  ? "1px solid rgba(129,140,248,0.12)"
+                  : "1px solid rgba(255,255,255,0.08)",
                 color: "rgba(255,255,255,0.6)",
               }}
             >
               {label}{" "}
               <span
-                style={{ fontWeight: 700, color: "rgba(255,255,255,0.85)" }}
+                style={{
+                  fontWeight: 700,
+                  color: isInternship
+                    ? "rgba(129,140,248,0.9)"
+                    : "rgba(255,255,255,0.85)",
+                }}
               >
                 {points}pt
               </span>
             </span>
           ))}
         </div>
+        {isInternship && (
+          <p
+            style={{
+              margin: "10px 0 0",
+              fontSize: 10,
+              color: "rgba(129,140,248,0.5)",
+              lineHeight: 1.5,
+            }}
+          >
+            ℹ️ Internship scoring emphasises Projects (30), Skills (20) and
+            Certifications (20) — work experience carries no weight since
+            freshers are not expected to have any.
+          </p>
+        )}
       </div>
 
       {/* Banners */}
@@ -1050,13 +1170,25 @@ Return ONLY a valid JSON object — no markdown, no explanation:
                     style={{
                       padding: "9px 12px",
                       borderRadius: 4,
-                      border: `1px solid ${jobType === value ? "rgba(34,197,94,0.3)" : "transparent"}`,
+                      border: `1px solid ${
+                        jobType === value
+                          ? value === "internship"
+                            ? "rgba(129,140,248,0.3)"
+                            : "rgba(34,197,94,0.3)"
+                          : "transparent"
+                      }`,
                       background:
                         jobType === value
-                          ? "rgba(34,197,94,0.12)"
+                          ? value === "internship"
+                            ? "rgba(129,140,248,0.12)"
+                            : "rgba(34,197,94,0.12)"
                           : "transparent",
                       color:
-                        jobType === value ? "#22c55e" : "rgba(255,255,255,0.4)",
+                        jobType === value
+                          ? value === "internship"
+                            ? "#818cf8"
+                            : "#22c55e"
+                          : "rgba(255,255,255,0.4)",
                       fontSize: 12,
                       fontWeight: jobType === value ? 700 : 500,
                       cursor: "pointer",
@@ -1299,17 +1431,18 @@ Return ONLY a valid JSON object — no markdown, no explanation:
                     padding: "2px 8px",
                     borderRadius: 3,
                     background:
-                      jobType === "internship"
+                      result._jobType === "internship"
                         ? "rgba(129,140,248,0.1)"
                         : "rgba(34,197,94,0.08)",
-                    color: jobType === "internship" ? "#818cf8" : "#22c55e",
+                    color:
+                      result._jobType === "internship" ? "#818cf8" : "#22c55e",
                     border:
-                      jobType === "internship"
+                      result._jobType === "internship"
                         ? "1px solid rgba(129,140,248,0.2)"
                         : "1px solid rgba(34,197,94,0.2)",
                   }}
                 >
-                  {jobType === "internship" ? "Internship" : "Job"}
+                  {result._jobType === "internship" ? "Internship" : "Job"}
                 </span>
                 {expYears !== null && (
                   <span
@@ -1374,7 +1507,10 @@ Return ONLY a valid JSON object — no markdown, no explanation:
           {/* Section breakdown */}
           <Divider label="Section Scores" />
           {result.sectionScores && (
-            <SectionBreakdown sections={result.sectionScores} />
+            <SectionBreakdown
+              sections={result.sectionScores}
+              jobType={result._jobType}
+            />
           )}
 
           {/* Missing sections banner */}
@@ -1398,7 +1534,7 @@ Return ONLY a valid JSON object — no markdown, no explanation:
                   marginBottom: 8,
                 }}
               >
-                Sections not found in resume
+                Scored sections not found in resume
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {result.missingSections.map((s, i) => (
@@ -1511,7 +1647,7 @@ Return ONLY a valid JSON object — no markdown, no explanation:
             </div>
           </div>
 
-          {/* One thing to fix... */}
+          {/* One thing to fix */}
           {result.oneThingToFix && (
             <>
               <Divider label="Top Priority Fix" />
