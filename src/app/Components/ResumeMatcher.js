@@ -118,7 +118,7 @@ function saveToHistory(analysis) {
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 50)));
 }
 
-// ── UI primitives ──────────────────────────────────────────────────────────
+// ── UI primitives ────────────────────────────────────────────────────────
 
 function ScoreRing({ score, size = 100 }) {
   const r = 38,
