@@ -1,7 +1,7 @@
 "use client";
 
 import { useApplications } from "../context/ApplicationsContext";
-import Analytics from "../Components/AnalyticsTab";
+import Analytics from "@/app/Components/AnalyticsTab";
 
 export default function AnalyticsPage() {
   const { applications } = useApplications();

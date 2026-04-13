@@ -1,6 +1,6 @@
 "use client";
 
-import ResumeMatcher from "../Components/ResumeMatcher";
+import ResumeMatcher from "@/app/Components/ResumeMatcher";
 
 export default function ResumePage() {
   return (

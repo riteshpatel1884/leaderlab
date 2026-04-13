@@ -1,5 +1,5 @@
-import Sidebar from "../Components/Sidebar";
-import BottomNav from "../Components/BottomNav";
+import Sidebar from "../Components/Sidebar.js";
+import BottomNav from "../Components/BottomNav.js";
 
 export default function ProtectedLayout({ children }) {
   return (
