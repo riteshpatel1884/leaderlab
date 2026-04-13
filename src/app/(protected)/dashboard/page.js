@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApplications } from "../context/ApplicationsContext";
-import Dashboard from "../Components/Dashboard";
-import AddJobModal from "../Components/AddJobModal";
+import { useApplications } from "../../context/ApplicationsContext";
+import Dashboard from "../../Components/Dashboard";
+import AddJobModal from "../../Components/AddJobModal";
 
 export default function DashboardPage() {
   const { applications, addApplication, updateApplication } = useApplications();

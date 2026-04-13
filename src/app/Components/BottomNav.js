@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { UserButton, useUser } from "@clerk/nextjs";
 
 const navItems = [
   { id: "dashboard", icon: "⊞", label: "Dashboard" },
@@ -14,8 +15,6 @@ const navItems = [
 
 const bottomItems = navItems.slice(0, 4);
 const moreItems = navItems.slice(4);
-
-// ── Changelog data ────────────────────────────────────────────────────────────
 
 const CHANGELOG = [
   {
@@ -84,12 +83,9 @@ const TYPE_CONFIG = {
   },
 };
 
-// ── Changelog modal ───────────────────────────────────────────────────────────
-
 function ChangelogModal({ onClose }) {
   return (
     <>
-      {/* Backdrop */}
       <div
         onClick={onClose}
         style={{
@@ -101,8 +97,6 @@ function ChangelogModal({ onClose }) {
           animation: "fadeIn 0.18s ease",
         }}
       />
-
-      {/* Panel */}
       <div
         style={{
           position: "fixed",
@@ -112,7 +106,7 @@ function ChangelogModal({ onClose }) {
           width: "min(520px, 92vw)",
           maxHeight: "80vh",
           background: "var(--surface, #13141f)",
-          border: "1px solid var(--border, rgba(255,255,255,0.08))",
+          border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: 16,
           display: "flex",
           flexDirection: "column",
@@ -122,11 +116,10 @@ function ChangelogModal({ onClose }) {
           overflow: "hidden",
         }}
       >
-        {/* Header */}
         <div
           style={{
             padding: "20px 24px 16px",
-            borderBottom: "1px solid var(--border, rgba(255,255,255,0.07))",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -136,7 +129,6 @@ function ChangelogModal({ onClose }) {
           <div>
             <div
               style={{
-                fontFamily: "sans-serif",
                 fontSize: 16,
                 fontWeight: 800,
                 color: "var(--text-primary, #f1f5f9)",
@@ -161,7 +153,7 @@ function ChangelogModal({ onClose }) {
               width: 30,
               height: 30,
               borderRadius: "50%",
-              border: "1px solid var(--border, rgba(255,255,255,0.08))",
+              border: "1px solid rgba(255,255,255,0.08)",
               background: "transparent",
               color: "var(--text-muted, #64748b)",
               fontSize: 16,
@@ -169,23 +161,12 @@ function ChangelogModal({ onClose }) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              transition: "all 0.15s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background =
-                "var(--surface-2, rgba(255,255,255,0.06))";
-              e.currentTarget.style.color = "var(--text-primary, #f1f5f9)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = "var(--text-muted, #64748b)";
             }}
           >
             ✕
           </button>
         </div>
 
-        {/* Scrollable content */}
         <div
           style={{
             overflowY: "auto",
@@ -202,10 +183,8 @@ function ChangelogModal({ onClose }) {
             const upcomingChanges = release.changes.filter(
               (c) => c.type === "upcoming",
             );
-
             return (
               <div key={release.version}>
-                {/* Version header */}
                 <div
                   style={{
                     display: "flex",
@@ -216,7 +195,6 @@ function ChangelogModal({ onClose }) {
                 >
                   <span
                     style={{
-                      fontFamily: "sans-serif",
                       fontSize: 13,
                       fontWeight: 800,
                       color: "var(--text-primary, #f1f5f9)",
@@ -224,7 +202,6 @@ function ChangelogModal({ onClose }) {
                   >
                     {release.version}
                   </span>
-
                   {release.tag === "next" && (
                     <span
                       style={{
@@ -242,42 +219,6 @@ function ChangelogModal({ onClose }) {
                       Next
                     </span>
                   )}
-                  {release.tag === "latest" && (
-                    <span
-                      style={{
-                        fontSize: 9,
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.8px",
-                        padding: "2px 7px",
-                        borderRadius: 4,
-                        background: "rgba(129,140,248,0.15)",
-                        color: "var(--accent, #818cf8)",
-                        border:
-                          "1px solid var(--accent-border, rgba(129,140,248,0.25))",
-                      }}
-                    >
-                      Latest
-                    </span>
-                  )}
-                  {release.tag === "initial" && (
-                    <span
-                      style={{
-                        fontSize: 9,
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.8px",
-                        padding: "2px 7px",
-                        borderRadius: 4,
-                        background: "rgba(100,116,139,0.12)",
-                        color: "var(--text-muted, #64748b)",
-                        border: "1px solid rgba(100,116,139,0.2)",
-                      }}
-                    >
-                      Initial
-                    </span>
-                  )}
-
                   <span
                     style={{
                       marginLeft: "auto",
@@ -288,8 +229,6 @@ function ChangelogModal({ onClose }) {
                     {release.date}
                   </span>
                 </div>
-
-                {/* Regular changes */}
                 {regularChanges.length > 0 && (
                   <div
                     style={{ display: "flex", flexDirection: "column", gap: 8 }}
@@ -305,10 +244,8 @@ function ChangelogModal({ onClose }) {
                             gap: 10,
                             padding: "9px 12px",
                             borderRadius: 8,
-                            background:
-                              "var(--surface-2, rgba(255,255,255,0.03))",
-                            border:
-                              "1px solid var(--border, rgba(255,255,255,0.05))",
+                            background: "rgba(255,255,255,0.03)",
+                            border: "1px solid rgba(255,255,255,0.05)",
                           }}
                         >
                           <span
@@ -342,8 +279,6 @@ function ChangelogModal({ onClose }) {
                     })}
                   </div>
                 )}
-
-                {/* Upcoming features */}
                 {upcomingChanges.length > 0 && (
                   <div
                     style={{ marginTop: regularChanges.length > 0 ? 16 : 0 }}
@@ -441,13 +376,11 @@ function ChangelogModal({ onClose }) {
                     </div>
                   </div>
                 )}
-
-                {/* Divider between releases */}
                 {i < CHANGELOG.length - 1 && (
                   <div
                     style={{
                       height: 1,
-                      background: "var(--border, rgba(255,255,255,0.06))",
+                      background: "rgba(255,255,255,0.06)",
                       marginTop: 24,
                     }}
                   />
@@ -457,7 +390,6 @@ function ChangelogModal({ onClose }) {
           })}
         </div>
       </div>
-
       <style>{`
         @keyframes fadeIn  { from { opacity: 0 } to { opacity: 1 } }
         @keyframes slideUp { from { opacity: 0; transform: translate(-50%, calc(-50% + 16px)) } to { opacity: 1; transform: translate(-50%, -50%) } }
@@ -466,12 +398,11 @@ function ChangelogModal({ onClose }) {
   );
 }
 
-// ── Bottom nav ────────────────────────────────────────────────────────────────
-
 export default function BottomNav() {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
+  const { user, isLoaded } = useUser();
 
   const currentVersion =
     CHANGELOG.find((r) => r.tag !== "next")?.version ?? CHANGELOG[0].version;
@@ -513,6 +444,74 @@ export default function BottomNav() {
           <>
             <div className="more-backdrop" onClick={() => setMoreOpen(false)} />
             <div className="more-drawer">
+              {/* ── USER SECTION — top of drawer ── */}
+              {isLoaded && user ? (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "12px 16px 14px",
+                    borderBottom: "1px solid rgba(255,255,255,0.07)",
+                    marginBottom: 4,
+                  }}
+                >
+                  <UserButton afterSignOutUrl="/sign-in" />
+                  <div style={{ overflow: "hidden", flex: 1 }}>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "var(--text-primary, #f1f5f9)",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {user.fullName || user.username || "User"}
+                    </p>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 11,
+                        color: "var(--text-muted, #64748b)",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {user.emailAddresses[0]?.emailAddress}
+                    </p>
+                  </div>
+                </div>
+              ) : isLoaded && !user ? (
+                <div
+                  style={{
+                    padding: "12px 16px 14px",
+                    borderBottom: "1px solid rgba(255,255,255,0.07)",
+                    marginBottom: 4,
+                  }}
+                >
+                  <Link
+                    href="/sign-in"
+                    onClick={() => setMoreOpen(false)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      color: "var(--accent, #818cf8)",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                    }}
+                  >
+                    <span>→</span> Sign in to your account
+                  </Link>
+                </div>
+              ) : null}
+
+              {/* Nav items in drawer */}
               {moreItems.map((item) => {
                 const href = `/${item.id}`;
                 const isActive = pathname === href;
@@ -529,7 +528,7 @@ export default function BottomNav() {
                 );
               })}
 
-              {/* Version button inside drawer */}
+              {/* Version / changelog button */}
               <button
                 onClick={() => {
                   setMoreOpen(false);
@@ -541,11 +540,10 @@ export default function BottomNav() {
                   gap: 8,
                   width: "100%",
                   padding: "10px 16px",
-                  marginTop: 6,
-                  borderTop: "1px solid var(--border, rgba(255,255,255,0.07))",
+                  marginTop: 4,
+                  borderTop: "1px solid rgba(255,255,255,0.07)",
                   background: "transparent",
                   border: "none",
-                  borderRadius: 0,
                   cursor: "pointer",
                   transition: "background 0.15s",
                 }}

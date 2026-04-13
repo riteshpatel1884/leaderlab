@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { UserButton, useUser } from "@clerk/nextjs";
 
 const navItems = [
   { id: "dashboard", icon: "⊞", label: "Dashboard" },
@@ -37,10 +38,7 @@ const CHANGELOG = [
     date: "April 2025",
     tag: null,
     changes: [
-      {
-        type: "new",
-        text: "Resume tab updated with only 2 limits per day.",
-      },
+      { type: "new", text: "Resume tab updated with only 2 limits per day." },
       { type: "fix", text: "Minor bugs fixed" },
       {
         type: "improved",
@@ -80,7 +78,6 @@ const TYPE_CONFIG = {
 function ChangelogModal({ onClose }) {
   return (
     <>
-      {/* Backdrop */}
       <div
         onClick={onClose}
         style={{
@@ -92,8 +89,6 @@ function ChangelogModal({ onClose }) {
           animation: "fadeIn 0.18s ease",
         }}
       />
-
-      {/* Panel */}
       <div
         style={{
           position: "fixed",
@@ -127,7 +122,6 @@ function ChangelogModal({ onClose }) {
           <div>
             <div
               style={{
-                fontFamily: "sans-serif",
                 fontSize: 16,
                 fontWeight: 800,
                 color: "var(--text-primary, #f1f5f9)",
@@ -163,8 +157,7 @@ function ChangelogModal({ onClose }) {
               transition: "all 0.15s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background =
-                "var(--surface-2, rgba(255,255,255,0.06))";
+              e.currentTarget.style.background = "rgba(255,255,255,0.06)";
               e.currentTarget.style.color = "var(--text-primary, #f1f5f9)";
             }}
             onMouseLeave={(e) => {
@@ -176,7 +169,7 @@ function ChangelogModal({ onClose }) {
           </button>
         </div>
 
-        {/* Scrollable content */}
+        {/* Content */}
         <div
           style={{
             overflowY: "auto",
@@ -193,10 +186,8 @@ function ChangelogModal({ onClose }) {
             const upcomingChanges = release.changes.filter(
               (c) => c.type === "upcoming",
             );
-
             return (
               <div key={release.version}>
-                {/* Version header */}
                 <div
                   style={{
                     display: "flex",
@@ -207,7 +198,6 @@ function ChangelogModal({ onClose }) {
                 >
                   <span
                     style={{
-                      fontFamily: "sans-serif",
                       fontSize: 13,
                       fontWeight: 800,
                       color: "var(--text-primary, #f1f5f9)",
@@ -215,7 +205,6 @@ function ChangelogModal({ onClose }) {
                   >
                     {release.version}
                   </span>
-
                   {release.tag === "next" && (
                     <span
                       style={{
@@ -244,8 +233,7 @@ function ChangelogModal({ onClose }) {
                         borderRadius: 4,
                         background: "rgba(129,140,248,0.15)",
                         color: "var(--accent, #818cf8)",
-                        border:
-                          "1px solid var(--accent-border, rgba(129,140,248,0.25))",
+                        border: "1px solid rgba(129,140,248,0.25)",
                       }}
                     >
                       Latest
@@ -268,7 +256,6 @@ function ChangelogModal({ onClose }) {
                       Initial
                     </span>
                   )}
-
                   <span
                     style={{
                       marginLeft: "auto",
@@ -280,7 +267,6 @@ function ChangelogModal({ onClose }) {
                   </span>
                 </div>
 
-                {/* Regular changes */}
                 {regularChanges.length > 0 && (
                   <div
                     style={{ display: "flex", flexDirection: "column", gap: 8 }}
@@ -296,10 +282,8 @@ function ChangelogModal({ onClose }) {
                             gap: 10,
                             padding: "9px 12px",
                             borderRadius: 8,
-                            background:
-                              "var(--surface-2, rgba(255,255,255,0.03))",
-                            border:
-                              "1px solid var(--border, rgba(255,255,255,0.05))",
+                            background: "rgba(255,255,255,0.03)",
+                            border: "1px solid rgba(255,255,255,0.05)",
                           }}
                         >
                           <span
@@ -334,12 +318,10 @@ function ChangelogModal({ onClose }) {
                   </div>
                 )}
 
-                {/* Upcoming features — visually separated */}
                 {upcomingChanges.length > 0 && (
                   <div
                     style={{ marginTop: regularChanges.length > 0 ? 16 : 0 }}
                   >
-                    {/* "Coming Soon" divider */}
                     <div
                       style={{
                         display: "flex",
@@ -377,7 +359,6 @@ function ChangelogModal({ onClose }) {
                         }}
                       />
                     </div>
-
                     <div
                       style={{
                         display: "flex",
@@ -435,12 +416,11 @@ function ChangelogModal({ onClose }) {
                   </div>
                 )}
 
-                {/* Divider between releases */}
                 {i < CHANGELOG.length - 1 && (
                   <div
                     style={{
                       height: 1,
-                      background: "var(--border, rgba(255,255,255,0.06))",
+                      background: "rgba(255,255,255,0.06)",
                       marginTop: 24,
                     }}
                   />
@@ -450,7 +430,6 @@ function ChangelogModal({ onClose }) {
           })}
         </div>
       </div>
-
       <style>{`
         @keyframes fadeIn  { from { opacity: 0 } to { opacity: 1 } }
         @keyframes slideUp { from { opacity: 0; transform: translate(-50%, calc(-50% + 16px)) } to { opacity: 1; transform: translate(-50%, -50%) } }
@@ -462,18 +441,20 @@ function ChangelogModal({ onClose }) {
 export default function Sidebar() {
   const pathname = usePathname();
   const [showChangelog, setShowChangelog] = useState(false);
+  const { user, isLoaded } = useUser();
 
-  // Show the first shipped (non-"next") version in the badge
   const currentVersion =
     CHANGELOG.find((r) => r.tag !== "next")?.version ?? CHANGELOG[0].version;
 
   return (
     <>
       <aside className="sidebar">
+        {/* Logo */}
         <div className="sidebar-logo">
           <div className="logo-mark">LeaderLab</div>
         </div>
 
+        {/* Nav */}
         <nav className="sidebar-nav">
           <div className="nav-section-label">Navigation</div>
           {navItems.map((item) => {
@@ -492,31 +473,103 @@ export default function Sidebar() {
           })}
         </nav>
 
+        {/* Bottom section */}
         <div
-          style={{ padding: "16px 20px", borderTop: "1px solid var(--border)" }}
+          style={{
+            marginTop: "auto",
+            padding: "16px 20px",
+            borderTop: "1px solid var(--border)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+          }}
         >
+          {/* User row — avatar + name/email + UserButton */}
+          {isLoaded && user ? (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "8px 10px",
+                borderRadius: 10,
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              {/* Clerk UserButton on the left */}
+              <UserButton afterSignOutUrl="/sign-in" />
+              {/* Name + email */}
+              <div style={{ flex: 1, overflow: "hidden" }}>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "var(--text-primary, #f1f5f9)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {user.fullName || user.username || "User"}
+                </p>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 10,
+                    color: "var(--text-muted, #64748b)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {user.emailAddresses[0]?.emailAddress}
+                </p>
+              </div>
+            </div>
+          ) : isLoaded && !user ? (
+            <Link
+              href="/sign-in"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 10px",
+                borderRadius: 10,
+                background: "rgba(129,140,248,0.08)",
+                border: "1px solid rgba(129,140,248,0.2)",
+                color: "var(--accent, #818cf8)",
+                fontSize: 12,
+                fontWeight: 600,
+                textDecoration: "none",
+                transition: "all 0.15s",
+              }}
+            >
+              <span style={{ fontSize: 14 }}>→</span> Sign in
+            </Link>
+          ) : null}
+
+          {/* Local storage note */}
           <div
             style={{
-              fontSize: "11px",
-              color: "var(--text-muted)",
+              fontSize: 10,
+              color: "var(--text-muted, #64748b)",
               lineHeight: 1.6,
-              marginBottom: 10,
             }}
           >
-            Data stored locally
-            <br />
-            in your browser
+            Data stored locally in your browser
           </div>
 
-          {/* Version badge */}
+          {/* Version / changelog button */}
           <button
             onClick={() => setShowChangelog(true)}
             style={{
               display: "flex",
               alignItems: "center",
               gap: 6,
-              background: "var(--accent-dim, rgba(129,140,248,0.08))",
-              border: "1px solid var(--accent-border, rgba(129,140,248,0.2))",
+              background: "rgba(129,140,248,0.08)",
+              border: "1px solid rgba(129,140,248,0.2)",
               borderRadius: 6,
               padding: "5px 10px",
               cursor: "pointer",
@@ -528,10 +581,8 @@ export default function Sidebar() {
               e.currentTarget.style.borderColor = "rgba(129,140,248,0.35)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background =
-                "var(--accent-dim, rgba(129,140,248,0.08))";
-              e.currentTarget.style.borderColor =
-                "var(--accent-border, rgba(129,140,248,0.2))";
+              e.currentTarget.style.background = "rgba(129,140,248,0.08)";
+              e.currentTarget.style.borderColor = "rgba(129,140,248,0.2)";
             }}
           >
             <span style={{ fontSize: 10, opacity: 0.5 }}>◈</span>
@@ -540,7 +591,6 @@ export default function Sidebar() {
                 fontSize: 11,
                 fontWeight: 600,
                 color: "var(--accent, #818cf8)",
-                fontFamily: "'DM Sans', sans-serif",
               }}
             >
               {currentVersion}
