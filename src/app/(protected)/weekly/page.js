@@ -1,7 +1,7 @@
 "use client";
 
-import { useApplications } from "../context/ApplicationsContext";
-import WeeklyReport from "@/app/Components/WeeklyReport";
+import { useApplications } from "../../context/ApplicationsContext";
+import WeeklyReport from "../../Components/WeeklyReport";
 
 export default function WeeklyPage() {
   const { applications } = useApplications();

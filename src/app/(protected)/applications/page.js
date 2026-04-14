@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useApplications } from "../context/ApplicationsContext";
-import ApplicationsTable from "@/app/Components/ApplicationsTab";
-import AddJobModal from "@/app/Components/AddJobModal";
+import { useApplications } from "../../context/ApplicationsContext";
+import ApplicationsTable from "../../Components/ApplicationsTab";
+import AddJobModal from "../../Components/AddJobModal";
 
 export default function ApplicationsPage() {
   const { applications, addApplication, updateApplication, deleteApplication } =
