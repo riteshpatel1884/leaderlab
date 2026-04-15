@@ -202,9 +202,8 @@ function TodaysPlan({ applications }) {
       if (saved) return JSON.parse(saved);
     } catch {}
     return [
-      { id: 1, text: "Apply to 5 jobs", done: false },
-      { id: 2, text: "Follow up on pending applications", done: false },
-      { id: 3, text: "Revise resume for target role", done: false },
+      { id: 1, text: "Follow up on pending applications", done: false },
+      { id: 2, text: "Revise resume for target role", done: false },
     ];
   });
   const [newTask, setNewTask] = useState("");
