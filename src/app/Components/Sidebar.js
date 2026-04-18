@@ -563,6 +563,7 @@ export default function Sidebar() {
 
           {/* Version / changelog button */}
           <button
+            suppressHydrationWarning
             onClick={() => setShowChangelog(true)}
             style={{
               display: "flex",

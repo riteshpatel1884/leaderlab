@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Application {
+  id               String    @id @default(cuid())
+  clerkUserId      String    @map("clerk_user_id")
+  company          String
+  role             String
+  jobType          String    @default("Job") @map("job_type")
+  applyType        String    @default("Direct Apply") @map("apply_type")
+  platform         String?
+  jobLink          String?   @map("job_link")
+  dateApplied      DateTime? @map("date_applied") @db.Date
+  status           String    @default("Applied")
+  workType         String    @default("Onsite") @map("work_type")
+  priority         String    @default("Medium")
+  recruiterName    String?   @map("recruiter_name")
+  recruiterContact String?   @map("recruiter_contact")
+  followUpDate     DateTime? @map("follow_up_date") @db.Date
+  salary           String?
+  resumeVersion    String?   @map("resume_version")
+  attachmentLink   String?   @map("attachment_link")
+  notes            String?
+  statusHistory    Json      @default("[]") @map("status_history")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@index([clerkUserId])
+  @@index([clerkUserId, status])
+  @@map("applications")
+}
