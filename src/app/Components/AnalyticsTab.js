@@ -316,7 +316,7 @@ export default function OptimizedAnalytics({ applications }) {
           </ChartCard>
 
           {/* 2 — Funnel + Work type */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
             <ChartCard title="Application funnel" height={230}>
               <InlineLegend items={funnelData.map(d => ({ label: d.name, color: STATUS_COLORS[d.name] || T.accent, count: d.value }))} />
               <div style={{ height: 178 }}>
@@ -365,7 +365,7 @@ export default function OptimizedAnalytics({ applications }) {
           </ChartCard>
 
           {/* 4 — Weekly response + Job type */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
             <ChartCard title="Weekly response rate" height={200}>
               <ResponsiveContainer width="100%" height="100%" tabIndex={-1}>
                 <AreaChart data={stats.weeklyResponse}>
