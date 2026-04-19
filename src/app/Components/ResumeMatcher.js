@@ -18,8 +18,7 @@ const JOB_SECTION_WEIGHTS = [
   { key: "achievements", label: "Achievements / Awards", points: 5 },
 ];
 
-// Section weights for INTERNSHIP — total 100 points
-// Experience (25pts) redistributed: Projects +10, Technical Skills +5, Certifications +5, Achievements +5
+
 const INTERNSHIP_SECTION_WEIGHTS = [
   { key: "projects", label: "Projects", points: 30 },
   { key: "technicalSkills", label: "Technical Skills", points: 20 },
@@ -245,7 +244,7 @@ function SectionBreakdown({ sections, jobType }) {
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.5px",
-                  color: present ? barColor : "#ef4444",
+                  color: present ? barColor : "#e13737",
                 }}
               >
                 {present ? s.quality || "present" : "missing"}

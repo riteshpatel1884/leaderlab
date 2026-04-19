@@ -9,7 +9,7 @@ const STATUS_COLORS = {
   Rejected: "#ef4444",
 };
 
-// ── Streak & Daily Target helpers ─────────────────────────────────────────────
+
 function getStreakData(applications) {
   if (!applications.length)
     return { streak: 0, appliedToday: 0, missedYesterday: false };

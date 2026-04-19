@@ -78,7 +78,7 @@ export default function WeeklyReport({ applications }) {
     <div>
       {/* This week summary */}
       <div className="insight-box" style={{ marginBottom: 20 }}>
-        This week you submitted{" "}
+        This week you submitted {" "}
         <strong>
           {report.thisWeek.total} application
           {report.thisWeek.total !== 1 ? "s" : ""}
