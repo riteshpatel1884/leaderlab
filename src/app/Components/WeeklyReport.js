@@ -76,7 +76,7 @@ export default function WeeklyReport({ applications }) {
 
   return (
     <div>
-      {/* This week summary */}
+    
       <div className="insight-box" style={{ marginBottom: 20 }}>
         This week you submitted {" "}
         <strong>
