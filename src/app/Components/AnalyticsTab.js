@@ -1,868 +1,454 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
-  PieChart,
-  Pie,
-  BarChart,
-  Bar,
-  AreaChart,
-  Area,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  LineChart,
-  Line,
+  PieChart, Pie, BarChart, Bar, AreaChart, Area,
+  Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, RadarChart, Radar, PolarGrid,
+  PolarAngleAxis, PolarRadiusAxis,
 } from "recharts";
 
-const MIN_DATA_THRESHOLD = 5;
+// ── Theme tokens — mirrors globals.css exactly ───────────────────────────────
+const T = {
+  bg:           "#0d0d0f",
+  bgCard:       "#1f1f22",
+  bgHover:      "#1a1a1d",
+  border:       "#242428",
+  borderLight:  "#2e2e34",
+  textP:        "#f0f0f2",
+  textS:        "#8b8b9a",
+  textM:        "#555562",
+  accent:       "#6c63ff",
+  accentHover:  "#7c74ff",
+  accentDim:    "rgba(108, 99, 255, 0.12)",
+  accentBorder: "rgba(108, 99, 255, 0.3)",
+  green:        "#22c55e",
+  greenDim:     "rgba(34, 197, 94, 0.1)",
+  yellow:       "#eab308",
+  yellowDim:    "rgba(234, 179, 8, 0.1)",
+  red:          "#ef4444",
+  redDim:       "rgba(239, 68, 68, 0.1)",
+  blue:         "#3b82f6",
+  blueDim:      "rgba(59, 130, 246, 0.1)",
+};
 
-function pct(num, denom) {
-  if (!denom) return null;
-  return ((num / denom) * 100).toFixed(1);
-}
+// Palette — accent-led, all from the theme
+const PALETTE = [
+  T.accent,   // #6c63ff purple
+  T.blue,     // #3b82f6 blue
+  T.green,    // #22c55e green
+  T.yellow,   // #eab308 yellow
+  "#f472b6",  // pink (complementary dark accent)
+  "#22d3ee",  // cyan
+  T.red,
+];
 
-function fmtResponseDays(d) {
-  if (d === null || d === undefined) return "—";
-  if (d === 0) return "< 1 day";
-  return `${d}d`;
-}
+const STATUS_COLORS = {
+  Applied:   T.blue,
+  Interview: T.yellow,
+  Offer:     T.green,
+  Rejected:  T.red,
+};
 
-function getWeekKey(dateStr) {
-  const d = new Date(dateStr);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(d.setDate(diff));
-  return monday.toISOString().slice(0, 10);
-}
+const AXIS = {
+  tick:     { fontSize: 11, fill: T.textM },
+  axisLine: false,
+  tickLine: false,
+};
 
-function MetricCard({ label, value, sub, color, lowData }) {
+// ── Custom tooltip ────────────────────────────────────────────────────────────
+function CustomTooltip({ active, payload, label, suffix = "" }) {
+  if (!active || !payload?.length) return null;
   return (
-    <div className="stat-card" style={{ position: "relative" }}>
-      <div className="stat-label">{label}</div>
-      <div
-        className="stat-value"
-        style={{ color: color || "var(--text-primary)", fontSize: 28 }}
-      >
-        {value}
-      </div>
-      {sub && <div className="stat-sub">{sub}</div>}
-      {lowData && (
-        <div
-          style={{
-            marginTop: 6,
-            fontSize: 10,
-            color: "var(--text-muted)",
-            fontStyle: "italic",
-          }}
-        >
-          Based on {lowData} application{lowData !== 1 ? "s" : ""}
+    <div style={{
+      background: T.bgCard,
+      border: `1px solid ${T.borderLight}`,
+      borderRadius: 8,
+      padding: "9px 13px",
+      fontSize: 12,
+      color: T.textP,
+      boxShadow: "0 8px 24px rgba(0,0,0,0.55)",
+    }}>
+      {label && (
+        <div style={{ fontSize: 10, color: T.textM, marginBottom: 6, textTransform: "uppercase", letterSpacing: ".06em" }}>
+          {label}
         </div>
       )}
-    </div>
-  );
-}
-
-function ProgressRow({ label, sublabel, value, max, color, right }) {
-  const pctWidth = max > 0 ? Math.max((value / max) * 100, 1) : 1;
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 5,
-        }}
-      >
-        <div>
-          <span
-            style={{
-              fontSize: 12,
-              color: "var(--text-secondary)",
-              fontWeight: 500,
-            }}
-          >
-            {label}
+      {payload.map((p, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, marginTop: i > 0 ? 4 : 0 }}>
+          <span style={{ width: 8, height: 8, borderRadius: 2, background: p.color || p.fill || T.accent, flexShrink: 0 }} />
+          <span style={{ fontWeight: 500, color: T.textP }}>
+            {p.name && <span style={{ color: T.textS, fontWeight: 400, marginRight: 4 }}>{p.name}:</span>}
+            {p.value}{suffix}
           </span>
-          {sublabel && (
-            <span
-              style={{
-                fontSize: 11,
-                color: "var(--text-muted)",
-                marginLeft: 6,
-              }}
-            >
-              {sublabel}
-            </span>
-          )}
         </div>
-        <span style={{ fontSize: 11, color: color || "var(--text-muted)" }}>
-          {right}
-        </span>
-      </div>
-      <div className="progress-bar-wrap">
-        <div
-          className="progress-bar"
-          style={{
-            width: `${pctWidth}%`,
-            background: color || "var(--accent)",
-          }}
-        />
-      </div>
+      ))}
     </div>
   );
 }
 
-function Funnel({ byStatus, total }) {
-  const steps = [
-    { label: "Applied", key: "Applied", color: "var(--blue)" },
-    { label: "Interview", key: "Interview", color: "var(--yellow)" },
-    { label: "Offer", key: "Offer", color: "var(--green)" },
-  ];
-
-  return (
-    <div className="card" style={{ marginBottom: 16 }}>
-      <div className="card-title">Application Funnel</div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 0,
-          marginTop: 8,
-          overflowX: "auto",
-        }}
-      >
-        {steps.map((step, i) => {
-          const count = byStatus[step.key] || 0;
-          const prevCount = i === 0 ? total : byStatus[steps[i - 1].key] || 0;
-          const convRate =
-            i > 0 && prevCount > 0 ? pct(count, prevCount) : null;
-
-          return (
-            <div
-              key={step.key}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                flex: 1,
-                minWidth: 90,
-              }}
-            >
-              <div style={{ flex: 1 }}>
-                {convRate !== null && (
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: "var(--text-muted)",
-                      textAlign: "center",
-                      marginBottom: 4,
-                    }}
-                  >
-                    {convRate}% conversion.
-                  </div>
-                )}
-                <div
-                  style={{
-                    height: 44,
-                    background: step.color,
-                    opacity: 0.15 + (count / (total || 1)) * 0.7,
-                    borderRadius:
-                      i === 0
-                        ? "8px 0 0 8px"
-                        : i === steps.length - 1
-                          ? "0 8px 8px 0"
-                          : 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "opacity 0.3s",
-                    border: `1px solid ${step.color}`,
-                    borderRight: i < steps.length - 1 ? "none" : undefined,
-                  }}
-                >
-                  <span
-                    style={{ fontSize: 18, fontWeight: 800, color: "#ffffff" }}
-                  >
-                    {count}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "var(--text-muted)",
-                    textAlign: "center",
-                    marginTop: 6,
-                  }}
-                >
-                  {step.label}
-                </div>
-              </div>
-              {i < steps.length - 1 && (
-                <div
-                  style={{
-                    width: 0,
-                    height: 0,
-                    borderTop: "22px solid transparent",
-                    borderBottom: "22px solid transparent",
-                    borderLeft: `14px solid ${step.color}`,
-                    opacity: 0.4,
-                    flexShrink: 0,
-                    zIndex: 1,
-                  }}
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          marginTop: 10,
-          fontSize: 11,
-          color: "var(--text-muted)",
-        }}
-      >
-        Rejected: {byStatus.Rejected || 0}
-      </div>
-    </div>
-  );
-}
-
-function InsightsBox({ stats, applications }) {
-  const insights = useMemo(() => {
-    const list = [];
-
-    const best = stats.platformPerf[0];
-    if (best && parseFloat(best.rate) > 0 && best.total >= 1) {
-      list.push(
-        `${best.name} has your best response rate at ${best.rate}% — prioritise it.`,
-      );
-    }
-
-    if (stats.byStatus.Offer === 0 && stats.total >= 3) {
-      list.push(
-        "No offers yet. Consider refining your resume or increasing application volume.",
-      );
-    }
-
-    const workEntries = Object.entries(stats.byWorkType).sort(
-      (a, b) => b[1] - a[1],
-    );
-    if (workEntries.length > 0) {
-      const [topType, topCount] = workEntries[0];
-      const topPct = Math.round((topCount / stats.total) * 100);
-      if (topPct >= 80) {
-        const alt = topType === "Onsite" ? "Remote or Hybrid" : "Onsite";
-        list.push(
-          `${topPct}% of applications are ${topType} — consider exploring ${alt} roles.`,
-        );
-      }
-    }
-
-    if (stats.avgResponseDays !== null && stats.avgResponseDays > 14) {
-      list.push(
-        `Average response time is ${stats.avgResponseDays} days — follow up on older applications.`,
-      );
-    }
-
-    const cbRate = parseFloat(stats.callbackRate);
-    if (stats.total >= 5 && cbRate < 10) {
-      list.push(
-        `Callback rate is ${stats.callbackRate}%. Tailoring your applications per role may improve this.`,
-      );
-    }
-
-    if (list.length === 0) {
-      list.push("Add more applications to unlock personalised insights.");
-    }
-
-    return list;
-  }, [stats, applications]);
-
+// ── Metric card ───────────────────────────────────────────────────────────────
+function MetricCard({ label, value, color, sub }) {
   return (
     <div
-      style={{
-        background: "var(--accent-dim)",
-        border: "1px solid var(--accent-border)",
-        borderRadius: "var(--radius)",
-        padding: "16px 20px",
-        marginBottom: 16,
-      }}
+      style={{ background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 10, padding: "16px 18px", transition: "border-color .15s" }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = T.borderLight}
+      onMouseLeave={e => e.currentTarget.style.borderColor = T.border}
     >
-      <div
-        style={{
-          fontFamily: "'Syne', sans-serif",
-          fontSize: 11,
-          fontWeight: 700,
-          color: "var(--accent)",
-          textTransform: "uppercase",
-          letterSpacing: "0.8px",
-          marginBottom: 12,
-        }}
-      >
-        Insights
+      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 30, fontWeight: 800, color, lineHeight: 1.1, marginBottom: 5 }}>
+        {value}
       </div>
-      <ul
-        style={{
-          margin: 0,
-          padding: 0,
-          listStyle: "none",
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-        }}
-      >
-        {insights.map((text, i) => (
-          <li
-            key={i}
-            style={{
-              fontSize: 13,
-              color: "var(--text-secondary)",
-              lineHeight: 1.6,
-              paddingLeft: 14,
-              borderLeft: "2px solid var(--accent)",
-            }}
-          >
-            {text}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-// ── Enhanced Charts ────────────────────────────────────────────────────────
-
-function StatusDistributionChart({ byStatus, total }) {
-  const data = [
-    { name: "Applied", value: byStatus.Applied || 0, fill: "#3b82f6" },
-    { name: "Interview", value: byStatus.Interview || 0, fill: "#f59e0b" },
-    { name: "Offer", value: byStatus.Offer || 0, fill: "#10b981" },
-    { name: "Rejected", value: byStatus.Rejected || 0, fill: "#ef4444" },
-  ].filter((item) => item.value > 0);
-
-  if (data.length === 0) {
-    return (
-      <div className="card">
-        <div className="card-title">Application Status</div>
-        <div style={{ color: "var(--text-muted)", fontSize: 12 }}>
-          No data available.
-        </div>
+      <div style={{ fontSize: 11, color: T.textM, fontWeight: 500, textTransform: "uppercase", letterSpacing: ".06em" }}>
+        {label}
       </div>
-    );
-  }
-
-  return (
-    <div className="card">
-      <div className="card-title">Application Status Distribution</div>
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            label={({ name, percent }) =>
-              `${name} ${(percent * 100).toFixed(0)}%`
-            }
-            outerRadius={80}
-            fill="#8884d8"
-            dataKey="value"
-          >
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.fill} />
-            ))}
-          </Pie>
-          <Tooltip formatter={(value) => `${value} applications`} />
-        </PieChart>
-      </ResponsiveContainer>
+      {sub && <div style={{ fontSize: 10, color: T.textM, marginTop: 3 }}>{sub}</div>}
     </div>
   );
 }
 
-function TagsVisualization({ topTags, total }) {
-  if (!topTags || topTags.length === 0) {
-    return (
-      <div className="card">
-        <div className="card-title">Top Application Tags</div>
-        <div style={{ color: "var(--text-muted)", fontSize: 12 }}>
-          No tags available.
-        </div>
+// ── Chart card wrapper ────────────────────────────────────────────────────────
+function ChartCard({ title, children, height = 220 }) {
+  return (
+    <div style={{ background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 10, padding: "18px 20px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+        <span style={{ display: "inline-block", width: 3, height: 12, borderRadius: 2, background: T.accent }} />
+        <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 11, fontWeight: 600, color: T.textS, textTransform: "uppercase", letterSpacing: ".08em" }}>
+          {title}
+        </span>
       </div>
-    );
-  }
-
-  const data = topTags.map(([tag, count]) => ({
-    name: tag,
-    count: count,
-    percentage: Math.round((count / total) * 100),
-  }));
-
-  return (
-    <div className="card">
-      <div className="card-title">Top Application Tags</div>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-          <XAxis dataKey="name" stroke="var(--text-muted)" />
-          <YAxis stroke="var(--text-muted)" />
-          <Tooltip
-            formatter={(value) => `${value} applications`}
-            contentStyle={{
-              background: "var(--bg-secondary)",
-              border: "1px solid var(--border)",
-            }}
-          />
-          <Bar dataKey="count" fill="var(--accent)" radius={[8, 8, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
+      <div style={{ height, width: "100%" }}>{children}</div>
     </div>
   );
 }
 
-function WorkTypeVisualization({ byWorkType, total }) {
-  if (!byWorkType || Object.keys(byWorkType).length === 0) {
-    return (
-      <div className="card">
-        <div className="card-title">Work Type Distribution</div>
-        <div style={{ color: "var(--text-muted)", fontSize: 12 }}>
-          No data available.
-        </div>
-      </div>
-    );
-  }
-
-  const data = Object.entries(byWorkType)
-    .sort((a, b) => b[1] - a[1])
-    .map(([type, count]) => ({
-      name: type,
-      value: count,
-      percentage: Math.round((count / total) * 100),
-    }));
-
-  const colors = ["#3b82f6", "#f59e0b", "#10b981", "#8b5cf6", "#ec4899"];
-
+// ── Inline legend ─────────────────────────────────────────────────────────────
+function InlineLegend({ items }) {
   return (
-    <div className="card">
-      <div className="card-title">Work Type Distribution</div>
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            label={({ name, percentage }) => `${name} ${percentage}%`}
-            outerRadius={80}
-            fill="#8884d8"
-            dataKey="value"
-          >
-            {data.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={colors[index % colors.length]}
-              />
-            ))}
-          </Pie>
-          <Tooltip formatter={(value) => `${value} applications`} />
-        </PieChart>
-      </ResponsiveContainer>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "5px 14px", marginBottom: 12 }}>
+      {items.map((item, i) => (
+        <span key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: T.textS }}>
+          <span style={{ width: 8, height: 8, borderRadius: 2, flexShrink: 0, background: item.color }} />
+          {item.label}
+          {item.count !== undefined && (
+            <span style={{ fontWeight: 700, color: T.textP, fontFamily: "'Syne', sans-serif" }}>{item.count}</span>
+          )}
+        </span>
+      ))}
     </div>
   );
 }
 
-function PlatformPerformanceChart({ platformPerf }) {
-  if (!platformPerf || platformPerf.length === 0) {
-    return (
-      <div className="card">
-        <div className="card-title">Platform Performance</div>
-        <div style={{ color: "var(--text-muted)", fontSize: 12 }}>
-          No platform data.
-        </div>
-      </div>
-    );
-  }
-
-  const data = platformPerf.map((p) => ({
-    name: p.name,
-    rate: parseFloat(p.rate),
-    total: p.total,
-    responses: p.responses,
-  }));
-
-  return (
-    <div className="card">
-      <div className="card-title">Platform Success Rate</div>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-          <XAxis dataKey="name" stroke="var(--text-muted)" />
-          <YAxis
-            stroke="var(--text-muted)"
-            label={{ value: "Rate (%)", angle: -90, position: "insideLeft" }}
-          />
-          <Tooltip
-            formatter={(value) => `${value.toFixed(1)}%`}
-            labelFormatter={(label) => `Platform: ${label}`}
-            contentStyle={{
-              background: "var(--bg-secondary)",
-              border: "1px solid var(--border)",
-            }}
-          />
-          <Bar dataKey="rate" fill="var(--green)" radius={[8, 8, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-function WeeklyTrendChart({ weeks }) {
-  if (!weeks || weeks.length === 0) {
-    return (
-      <div className="card">
-        <div className="card-title">Weekly Trend</div>
-        <div style={{ color: "var(--text-muted)", fontSize: 12 }}>
-          No trend data available.
-        </div>
-      </div>
-    );
-  }
-
-  const data = weeks.map(([key, d]) => ({
-    week: new Date(key).toLocaleDateString("en-IN", {
-      month: "short",
-      day: "2-digit",
-    }),
-    applied: d.applied,
-    interviews: d.interviews || 0,
-    offers: d.offers || 0,
-  }));
-
-  return (
-    <div className="card">
-      <div className="card-title">Weekly Application Trend</div>
-      <ResponsiveContainer width="100%" height={300}>
-        <AreaChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-          <XAxis dataKey="week" stroke="var(--text-muted)" />
-          <YAxis stroke="var(--text-muted)" />
-          <Tooltip
-            contentStyle={{
-              background: "var(--bg-secondary)",
-              border: "1px solid var(--border)",
-            }}
-          />
-          <Legend />
-          <Area
-            type="monotone"
-            dataKey="applied"
-            stackId="1"
-            stroke="#3b82f6"
-            fill="#3b82f6"
-          />
-          <Area
-            type="monotone"
-            dataKey="interviews"
-            stackId="1"
-            stroke="#f59e0b"
-            fill="#f59e0b"
-          />
-          <Area
-            type="monotone"
-            dataKey="offers"
-            stackId="1"
-            stroke="#10b981"
-            fill="#10b981"
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-function ConversionFunnelChart({ byStatus, total }) {
-  const data = [
-    { name: "Applied", value: byStatus.Applied || 0 },
-    { name: "Interview", value: byStatus.Interview || 0 },
-    { name: "Offer", value: byStatus.Offer || 0 },
-  ];
-
-  return (
-    <div className="card">
-      <div className="card-title">Conversion Metrics</div>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-          <XAxis dataKey="name" stroke="var(--text-muted)" />
-          <YAxis stroke="var(--text-muted)" />
-          <Tooltip
-            formatter={(value) => `${value} applications`}
-            contentStyle={{
-              background: "var(--bg-secondary)",
-              border: "1px solid var(--border)",
-            }}
-          />
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke="var(--accent)"
-            strokeWidth={3}
-            dot={{ fill: "var(--accent)", r: 6 }}
-            activeDot={{ r: 8 }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-// ── Main ──────────────────────────────────────────────────────────────────────
-export default function Analytics({ applications }) {
+// ── Main component ────────────────────────────────────────────────────────────
+export default function OptimizedAnalytics({ applications }) {
   const [timeFilter, setTimeFilter] = useState("7d");
 
-  const filtered = useMemo(() => {
-    if (timeFilter === "all") return applications;
-    const cutoff = new Date();
-    if (timeFilter === "7d") cutoff.setDate(cutoff.getDate() - 7);
-    if (timeFilter === "30d") cutoff.setDate(cutoff.getDate() - 30);
-    return applications.filter((a) => new Date(a.createdAt) >= cutoff);
-  }, [applications, timeFilter]);
+  const tabs = [
+    { key: "7d",  label: "7 days" },
+    { key: "30d", label: "30 days" },
+    { key: "all", label: "All time" },
+  ];
 
   const stats = useMemo(() => {
+    if (!applications?.length) return null;
+
+    const cutoff = timeFilter === "7d" ? 7 : timeFilter === "30d" ? 30 : null;
+    const filtered = cutoff
+      ? applications.filter(a => new Date(a.createdAt) >= new Date(Date.now() - cutoff * 86400000))
+      : [...applications];
+
     const total = filtered.length;
-    if (total === 0) return null;
+    if (!total) return { total: 0 };
 
-    const byStatus = { Applied: 0, Interview: 0, Offer: 0, Rejected: 0 };
-    const byPlatform = {};
+    const byStatus   = { Applied: 0, Interview: 0, Offer: 0, Rejected: 0 };
     const byWorkType = {};
-    const weeklyData = {};
-    const tagCounts = {};
+    const byJobType  = {};
+    const byPlatform = {};
+    const dailyMap   = {};
+    const weeklyMap  = {};
 
-    let totalResponseDays = 0,
-      responseCount = 0;
-    let fastestResponse = Infinity,
-      slowestResponse = 0;
+    filtered.forEach(app => {
+      if (byStatus[app.status] !== undefined) byStatus[app.status]++;
 
-    filtered.forEach((app) => {
-      byStatus[app.status] = (byStatus[app.status] || 0) + 1;
+      const wt = app.workType || "Other";
+      byWorkType[wt] = (byWorkType[wt] || 0) + 1;
 
-      if (app.platform) {
-        if (!byPlatform[app.platform])
-          byPlatform[app.platform] = { total: 0, interviews: 0, offers: 0 };
-        byPlatform[app.platform].total++;
-        if (app.status === "Interview") byPlatform[app.platform].interviews++;
-        if (app.status === "Offer") byPlatform[app.platform].offers++;
-      }
+      const jt = app.jobType || "Job";
+      byJobType[jt] = (byJobType[jt] || 0) + 1;
 
-      if (app.workType)
-        byWorkType[app.workType] = (byWorkType[app.workType] || 0) + 1;
+      const pl = app.platform || "Other";
+      if (!byPlatform[pl]) byPlatform[pl] = { total: 0, success: 0 };
+      byPlatform[pl].total++;
+      if (app.status === "Interview" || app.status === "Offer") byPlatform[pl].success++;
 
-      if (app.dateApplied) {
-        const week = getWeekKey(app.dateApplied);
-        if (!weeklyData[week])
-          weeklyData[week] = { applied: 0, interviews: 0, offers: 0 };
-        weeklyData[week].applied++;
-        if (app.status === "Interview") weeklyData[week].interviews++;
-        if (app.status === "Offer") weeklyData[week].offers++;
-      }
+      const dateKey = new Date(app.dateApplied || app.createdAt)
+        .toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+      dailyMap[dateKey] = (dailyMap[dateKey] || 0) + 1;
 
-      if (app.tags && Array.isArray(app.tags)) {
-        app.tags.forEach((t) => {
-          tagCounts[t] = (tagCounts[t] || 0) + 1;
-        });
-      }
-      if (app.workType)
-        tagCounts[app.workType] = (tagCounts[app.workType] || 0) + 1;
-
-      if (app.statusHistory && app.statusHistory.length > 1) {
-        const first = new Date(app.statusHistory[0].date);
-        const second = new Date(app.statusHistory[1].date);
-        const days = Math.round((second - first) / (1000 * 60 * 60 * 24));
-        if (days >= 0) {
-          totalResponseDays += days;
-          responseCount++;
-          fastestResponse = Math.min(fastestResponse, days);
-          slowestResponse = Math.max(slowestResponse, days);
-        }
-      }
+      const d  = new Date(app.dateApplied || app.createdAt);
+      const wk = `W${Math.ceil(d.getDate() / 7)} ${d.toLocaleDateString("en-IN", { month: "short" })}`;
+      if (!weeklyMap[wk]) weeklyMap[wk] = { t: 0, s: 0 };
+      weeklyMap[wk].t++;
+      if (app.status === "Interview" || app.status === "Offer") weeklyMap[wk].s++;
     });
 
-    const avgResponseDays =
-      responseCount > 0 ? Math.round(totalResponseDays / responseCount) : null;
-    const callbackRate = pct(byStatus.Interview + byStatus.Offer, total);
-    const offerRate = pct(byStatus.Offer, total);
-    const rejectionRate = pct(byStatus.Rejected, total);
+    const platformSuccess = Object.entries(byPlatform)
+      .map(([name, d]) => ({ name, rate: Math.round((d.success / d.total) * 100), total: d.total }))
+      .sort((a, b) => b.rate - a.rate)
+      .slice(0, 6);
 
-    const platformPerf = Object.entries(byPlatform)
-      .map(([name, d]) => ({
-        name,
-        total: d.total,
-        responses: d.interviews + d.offers,
-        rate: d.total > 0 ? pct(d.interviews + d.offers, d.total) : "0.0",
-      }))
-      .sort((a, b) => parseFloat(b.rate) - parseFloat(a.rate));
+    const dailyTrend     = Object.entries(dailyMap).slice(-14).map(([date, count]) => ({ date, count }));
+    const weeklyResponse = Object.entries(weeklyMap).slice(-6).map(([week, d]) => ({
+      week, rate: Math.round((d.s / d.t) * 100), apps: d.t,
+    }));
 
-    const weeks = Object.entries(weeklyData)
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .slice(-8);
+    const workTypeData = Object.entries(byWorkType).map(([name, value]) => ({ name, value }));
+    const jobTypeData  = Object.entries(byJobType).map(([name, value]) => ({ name, value }));
+    const responseRate = Math.round(((byStatus.Interview + byStatus.Offer) / total) * 100);
+    const offerRate    = Math.round((byStatus.Offer / total) * 100);
 
-    const topTags = Object.entries(tagCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
+    const radarData = platformSuccess.slice(0, 5).map(p => ({
+      platform: p.name.length > 9 ? p.name.slice(0, 9) + "…" : p.name,
+      rate:  p.rate,
+      total: Math.min(100, p.total * 10),
+    }));
 
     return {
-      total,
-      byStatus,
-      byPlatform,
-      byWorkType,
-      platformPerf,
-      weeks,
-      callbackRate,
-      offerRate,
-      rejectionRate,
-      avgResponseDays,
-      fastestResponse: fastestResponse === Infinity ? null : fastestResponse,
-      slowestResponse:
-        slowestResponse === 0 && responseCount === 0 ? null : slowestResponse,
-      topTags,
-      isLowData: total < MIN_DATA_THRESHOLD,
+      total, byStatus, responseRate, offerRate,
+      platformSuccess, dailyTrend, weeklyResponse,
+      workTypeData, jobTypeData, radarData,
+      bestPlatform: platformSuccess[0],
     };
-  }, [filtered]);
+  }, [applications, timeFilter]);
 
   if (!stats) {
     return (
       <div className="empty-state">
-        <div
-          className="empty-state-icon"
-          style={{ fontSize: 32, marginBottom: 10, opacity: 0.4 }}
-        >
-          —
-        </div>
-        <h3>No data to analyze</h3>
-        <p>Add applications to see analytics</p>
+        <div className="empty-state-icon">📊</div>
+        <h3>No data yet</h3>
+        <p>Add applications to see your analytics</p>
       </div>
     );
   }
 
+  const funnelData = [
+    { name: "Applied",   value: stats.byStatus?.Applied   || 0 },
+    { name: "Interview", value: stats.byStatus?.Interview || 0 },
+    { name: "Offer",     value: stats.byStatus?.Offer     || 0 },
+    { name: "Rejected",  value: stats.byStatus?.Rejected  || 0 },
+  ].filter(d => d.value > 0);
+
   return (
-    <div>
-      {/* Time filter */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
-        {[
-          { value: "7d", label: "Last 7 days" },
-          { value: "30d", label: "Last 30 days" },
-          { value: "all", label: "All time" },
-        ].map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => setTimeFilter(opt.value)}
-            style={{
-              padding: "6px 14px",
-              borderRadius: "var(--radius-sm)",
-              border: `1px solid ${timeFilter === opt.value ? "var(--accent-border)" : "var(--border)"}`,
-              background:
-                timeFilter === opt.value ? "var(--accent-dim)" : "transparent",
-              color:
-                timeFilter === opt.value
-                  ? "var(--accent)"
-                  : "var(--text-muted)",
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: "pointer",
-              fontFamily: "'DM Sans', sans-serif",
-              transition: "all 0.15s",
-            }}
-          >
-            {opt.label}
-          </button>
-        ))}
-        {stats.isLowData && (
-          <span
-            style={{
-              marginLeft: "auto",
-              fontSize: 11,
-              color: "var(--text-muted)",
-              alignSelf: "center",
-              fontStyle: "italic",
-            }}
-          >
-            Based on {stats.total} application{stats.total !== 1 ? "s" : ""} —
-            metrics may not be representative
-          </span>
-        )}
+    <div style={{ paddingBottom: 32 }}>
+      <style>{`
+        .recharts-surface, .recharts-surface:focus, .recharts-surface:focus-visible,
+        .recharts-wrapper, .recharts-wrapper:focus, .recharts-wrapper:focus-visible,
+        .recharts-sector:focus, .recharts-sector:focus-visible,
+        .recharts-bar-rectangle:focus, .recharts-bar-rectangle:focus-visible,
+        .recharts-rectangle:focus, .recharts-rectangle:focus-visible,
+        .recharts-pie-sector:focus, .recharts-pie-sector:focus-visible,
+        .recharts-layer:focus, .recharts-layer:focus-visible,
+        svg:focus, svg:focus-visible, g:focus, g:focus-visible, path:focus, path:focus-visible {
+          outline: none !important;
+          stroke: none;
+        }
+        .recharts-surface { outline: none !important; }
+      `}</style>
+
+      {/* Time filter tabs */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+        {tabs.map(t => {
+          const active = timeFilter === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTimeFilter(t.key)}
+              style={{
+                flex: 1, padding: "8px 0", borderRadius: 6,
+                border: active ? `1px solid ${T.accentBorder}` : `1px solid ${T.border}`,
+                background: active ? T.accentDim : "transparent",
+                color: active ? T.accent : T.textS,
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: 13,
+                fontWeight: active ? 600 : 400,
+                cursor: "pointer",
+                transition: "all .15s",
+              }}
+            >
+              {t.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Insights */}
-      <InsightsBox stats={stats} applications={filtered} />
+      {/* Metric cards */}
+      {stats.total > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12, marginBottom: 20 }}>
+          <MetricCard label="Total applied"  value={stats.total}                   color={T.accent} />
+          <MetricCard label="Interviews"      value={stats.byStatus.Interview}       color={T.yellow} />
+          <MetricCard label="Offers"          value={stats.byStatus.Offer}           color={T.green}  />
+          <MetricCard label="Rejected"        value={stats.byStatus.Rejected}        color={T.red}    />
+          <MetricCard label="Response rate"   value={`${stats.responseRate}%`}       color={T.blue}   sub={`${stats.offerRate}% offer rate`} />
+        </div>
+      )}
 
-      {/* Key metrics */}
-      <div className="stats-grid" style={{ marginBottom: 20 }}>
-        <MetricCard
-          label="Callback Rate"
-          value={stats.callbackRate !== null ? `${stats.callbackRate}%` : "—"}
-          sub="Interview + Offer"
-          color="var(--accent)"
-          lowData={stats.isLowData ? stats.total : null}
-        />
-        <MetricCard
-          label="Offer Rate"
-          value={stats.offerRate !== null ? `${stats.offerRate}%` : "—"}
-          sub="Of all applications"
-          color="var(--green)"
-          lowData={stats.isLowData ? stats.total : null}
-        />
-        <MetricCard
-          label="Rejection Rate"
-          value={stats.rejectionRate !== null ? `${stats.rejectionRate}%` : "—"}
-          sub="Of all applications"
-          color="var(--red)"
-          lowData={stats.isLowData ? stats.total : null}
-        />
-        <MetricCard
-          label="Total Applications"
-          value={stats.total}
-          sub="In selected period"
-          color="var(--yellow)"
-        />
-      </div>
+      {stats.total === 0 && (
+        <div className="empty-state">
+          <div className="empty-state-icon">📭</div>
+          <h3>No data in this period</h3>
+          <p>Try switching to a wider time range</p>
+        </div>
+      )}
 
-      {/* Funnel */}
-      <Funnel byStatus={stats.byStatus} total={stats.total} />
+      {stats.total > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 
-      {/* Status Distribution Pie Chart */}
-      <StatusDistributionChart byStatus={stats.byStatus} total={stats.total} />
+          {/* 1 — Daily trend */}
+          <ChartCard title="Daily applications" height={200}>
+            <ResponsiveContainer width="100%" height="100%" tabIndex={-1}>
+              <BarChart data={stats.dailyTrend} barSize={14}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={T.border} />
+                <XAxis dataKey="date" {...AXIS} />
+                <YAxis {...AXIS} width={22} allowDecimals={false} />
+                <Tooltip content={<CustomTooltip suffix=" apps" />} cursor={{ fill: "rgba(108,99,255,0.07)" }} />
+                <Bar dataKey="count" fill={T.accent} fillOpacity={.9} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
 
-      {/* Grid of charts */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 16,
-          marginBottom: 16,
-        }}
-      >
-        <WorkTypeVisualization
-          byWorkType={stats.byWorkType}
-          total={stats.total}
-        />
-        <PlatformPerformanceChart platformPerf={stats.platformPerf} />
-      </div>
+          {/* 2 — Funnel + Work type */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <ChartCard title="Application funnel" height={230}>
+              <InlineLegend items={funnelData.map(d => ({ label: d.name, color: STATUS_COLORS[d.name] || T.accent, count: d.value }))} />
+              <div style={{ height: 178 }}>
+                <ResponsiveContainer width="100%" height="100%" tabIndex={-1}>
+                  <PieChart>
+                    <Pie data={funnelData} innerRadius="50%" outerRadius="75%" paddingAngle={4} dataKey="value" stroke="none">
+                      {funnelData.map((entry, i) => <Cell key={i} fill={STATUS_COLORS[entry.name] || PALETTE[i]} />)}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </ChartCard>
 
-      {/* Tags Chart */}
-      <TagsVisualization topTags={stats.topTags} total={stats.total} />
+            <ChartCard title="Work type" height={230}>
+              <InlineLegend items={stats.workTypeData.map((d, i) => ({ label: d.name, color: PALETTE[i % PALETTE.length], count: d.value }))} />
+              <div style={{ height: 178 }}>
+                <ResponsiveContainer width="100%" height="100%" tabIndex={-1}>
+                  <BarChart data={stats.workTypeData} barSize={32}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={T.border} />
+                    <XAxis dataKey="name" {...AXIS} />
+                    <YAxis {...AXIS} width={22} allowDecimals={false} />
+                    <Tooltip content={<CustomTooltip suffix=" apps" />} cursor={{ fill: "rgba(108,99,255,0.07)" }} />
+                    <Bar dataKey="value" radius={[5, 5, 0, 0]}>
+                      {stats.workTypeData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </ChartCard>
+          </div>
 
-      {/* Weekly Trend */}
-      <WeeklyTrendChart weeks={stats.weeks} />
+          {/* 3 — Platform success */}
+          <ChartCard title="Platform success rate" height={Math.max(200, stats.platformSuccess.length * 44 + 40)}>
+            <ResponsiveContainer width="100%" height="100%" tabIndex={-1}>
+              <BarChart data={stats.platformSuccess} layout="vertical" margin={{ left: 4, right: 28 }} barSize={18}>
+                <XAxis type="number" {...AXIS} domain={[0, 100]} tickFormatter={v => `${v}%`} />
+                <YAxis type="category" dataKey="name" {...AXIS} width={96} />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={T.border} />
+                <Tooltip content={<CustomTooltip suffix="%" />} cursor={{ fill: "rgba(108,99,255,0.07)" }} />
+                <Bar dataKey="rate" radius={[0, 5, 5, 0]}>
+                  {stats.platformSuccess.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
 
-      {/* Conversion Funnel */}
-      <ConversionFunnelChart byStatus={stats.byStatus} total={stats.total} />
+          {/* 4 — Weekly response + Job type */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <ChartCard title="Weekly response rate" height={200}>
+              <ResponsiveContainer width="100%" height="100%" tabIndex={-1}>
+                <AreaChart data={stats.weeklyResponse}>
+                  <defs>
+                    <linearGradient id="accentGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor={T.accent} stopOpacity={.22} />
+                      <stop offset="100%" stopColor={T.accent} stopOpacity={0}   />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={T.border} />
+                  <XAxis dataKey="week" {...AXIS} />
+                  <YAxis {...AXIS} width={30} tickFormatter={v => `${v}%`} domain={[0, 100]} />
+                  <Tooltip content={<CustomTooltip suffix="%" />} cursor={{ stroke: T.accent, strokeWidth: 1 }} />
+                  <Area type="monotone" dataKey="rate" stroke={T.accent} strokeWidth={2} fill="url(#accentGrad)"
+                    dot={{ r: 3, fill: T.accent, strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: T.accent, stroke: T.bgCard, strokeWidth: 2 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Job vs internship" height={200}>
+              <InlineLegend items={stats.jobTypeData.map((d, i) => ({ label: d.name, color: [T.accent, T.blue][i % 2], count: d.value }))} />
+              <div style={{ height: 158 }}>
+                <ResponsiveContainer width="100%" height="100%" tabIndex={-1}>
+                  <BarChart data={stats.jobTypeData} barSize={36}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={T.border} />
+                    <XAxis dataKey="name" {...AXIS} />
+                    <YAxis {...AXIS} width={22} allowDecimals={false} />
+                    <Tooltip content={<CustomTooltip suffix=" apps" />} cursor={{ fill: "rgba(108,99,255,0.07)" }} />
+                    <Bar dataKey="value" radius={[5, 5, 0, 0]}>
+                      {stats.jobTypeData.map((_, i) => <Cell key={i} fill={[T.accent, T.blue][i % 2]} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </ChartCard>
+          </div>
+
+          {/* 5 — Platform radar (≥3 platforms) */}
+          {stats.radarData?.length >= 3 && (
+            <ChartCard title="Platform activity radar" height={260}>
+              <ResponsiveContainer width="100%" height="100%" tabIndex={-1}>
+                <RadarChart data={stats.radarData} margin={{ top: 10, right: 28, bottom: 10, left: 28 }}>
+                  <PolarGrid stroke={T.border} />
+                  <PolarAngleAxis dataKey="platform" tick={{ fontSize: 11, fill: T.textS }} />
+                  <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
+                  <Radar name="Success rate" dataKey="rate" stroke={T.accent} fill={T.accent} fillOpacity={.18} strokeWidth={2} />
+                  <Radar name="Volume" dataKey="total" stroke={T.green} fill={T.green} fillOpacity={.1} strokeWidth={1.5} strokeDasharray="4 3" />
+                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, color: T.textS }} />
+                  <Tooltip content={<CustomTooltip suffix="%" />} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          )}
+
+          {/* Insight strip */}
+          <div style={{
+            background: T.accentDim,
+            border: `1px solid ${T.accentBorder}`,
+            borderRadius: 10,
+            padding: "14px 18px",
+            fontSize: 13,
+            color: T.textS,
+            lineHeight: 1.65,
+          }}>
+            <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, color: T.accent, marginRight: 6 }}>💡 Insight</span>
+            {stats.bestPlatform ? (
+              <>
+                <span style={{ color: T.textP, fontWeight: 500 }}>{stats.bestPlatform.name}</span>
+                {" "}is your top platform with a{" "}
+                <span style={{ color: T.textP, fontWeight: 500 }}>{stats.bestPlatform.rate}% response rate</span>.
+                {" "}Focus your effort there this week. Overall response rate is{" "}
+                <span style={{ color: T.textP, fontWeight: 500 }}>{stats.responseRate}%</span>
+                {" "}across {stats.total} application{stats.total !== 1 ? "s" : ""}.
+              </>
+            ) : (
+              "Add more applications to unlock actionable insights."
+            )}
+          </div>
+
+        </div>
+      )}
     </div>
   );
 }
