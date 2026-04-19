@@ -25,7 +25,7 @@ export async function POST(req) {
   const application = await prisma.application.create({
     data: {
       id: body.id,
-      clerkUserId: userId, // always from auth, never from body
+      clerkUserId: userId,
       company: body.company,
       role: body.role,
       jobType: body.jobType ?? "Job",

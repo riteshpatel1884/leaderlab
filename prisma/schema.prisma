@@ -6,9 +6,19 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id           String        @id
+  email        String?       @unique
+  createdAt    DateTime      @default(now()) @map("created_at")
+  applications Application[]
+
+  @@map("users")
+}
+
 model Application {
   id               String    @id @default(cuid())
   clerkUserId      String    @map("clerk_user_id")
+  user             User      @relation(fields: [clerkUserId], references: [id])
   company          String
   role             String
   jobType          String    @default("Job") @map("job_type")
