@@ -1,260 +1,541 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, SignInButton, SignUpButton } from "@clerk/nextjs";
-import { useTheme } from "../utils/themeProvider/Themeprovider"; // adjust path
+import { useTheme } from "../utils/themeProvider/Themeprovider";
+import {
+  PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from "recharts";
 
-/* ─── Static demo data shown in the mock dashboard ─── */
-const FUNNEL = [
-  { label: "Applied", value: 24, color: "#60a5fa" },
-  { label: "Interview", value: 8, color: "#f59e0b" },
-  { label: "Offer", value: 2, color: "#34d399" },
+/* ─── 35 Mock Applications ─── */
+const MOCK_APPS = [
+  { id: 1,  company: "Stripe",      role: "Product Manager",       status: "Interview", platform: "LinkedIn",     workType: "Remote",  resumeVersion: "v2", dateApplied: "2025-04-01" },
+  { id: 2,  company: "Notion",      role: "Senior PM",             status: "Applied",   platform: "Referral",     workType: "Hybrid",  resumeVersion: "v1", dateApplied: "2025-04-03" },
+  { id: 3,  company: "Linear",      role: "Product Lead",          status: "Offer",     platform: "Company site", workType: "Remote",  resumeVersion: "v2", dateApplied: "2025-03-28" },
+  { id: 4,  company: "Figma",       role: "PM – Design Tools",     status: "Interview", platform: "LinkedIn",     workType: "Onsite",  resumeVersion: "v2", dateApplied: "2025-04-05" },
+  { id: 5,  company: "Vercel",      role: "Growth PM",             status: "Applied",   platform: "AngelList",    workType: "Remote",  resumeVersion: "v1", dateApplied: "2025-04-08" },
+  { id: 6,  company: "Loom",        role: "Product Manager",       status: "Rejected",  platform: "LinkedIn",     workType: "Remote",  resumeVersion: "v1", dateApplied: "2025-03-20" },
+  { id: 7,  company: "Retool",      role: "Platform PM",           status: "Interview", platform: "Referral",     workType: "Hybrid",  resumeVersion: "v2", dateApplied: "2025-03-25" },
+  { id: 8,  company: "Supabase",    role: "Developer PM",          status: "Applied",   platform: "Company site", workType: "Remote",  resumeVersion: "v2", dateApplied: "2025-04-10" },
+  { id: 9,  company: "Atlassian",   role: "Senior PM",             status: "Rejected",  platform: "LinkedIn",     workType: "Hybrid",  resumeVersion: "v1", dateApplied: "2025-03-15" },
+  { id: 10, company: "Dropbox",     role: "PM – Platform",         status: "Applied",   platform: "AngelList",    workType: "Remote",  resumeVersion: "v1", dateApplied: "2025-04-02" },
+  { id: 11, company: "Intercom",    role: "Product Manager",       status: "Interview", platform: "LinkedIn",     workType: "Onsite",  resumeVersion: "v2", dateApplied: "2025-03-30" },
+  { id: 12, company: "Airtable",    role: "PM – Integrations",     status: "Rejected",  platform: "Company site", workType: "Remote",  resumeVersion: "v1", dateApplied: "2025-03-18" },
+  { id: 13, company: "Webflow",     role: "Growth PM",             status: "Applied",   platform: "LinkedIn",     workType: "Remote",  resumeVersion: "v2", dateApplied: "2025-04-12" },
+  { id: 14, company: "Mixpanel",    role: "Data PM",               status: "Interview", platform: "Referral",     workType: "Hybrid",  resumeVersion: "v2", dateApplied: "2025-04-06" },
+  { id: 15, company: "Amplitude",   role: "Product Analyst PM",    status: "Applied",   platform: "AngelList",    workType: "Remote",  resumeVersion: "v1", dateApplied: "2025-03-22" },
+  { id: 16, company: "HubSpot",     role: "PM – CRM",              status: "Rejected",  platform: "LinkedIn",     workType: "Hybrid",  resumeVersion: "v1", dateApplied: "2025-03-10" },
+  { id: 17, company: "Salesforce",  role: "Senior PM",             status: "Applied",   platform: "Company site", workType: "Onsite",  resumeVersion: "v2", dateApplied: "2025-04-14" },
+  { id: 18, company: "Asana",       role: "PM – Workflows",        status: "Interview", platform: "LinkedIn",     workType: "Remote",  resumeVersion: "v2", dateApplied: "2025-04-07" },
+  { id: 19, company: "Monday.com",  role: "Product Manager",       status: "Applied",   platform: "AngelList",    workType: "Hybrid",  resumeVersion: "v1", dateApplied: "2025-03-27" },
+  { id: 20, company: "ClickUp",     role: "Growth PM",             status: "Rejected",  platform: "LinkedIn",     workType: "Remote",  resumeVersion: "v1", dateApplied: "2025-03-12" },
+  { id: 21, company: "Miro",        role: "PM – Collaboration",    status: "Offer",     platform: "Referral",     workType: "Hybrid",  resumeVersion: "v2", dateApplied: "2025-04-01" },
+  { id: 22, company: "Coda",        role: "Product Lead",          status: "Applied",   platform: "Company site", workType: "Remote",  resumeVersion: "v2", dateApplied: "2025-04-15" },
+  { id: 23, company: "Craft",       role: "PM",                    status: "Rejected",  platform: "AngelList",    workType: "Remote",  resumeVersion: "v1", dateApplied: "2025-03-08" },
+  { id: 24, company: "Descript",    role: "PM – Media",            status: "Applied",   platform: "LinkedIn",     workType: "Remote",  resumeVersion: "v2", dateApplied: "2025-04-09" },
+  { id: 25, company: "LakeFS",      role: "Senior PM",             status: "Interview", platform: "Referral",     workType: "Remote",  resumeVersion: "v2", dateApplied: "2025-03-29" },
+  { id: 26, company: "Pendo",       role: "PM – Analytics",        status: "Applied",   platform: "LinkedIn",     workType: "Hybrid",  resumeVersion: "v1", dateApplied: "2025-04-11" },
+  { id: 27, company: "Productboard",role: "PM",                    status: "Rejected",  platform: "Company site", workType: "Remote",  resumeVersion: "v1", dateApplied: "2025-03-16" },
+  { id: 28, company: "Heap",        role: "Data PM",               status: "Applied",   platform: "AngelList",    workType: "Remote",  resumeVersion: "v2", dateApplied: "2025-04-13" },
+  { id: 29, company: "Segment",     role: "PM – Data Infra",       status: "Interview", platform: "LinkedIn",     workType: "Onsite",  resumeVersion: "v2", dateApplied: "2025-04-04" },
+  { id: 30, company: "Braze",       role: "Product Manager",       status: "Applied",   platform: "Referral",     workType: "Hybrid",  resumeVersion: "v2", dateApplied: "2025-03-26" },
+  { id: 31, company: "Contentful",  role: "PM – CMS",              status: "Rejected",  platform: "LinkedIn",     workType: "Remote",  resumeVersion: "v1", dateApplied: "2025-03-14" },
+  { id: 32, company: "Sanity",      role: "Developer PM",          status: "Applied",   platform: "Company site", workType: "Remote",  resumeVersion: "v2", dateApplied: "2025-04-16" },
+  { id: 33, company: "Algolia",     role: "PM – Search",           status: "Interview", platform: "LinkedIn",     workType: "Hybrid",  resumeVersion: "v2", dateApplied: "2025-03-31" },
+  { id: 34, company: "Elastic",     role: "Senior PM",             status: "Applied",   platform: "AngelList",    workType: "Remote",  resumeVersion: "v1", dateApplied: "2025-04-17" },
+  { id: 35, company: "Datadog",     role: "PM – Observability",    status: "Offer",     platform: "Referral",     workType: "Onsite",  resumeVersion: "v2", dateApplied: "2025-04-02" },
 ];
 
-/* Weekly trend data — applied & interviews over 8 weeks */
-const TREND_DATA = [
-  { label: "Mar 16", applied: 1, interviews: 0 },
-  { label: "Mar 23", applied: 1, interviews: 0 },
-  { label: "Mar 30", applied: 2, interviews: 0 },
-  { label: "Apr 6",  applied: 2, interviews: 1 },
-  { label: "Apr 13", applied: 3, interviews: 1 },
-  { label: "Apr 27", applied: 4, interviews: 1 },
-  { label: "May 4",  applied: 5, interviews: 2 },
-  { label: "May 11", applied: 7, interviews: 2 },
-];
+/* ─── Analytics computation ─── */
+function computeAnalytics(apps) {
+  const total = apps.length;
+  const byStatus = { Applied: 0, Interview: 0, Offer: 0, Rejected: 0 };
+  const byPlatform = {};
+  const byWorkType = {};
+  const byResume = {};
+  const weeklyMap = {};
 
-const FEATURES = [
-  {
-    icon: "📊",
-    title: "Visual Analytics",
-    desc: "Track your application funnel, conversion rate, and success metrics in real time.",
-  },
-  {
-    icon: "🗓️",
-    title: "Timeline View",
-    desc: "See applications over time and spot the best windows to apply for maximum response.",
-  },
-  {
-    icon: "🤝",
-    title: "Resume Matcher",
-    desc: "Match your resume to job descriptions and boost your interview call-back rate.",
-  },
-  {
-    icon: "🎯",
-    title: "Prep Tracker",
-    desc: "Log interview rounds, notes, and prep tasks so you walk in fully confident.",
-  },
-  {
-    icon: "🔔",
-    title: "Smart Reminders",
-    desc: "Never let a follow-up slip. Get nudged at the right time for every application.",
-  },
-  {
-    icon: "🌗",
-    title: "Light & Dark Mode",
-    desc: "Pristine in daylight, easy on the eyes at midnight. Your tracker, your vibe.",
-  },
-];
+  apps.forEach((a) => {
+    byStatus[a.status] = (byStatus[a.status] || 0) + 1;
 
-/* ─── Donut chart (SVG) — larger, gap-separated segments ─── */
-function DonutChart() {
-  const data = [
-    { pct: 0.48, color: "#60a5fa", label: "Applied" },
-    { pct: 0.16, color: "#f59e0b", label: "Interview" },
-    { pct: 0.08, color: "#34d399", label: "Offer" },
-    { pct: 0.28, color: "#f87171", label: "Rejected" },
-  ];
-  const r = 40;
-  const cx = 56;
-  const cy = 56;
-  const circ = 2 * Math.PI * r;
-  const GAP = 3; // gap between segments in px
-  let cumAngle = -90; // start at top
-  const segments = data.map((d) => {
-    const angle = d.pct * 360;
-    const startAngle = cumAngle;
-    cumAngle += angle;
-    return { ...d, startAngle, angle };
-  });
-  function polarToXY(angleDeg, radius) {
-    const rad = (angleDeg * Math.PI) / 180;
-    return [cx + radius * Math.cos(rad), cy + radius * Math.sin(rad)];
-  }
-  function segmentPath(startAngle, angle, r, gapDeg = 2) {
-    const s = startAngle + gapDeg / 2;
-    const e = startAngle + angle - gapDeg / 2;
-    const innerR = r - 14;
-    const [x1, y1] = polarToXY(s, r);
-    const [x2, y2] = polarToXY(e, r);
-    const [x3, y3] = polarToXY(e, innerR);
-    const [x4, y4] = polarToXY(s, innerR);
-    const large = angle - gapDeg > 180 ? 1 : 0;
-    return `M${x1},${y1} A${r},${r},0,${large},1,${x2},${y2} L${x3},${y3} A${innerR},${innerR},0,${large},0,${x4},${y4} Z`;
-  }
-  return (
-    <svg viewBox="0 0 112 112" style={{ width: 100, height: 100 }}>
-      {segments.map((seg, i) => (
-        <path
-          key={i}
-          d={segmentPath(seg.startAngle, seg.angle, r)}
-          fill={seg.color}
-          opacity="0.92"
-        />
-      ))}
-      {/* center text */}
-      <text x={cx} y={cy - 4} textAnchor="middle" fill="var(--text-primary)" fontSize="13" fontWeight="800" fontFamily="Syne, sans-serif">24</text>
-      <text x={cx} y={cy + 10} textAnchor="middle" fill="var(--text-muted)" fontSize="7" fontFamily="DM Sans, sans-serif">total</text>
-    </svg>
-  );
-}
-
-/* ─── Mini area/line trend chart (pure SVG, no deps) ─── */
-function MiniTrendChart() {
-  const W = 280, H = 90;
-  const PAD = { top: 8, right: 8, bottom: 22, left: 20 };
-  const innerW = W - PAD.left - PAD.right;
-  const innerH = H - PAD.top - PAD.bottom;
-
-  const maxVal = Math.max(...TREND_DATA.map((d) => d.applied));
-  const n = TREND_DATA.length;
-
-  const xOf = (i) => PAD.left + (i / (n - 1)) * innerW;
-  const yOf = (v) => PAD.top + innerH - (v / maxVal) * innerH;
-
-  // smooth cubic bezier path helper
-  function smoothPath(points) {
-    if (points.length < 2) return "";
-    let d = `M${points[0][0]},${points[0][1]}`;
-    for (let i = 0; i < points.length - 1; i++) {
-      const [x0, y0] = points[i];
-      const [x1, y1] = points[i + 1];
-      const cpX = (x0 + x1) / 2;
-      d += ` C${cpX},${y0} ${cpX},${y1} ${x1},${y1}`;
+    if (a.platform) {
+      if (!byPlatform[a.platform]) byPlatform[a.platform] = { total: 0, callbacks: 0 };
+      byPlatform[a.platform].total++;
+      if (a.status === "Interview" || a.status === "Offer") byPlatform[a.platform].callbacks++;
     }
-    return d;
-  }
 
-  const appliedPts  = TREND_DATA.map((d, i) => [xOf(i), yOf(d.applied)]);
-  const interviewPts = TREND_DATA.map((d, i) => [xOf(i), yOf(d.interviews)]);
+    if (a.workType) {
+      if (!byWorkType[a.workType]) byWorkType[a.workType] = { total: 0, callbacks: 0 };
+      byWorkType[a.workType].total++;
+      if (a.status === "Interview" || a.status === "Offer") byWorkType[a.workType].callbacks++;
+    }
 
-  const appliedLine   = smoothPath(appliedPts);
-  const interviewLine = smoothPath(interviewPts);
+    if (a.resumeVersion) {
+      if (!byResume[a.resumeVersion]) byResume[a.resumeVersion] = { total: 0, callbacks: 0 };
+      byResume[a.resumeVersion].total++;
+      if (a.status === "Interview" || a.status === "Offer") byResume[a.resumeVersion].callbacks++;
+    }
 
-  // area fill: line path + close along bottom
-  const appliedArea = appliedLine
-    + ` L${xOf(n - 1)},${PAD.top + innerH} L${PAD.left},${PAD.top + innerH} Z`;
+    const d = new Date(a.dateApplied);
+    const day = d.getDay();
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
+    const key = monday.toISOString().slice(0, 10);
+    if (!weeklyMap[key]) weeklyMap[key] = { applied: 0, interviews: 0 };
+    weeklyMap[key].applied++;
+    if (a.status === "Interview" || a.status === "Offer") weeklyMap[key].interviews++;
+  });
 
-  // x-axis labels — show 3 evenly spaced
-  const labelIdxs = [0, 3, 7];
+  const platformData = Object.entries(byPlatform)
+    .map(([name, d]) => ({ name, total: d.total, rate: d.total > 0 ? +((d.callbacks / d.total) * 100).toFixed(1) : 0 }))
+    .sort((a, b) => b.rate - a.rate);
 
+  const workTypeData = Object.entries(byWorkType)
+    .map(([name, d]) => ({
+      name, value: d.total, callbacks: d.callbacks,
+      fill: { Remote: "#6c63ff", Hybrid: "#3b82f6", Onsite: "#f59e0b" }[name] || "#22c55e",
+    }));
+
+  const resumeData = Object.entries(byResume)
+    .map(([name, d]) => ({ name, total: d.total, rate: d.total > 0 ? +((d.callbacks / d.total) * 100).toFixed(1) : 0 }))
+    .sort((a, b) => b.rate - a.rate);
+
+  const weeks = Object.entries(weeklyMap)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([key, d]) => ({
+      week: new Date(key).toLocaleDateString("en-IN", { month: "short", day: "2-digit" }),
+      applied: d.applied, interviews: d.interviews,
+    }));
+
+  const callbackRate = +((( byStatus.Interview + byStatus.Offer) / total) * 100).toFixed(1);
+  const offerRate = +((byStatus.Offer / total) * 100).toFixed(1);
+  const rejectionRate = +((byStatus.Rejected / total) * 100).toFixed(1);
+
+  const now = new Date();
+  const ghostCutoff = new Date(now - 14 * 864e5);
+  const ghostCount = apps.filter(a => a.status === "Applied" && new Date(a.dateApplied) < ghostCutoff).length;
+  const ghostRate = +((ghostCount / total) * 100).toFixed(1);
+
+  return { total, byStatus, platformData, workTypeData, resumeData, weeks, callbackRate, offerRate, rejectionRate, ghostRate };
+}
+
+/* ─── Recharts tooltip ─── */
+const tooltipStyle = {
+  background: "rgba(14,14,18,0.97)", border: "1px solid rgba(108,99,255,0.2)",
+  borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#f0f0f2", outline: "none",
+};
+function CustomTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
-      <defs>
-        {/* blue area gradient */}
-        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#60a5fa" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.02" />
-        </linearGradient>
-        {/* subtle grid line */}
-      </defs>
-
-      {/* grid lines */}
-      {[0, 0.5, 1].map((t, i) => {
-        const y = PAD.top + t * innerH;
-        return (
-          <line key={i} x1={PAD.left} x2={PAD.left + innerW}
-            y1={y} y2={y}
-            stroke="rgba(255,255,255,0.05)" strokeWidth="1"
-            strokeDasharray="3 4"
-          />
-        );
-      })}
-
-      {/* y-axis value labels */}
-      {[0, Math.round(maxVal / 2), maxVal].map((v, i) => (
-        <text key={i}
-          x={PAD.left - 4}
-          y={yOf(v) + 3}
-          textAnchor="end"
-          fontSize="5.5"
-          fill="rgba(138,158,150,0.7)"
-          fontFamily="DM Sans, sans-serif"
-        >{v}</text>
+    <div style={tooltipStyle}>
+      {label && <div style={{ fontWeight: 700, marginBottom: 4 }}>{label}</div>}
+      {payload.map((p, i) => (
+        <div key={i} style={{ color: p.color || "#a5b4fc", marginTop: 2 }}>
+          <span style={{ color: "#8b8b9a", marginRight: 6 }}>{p.name}:</span>{p.value}
+        </div>
       ))}
-
-      {/* filled area under applied */}
-      <path d={appliedArea} fill="url(#areaGrad)" />
-
-      {/* applied line */}
-      <path d={appliedLine} fill="none" stroke="#60a5fa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-
-      {/* interviews line */}
-      <path d={interviewLine} fill="none" stroke="#f59e0b" strokeWidth="1.5"
-        strokeLinecap="round" strokeLinejoin="round" strokeDasharray="3 2" />
-
-      {/* dots on last point */}
-      <circle cx={appliedPts[n-1][0]} cy={appliedPts[n-1][1]} r="3" fill="#60a5fa" stroke="var(--bg)" strokeWidth="1.2" />
-      <circle cx={interviewPts[n-1][0]} cy={interviewPts[n-1][1]} r="3" fill="#f59e0b" stroke="var(--bg)" strokeWidth="1.2" />
-
-      {/* tooltip callout on last point */}
-      <rect
-        x={appliedPts[n-1][0] - 38} y={PAD.top - 2}
-        width="36" height="20" rx="3"
-        fill="var(--bg-card)" stroke="var(--border)" strokeWidth="0.8"
-      />
-      <text x={appliedPts[n-1][0] - 20} y={PAD.top + 7} textAnchor="middle"
-        fontSize="5" fontWeight="700" fill="var(--text-primary)" fontFamily="Syne, sans-serif">
-        May 11
-      </text>
-      <text x={appliedPts[n-1][0] - 20} y={PAD.top + 14} textAnchor="middle"
-        fontSize="4.5" fill="var(--text-muted)" fontFamily="DM Sans, sans-serif">
-        Applied: <tspan fill="#60a5fa" fontWeight="700">7</tspan>
-        {"  "}Int: <tspan fill="#f59e0b" fontWeight="700">2</tspan>
-      </text>
-
-      {/* x-axis labels */}
-      {labelIdxs.map((idx) => (
-        <text key={idx}
-          x={xOf(idx)} y={H - 4}
-          textAnchor="middle" fontSize="5.5"
-          fill="rgba(138,158,150,0.7)"
-          fontFamily="DM Sans, sans-serif"
-        >{TREND_DATA[idx].label}</text>
-      ))}
-    </svg>
+    </div>
   );
 }
 
-/* ─── Animated counter ─── */
+/* ─── Status colors ─── */
+const STATUS_COLORS = { Applied: "#3b82f6", Interview: "#f59e0b", Offer: "#22c55e", Rejected: "#ef4444" };
+
+/* ─── Animated Counter ─── */
 function Counter({ target, suffix = "" }) {
   const [val, setVal] = useState(0);
   const ref = useRef(null);
   useEffect(() => {
-    const obs = new IntersectionObserver(
-      ([e]) => {
-        if (!e.isIntersecting) return;
-        obs.disconnect();
-        let start = 0;
-        const step = Math.ceil(target / 40);
-        const t = setInterval(() => {
-          start = Math.min(start + step, target);
-          setVal(start);
-          if (start >= target) clearInterval(t);
-        }, 30);
-      },
-      { threshold: 0.4 }
-    );
+    const obs = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      obs.disconnect();
+      let start = 0;
+      const step = Math.ceil(target / 40);
+      const t = setInterval(() => {
+        start = Math.min(start + step, target);
+        setVal(start);
+        if (start >= target) clearInterval(t);
+      }, 30);
+    }, { threshold: 0.4 });
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
   }, [target]);
+  return <span ref={ref}>{val}{suffix}</span>;
+}
+
+/* ─── Donut Chart (hero mock) ─── */
+function DonutChart({ size = 100 }) {
+  const data = [
+    { pct: 0.48, color: "#60a5fa" }, { pct: 0.16, color: "#f59e0b" },
+    { pct: 0.08, color: "#34d399" }, { pct: 0.28, color: "#f87171" },
+  ];
+  const r = size * 0.36, cx = size / 2, cy = size / 2;
+  let cumAngle = -90;
+  const segments = data.map((d) => { const s = cumAngle; cumAngle += d.pct * 360; return { ...d, startAngle: s }; });
+
+  function polarXY(a, radius) {
+    const rad = (a * Math.PI) / 180;
+    return [cx + radius * Math.cos(rad), cy + radius * Math.sin(rad)];
+  }
+  function segPath(startAngle, angle, r, gap = 2) {
+    const s = startAngle + gap / 2, e = startAngle + angle - gap / 2;
+    const iR = r - r * 0.35;
+    const [x1,y1]=polarXY(s,r), [x2,y2]=polarXY(e,r), [x3,y3]=polarXY(e,iR), [x4,y4]=polarXY(s,iR);
+    const large = angle - gap > 180 ? 1 : 0;
+    return `M${x1},${y1} A${r},${r},0,${large},1,${x2},${y2} L${x3},${y3} A${iR},${iR},0,${large},0,${x4},${y4} Z`;
+  }
   return (
-    <span ref={ref}>
-      {val}
-      {suffix}
-    </span>
+    <svg viewBox={`0 0 ${size} ${size}`} style={{ width: size, height: size }}>
+      {segments.map((seg, i) => <path key={i} d={segPath(seg.startAngle, seg.pct * 360, r)} fill={seg.color} opacity="0.92" />)}
+      <text x={cx} y={cy - 4} textAnchor="middle" fill="var(--text-primary)" fontSize={size * 0.13} fontWeight="800" fontFamily="Syne, sans-serif">35</text>
+      <text x={cx} y={cy + size * 0.1} textAnchor="middle" fill="var(--text-muted)" fontSize={size * 0.07} fontFamily="DM Sans, sans-serif">apps</text>
+    </svg>
   );
 }
+
+/* ─── Mini Trend (hero) ─── */
+const HERO_TREND = [
+  { label: "Wk1", applied: 3, interviews: 0 }, { label: "Wk2", applied: 4, interviews: 1 },
+  { label: "Wk3", applied: 5, interviews: 2 }, { label: "Wk4", applied: 6, interviews: 2 },
+  { label: "Wk5", applied: 7, interviews: 3 }, { label: "Wk6", applied: 7, interviews: 3 },
+];
+function MiniTrendChart() {
+  const W = 280, H = 80, PAD = { top: 8, right: 8, bottom: 18, left: 18 };
+  const iW = W - PAD.left - PAD.right, iH = H - PAD.top - PAD.bottom;
+  const n = HERO_TREND.length, maxV = 8;
+  const xOf = (i) => PAD.left + (i / (n - 1)) * iW;
+  const yOf = (v) => PAD.top + iH - (v / maxV) * iH;
+  function smooth(pts) {
+    let d = `M${pts[0][0]},${pts[0][1]}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const cp = (pts[i][0] + pts[i + 1][0]) / 2;
+      d += ` C${cp},${pts[i][1]} ${cp},${pts[i + 1][1]} ${pts[i + 1][0]},${pts[i + 1][1]}`;
+    }
+    return d;
+  }
+  const aPts = HERO_TREND.map((d, i) => [xOf(i), yOf(d.applied)]);
+  const iPts = HERO_TREND.map((d, i) => [xOf(i), yOf(d.interviews)]);
+  const aLine = smooth(aPts), iLine = smooth(iPts);
+  const aArea = aLine + ` L${xOf(n - 1)},${PAD.top + iH} L${PAD.left},${PAD.top + iH} Z`;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
+      <defs>
+        <linearGradient id="heroAreaGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      {[0, 0.5, 1].map((t, i) => <line key={i} x1={PAD.left} x2={PAD.left + iW} y1={PAD.top + t * iH} y2={PAD.top + t * iH} stroke="rgba(255,255,255,0.05)" strokeWidth="1" strokeDasharray="3 4" />)}
+      <path d={aArea} fill="url(#heroAreaGrad)" />
+      <path d={aLine} fill="none" stroke="#60a5fa" strokeWidth="1.8" strokeLinecap="round" />
+      <path d={iLine} fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="3 2" />
+      <circle cx={aPts[n - 1][0]} cy={aPts[n - 1][1]} r="3" fill="#60a5fa" stroke="var(--bg-card)" strokeWidth="1.2" />
+      <circle cx={iPts[n - 1][0]} cy={iPts[n - 1][1]} r="3" fill="#f59e0b" stroke="var(--bg-card)" strokeWidth="1.2" />
+      {HERO_TREND.map((d, i) => <text key={i} x={xOf(i)} y={H - 3} textAnchor="middle" fontSize="5.5" fill="rgba(138,158,150,0.7)" fontFamily="DM Sans, sans-serif">{d.label}</text>)}
+    </svg>
+  );
+}
+
+/* ─── Analytics Demo Section ─── */
+function AnalyticsDemo() {
+  const [analysed, setAnalysed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState(null);
+
+  const handleAnalyse = useCallback(() => {
+    setLoading(true);
+    setTimeout(() => {
+      setStats(computeAnalytics(MOCK_APPS));
+      setLoading(false);
+      setAnalysed(true);
+    }, 1200);
+  }, []);
+
+  const RECHARTS_RESET = `
+    .recharts-wrapper,.recharts-wrapper *,.recharts-surface,.recharts-surface * {
+      outline: none !important; -webkit-tap-highlight-color: transparent !important;
+    }
+    .recharts-surface,.recharts-surface > rect:first-child { fill: transparent !important; }
+    .recharts-rectangle.recharts-tooltip-cursor { fill: rgba(255,255,255,0.04) !important; }
+  `;
+
+  return (
+    <section className="ll-features" style={{ paddingTop: 60, paddingBottom: 80 }}>
+      <style dangerouslySetInnerHTML={{ __html: RECHARTS_RESET }} />
+      <p className="ll-section-eyebrow">See it in action</p>
+      <h2 className="ll-section-title">Your job search analytics</h2>
+      <p style={{ textAlign: "center", color: "var(--text-secondary)", fontSize: 14, marginBottom: 36, lineHeight: 1.6, maxWidth: 520, margin: "0 auto 36px" }}>
+        35 real-world applications. Click Analyse to instantly see your full performance breakdown — funnel, platforms, trends and more.
+      </p>
+
+      {/* CTA */}
+      {!analysed && (
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <button
+            onClick={handleAnalyse}
+            disabled={loading}
+            style={{
+              padding: "14px 36px", borderRadius: 10,
+              background: loading ? "rgba(108,99,255,0.3)" : "linear-gradient(135deg, #6c63ff, #22c55e)",
+              border: "none", color: "#fff", fontSize: 15, fontWeight: 700,
+              cursor: loading ? "not-allowed" : "pointer",
+              fontFamily: "'Syne', sans-serif", letterSpacing: "0.2px",
+              boxShadow: loading ? "none" : "0 8px 32px rgba(108,99,255,0.35)",
+              transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 10,
+            }}
+          >
+            {loading ? (
+              <>
+                <span style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin 0.7s linear infinite" }} />
+                Analysing 35 applications…
+              </>
+            ) : (
+              <> Analyse My Applications</>
+            )}
+          </button>
+          <div style={{ marginTop: 12, fontSize: 12, color: "var(--text-muted)" }}>Based on 35 mock applications across 6 weeks</div>
+        </div>
+      )}
+
+      {/* Charts */}
+      {analysed && stats && (
+        <div style={{ animation: "fadeUp 0.4s ease both" }}>
+          {/* Refresh button */}
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
+            <button
+              onClick={() => { setAnalysed(false); setStats(null); }}
+              style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid var(--border)", background: "transparent", color: "var(--text-muted)", fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.borderColor = "var(--border-light)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.borderColor = "var(--border)"; }}
+            >
+              ↺ Reset
+            </button>
+          </div>
+
+          {/* ── Stat cards: 4 per row on desktop, 2 per row on mobile ── */}
+          <div className="stat-cards-grid">
+            {[
+              { label: "Total Applied",  value: stats.total,              color: "#3b82f6" },
+              { label: "Callback Rate",  value: `${stats.callbackRate}%`, color: "#6c63ff" },
+              { label: "Offer Rate",     value: `${stats.offerRate}%`,    color: "#22c55e" },
+              { label: "Ghost Rate",     value: `${stats.ghostRate}%`,    color: "#f59e0b" },
+              { label: "Interviews",     value: stats.byStatus.Interview, color: "#f59e0b" },
+              { label: "Offers",         value: stats.byStatus.Offer,     color: "#22c55e" },
+              { label: "Rejected",       value: stats.byStatus.Rejected,  color: "#ef4444" },
+              { label: "Pending",        value: stats.byStatus.Applied,   color: "#3b82f6" },
+            ].map((s) => (
+              <div key={s.label} className="stat-card" style={{ animation: "fadeUp 0.4s ease both" }}>
+                <div className="stat-label">{s.label}</div>
+                <div style={{ fontFamily: "sans-serif", fontSize: 28, fontWeight: 800, color: s.color, lineHeight: 1.1, margin: "6px 0 4px" }}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Funnel */}
+          <div className="demo-chart-card" style={{ marginBottom: 16 }}>
+            <div className="demo-chart-title">Application Funnel</div>
+            {[
+              { label: "Applied",   count: stats.total,                color: "#3b82f6" },
+              { label: "Interview", count: stats.byStatus.Interview,   color: "#f59e0b" },
+              { label: "Offer",     count: stats.byStatus.Offer,       color: "#22c55e" },
+            ].map((step, i, arr) => {
+              const prev = i === 0 ? stats.total : arr[i - 1].count;
+              const conv = i > 0 && prev > 0 ? `${((step.count / prev) * 100).toFixed(0)}% conv.` : null;
+              return (
+                <div key={step.label} style={{ marginBottom: 10 }}>
+                  {conv && <div style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 3 }}>{conv}</div>}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 70, fontSize: 11, color: "var(--text-muted)", textAlign: "right" }}>{step.label}</div>
+                    <div style={{ flex: 1, height: 28, background: "var(--bg)", borderRadius: 6, overflow: "hidden" }}>
+                      <div style={{
+                        width: `${(step.count / stats.total) * 100}%`, height: "100%",
+                        background: step.color, borderRadius: 6, display: "flex", alignItems: "center", paddingLeft: 8,
+                        transition: "width 1.2s cubic-bezier(.4,0,.2,1)",
+                      }}>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{step.count}</span>
+                      </div>
+                    </div>
+                    <div style={{ width: 40, fontSize: 11, color: "var(--text-muted)" }}>{((step.count / stats.total) * 100).toFixed(0)}%</div>
+                  </div>
+                </div>
+              );
+            })}
+            <div style={{ marginTop: 8, fontSize: 11, color: "#ef4444" }}>Rejected: {stats.byStatus.Rejected}</div>
+          </div>
+
+          {/* ── Donut charts: side-by-side, mobile-safe ── */}
+          <div className="donut-grid">
+            {/* Status Donut */}
+            <div className="demo-chart-card">
+              <div className="demo-chart-title">Status Distribution</div>
+              <div className="pie-chart-wrap">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart style={{ outline: "none" }} tabIndex={-1}>
+                    <Pie
+                      isAnimationActive={false}
+                      data={Object.entries(stats.byStatus).filter(([, v]) => v > 0).map(([name, value]) => ({ name, value, fill: STATUS_COLORS[name] }))}
+                      cx="50%" cy="45%" innerRadius="40%" outerRadius="65%"
+                      paddingAngle={3} dataKey="value" stroke="none" tabIndex={-1}
+                    >
+                      {Object.entries(stats.byStatus).filter(([, v]) => v > 0).map(([name], i) => (
+                        <Cell key={i} fill={STATUS_COLORS[name]} tabIndex={-1} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend
+                      iconType="circle" iconSize={7}
+                      formatter={(v) => <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{v}</span>}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Work Type Donut */}
+            <div className="demo-chart-card">
+              <div className="demo-chart-title">Work Type Split</div>
+              <div className="pie-chart-wrap">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart style={{ outline: "none" }} tabIndex={-1}>
+                    <Pie
+                      isAnimationActive={false}
+                      data={stats.workTypeData}
+                      cx="50%" cy="45%" innerRadius="35%" outerRadius="62%"
+                      paddingAngle={4} dataKey="value" stroke="none" tabIndex={-1}
+                    >
+                      {stats.workTypeData.map((e, i) => <Cell key={i} fill={e.fill} tabIndex={-1} />)}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend
+                      iconType="circle" iconSize={7}
+                      formatter={(v) => <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{v}</span>}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Weekly Trend */}
+          <div className="demo-chart-card" style={{ marginBottom: 16 }}>
+            <div className="demo-chart-title">Weekly Application Trend</div>
+            <ResponsiveContainer width="100%" height={200} style={{ background: "transparent", outline: "none" }}>
+              <AreaChart data={stats.weeks} style={{ outline: "none" }} tabIndex={-1} margin={{ left: -10, right: 8 }}>
+                <defs>
+                  <linearGradient id="gApplied2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gInterview2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="week" tick={{ fill: "#555562", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#555562", fontSize: 10 }} axisLine={false} tickLine={false} width={24} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend iconType="circle" iconSize={7} formatter={(v) => <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{v}</span>} />
+                <Area isAnimationActive={false} type="monotone" dataKey="applied" name="Applied" stroke="#3b82f6" strokeWidth={2} fill="url(#gApplied2)" dot={false} />
+                <Area isAnimationActive={false} type="monotone" dataKey="interviews" name="Interviews" stroke="#f59e0b" strokeWidth={2} fill="url(#gInterview2)" dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Platform Success Rate */}
+          <div className="demo-chart-card" style={{ marginBottom: 16 }}>
+            <div className="demo-chart-title">Platform Success Rate</div>
+            <ResponsiveContainer width="100%" height={180} style={{ background: "transparent", outline: "none" }}>
+              <BarChart data={stats.platformData} layout="vertical" style={{ outline: "none" }} tabIndex={-1}>
+                <defs>
+                  <linearGradient id="gPlatform2" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#6c63ff" />
+                    <stop offset="100%" stopColor="#22c55e" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
+                <XAxis type="number" tick={{ fill: "#555562", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+                <YAxis type="category" dataKey="name" tick={{ fill: "#8b8b9a", fontSize: 12 }} axisLine={false} tickLine={false} width={100} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar isAnimationActive={false} dataKey="rate" name="Success Rate %" fill="url(#gPlatform2)" radius={[0, 6, 6, 0]} barSize={16} tabIndex={-1} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Resume Performance */}
+          <div className="demo-chart-card" style={{ marginBottom: 16 }}>
+            <div className="demo-chart-title">Resume Performance</div>
+            <div style={{ display: "flex", gap: 24, justifyContent: "center", alignItems: "center", padding: "12px 0" }}>
+              {stats.resumeData.map((r, i) => {
+                const R = 34, CIRC = 2 * Math.PI * R;
+                const filled = (r.rate / 100) * CIRC;
+                const colors = ["#22c55e", "#6c63ff"];
+                const color = colors[i % colors.length];
+                const isBest = i === 0;
+                return (
+                  <div key={r.name} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                    <div style={{ position: "relative" }}>
+                      <svg width={100} height={100} viewBox="0 0 100 100">
+                        <circle cx={50} cy={50} r={R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={8} />
+                        <circle cx={50} cy={50} r={R} fill="none" stroke={color} strokeWidth={8}
+                          strokeLinecap="round" strokeDasharray={`${filled} ${CIRC}`}
+                          transform="rotate(-90 50 50)" style={{ transition: "stroke-dasharray 0.7s ease" }} />
+                      </svg>
+                      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ fontSize: 20, fontWeight: 800, color, fontFamily: "'Syne', sans-serif" }}>{r.rate}%</span>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5, justifyContent: "center" }}>
+                        <span style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 600 }}>{r.name}</span>
+                        {isBest && <span style={{ fontSize: 9, padding: "1px 6px", borderRadius: 99, background: "rgba(34,197,94,0.15)", color: "#22c55e", fontWeight: 700 }}>BEST</span>}
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{r.total} apps</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: 12, color: "#22c55e", background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.18)", borderRadius: 8, padding: "8px 12px", marginTop: 4 }}>
+              ✦ <strong>{stats.resumeData[0]?.name}</strong> has a {stats.resumeData[0]?.rate}% callback rate — use it as your primary resume.
+            </div>
+          </div>
+
+          {/* Ghost rate callout */}
+          <div style={{
+            background: "var(--bg-card)",
+            border: `1px solid ${stats.ghostRate > 40 ? "rgba(239,68,68,0.3)" : "rgba(245,158,11,0.3)"}`,
+            borderRadius: 10, padding: "20px 24px", display: "flex", alignItems: "center", gap: 20, marginBottom: 16,
+          }}>
+            <div style={{ textAlign: "center", flexShrink: 0 }}>
+              <div style={{ fontSize: 42, fontWeight: 800, lineHeight: 1, color: stats.ghostRate > 40 ? "#ef4444" : "#f59e0b", fontFamily: "'Syne', sans-serif" }}>
+                {stats.ghostRate.toFixed(0)}<span style={{ fontSize: 20 }}>%</span>
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>Ghost Rate</div>
+            </div>
+            <div style={{ flex: 1, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7, borderLeft: `2px solid ${stats.ghostRate > 40 ? "#ef4444" : "#f59e0b"}`, paddingLeft: 16 }}>
+              <strong style={{ color: "var(--text-primary)" }}>{Math.round((stats.ghostRate / 100) * stats.total)} applications</strong> received no response after 14 days.
+              {stats.ghostRate > 40 ? " Try personalising your outreach or targeting roles with higher match." : " Within normal range — keep applying consistently."}
+            </div>
+          </div>
+
+         
+        </div>
+      )}
+    </section>
+  );
+}
+
+const FEATURES = [
+  { icon: "📊", title: "Visual Analytics",  desc: "Track your application funnel, conversion rate, and success metrics in real time." },
+  { icon: "🗓️", title: "Timeline View",     desc: "See applications over time and spot the best windows to apply for maximum response." },
+  { icon: "🤝", title: "Resume Matcher",    desc: "Match your resume to job descriptions and boost your interview call-back rate." },
+  { icon: "🎯", title: "Prep Tracker",      desc: "Log interview rounds, notes, and prep tasks so you walk in fully confident." },
+  { icon: "🔔", title: "Smart Reminders",   desc: "Never let a follow-up slip. Get nudged at the right time for every application." },
+  { icon: "🌗", title: "Light & Dark Mode", desc: "Pristine in daylight, easy on the eyes at midnight. Your tracker, your vibe." },
+];
 
 /* ─── Main Page ─── */
 export default function HomePage() {
@@ -262,403 +543,295 @@ export default function HomePage() {
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
 
-  // Redirect signed-in users straight to dashboard
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      router.replace("/dashboard");
-    }
+    if (isLoaded && isSignedIn) router.replace("/dashboard");
   }, [isLoaded, isSignedIn, router]);
 
-  if (!isLoaded || isSignedIn) return null; // avoid flash
+  if (!isLoaded || isSignedIn) return null;
 
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
 
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
         .ll-page { min-height: 100vh; background: var(--bg); color: var(--text-primary); font-family: 'DM Sans', sans-serif; }
 
-        /* ── NAV ── */
+        /* ── Nav ── */
         .ll-nav {
           position: sticky; top: 0; z-index: 80;
           display: flex; align-items: center; justify-content: space-between;
           padding: 0 40px; height: 60px;
-          background: var(--bg-card); border-bottom: 1px solid var(--border);
+          background: var(--bg);
           backdrop-filter: blur(12px);
         }
         .ll-nav-logo { font-family: sans-serif; font-size: 18px; font-weight: 800; color: var(--text-primary); }
         .ll-nav-logo span { color: var(--accent); }
         .ll-nav-right { display: flex; align-items: center; gap: 10px; }
 
-        /* ── THEME TOGGLE ── */
+        /* ── Theme toggle ── */
         .theme-toggle {
           background: var(--bg); border: 1px solid var(--border);
           border-radius: 20px; width: 42px; height: 24px;
-          cursor: pointer; position: relative; transition: background 0.2s;
-          flex-shrink: 0;
+          cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0;
         }
         .theme-toggle-thumb {
           position: absolute; top: 3px; width: 18px; height: 18px;
           border-radius: 50%; background: var(--accent); transition: left 0.2s;
         }
-        .theme-toggle-thumb.dark { left: 3px; }
+        .theme-toggle-thumb.dark  { left: 3px; }
         .theme-toggle-thumb.light { left: 21px; }
 
-        /* ── HERO ── */
+        /* ── Hero ── */
         .ll-hero {
           display: grid; grid-template-columns: 1fr 1fr;
           gap: 40px; align-items: center;
           max-width: 1200px; margin: 0 auto;
           padding: 40px 40px 60px;
         }
-        .ll-hero-badge {
-          display: inline-flex; align-items: center; gap: 7px;
-          background: var(--accent-dim); border: 1px solid var(--accent-border);
-          border-radius: 20px; padding: 4px 14px;
-          font-size: 12px; font-weight: 600; color: var(--accent);
-          margin-bottom: 20px;
-        }
         .ll-hero h1 {
-          font-family: sans-serif;
-          font-size: clamp(32px, 4vw, 52px);
-          font-weight: 800; line-height: 1.1;
-          color: var(--text-primary); margin-bottom: 18px;
-          letter-spacing: -1px;
+          font-family: sans-serif; font-size: clamp(32px, 4vw, 52px);
+          font-weight: 800; line-height: 1.1; color: var(--text-primary);
+          margin-bottom: 18px; letter-spacing: -1px;
         }
         .ll-hero h1 em { color: var(--accent); font-style: normal; }
-        .ll-hero-desc {
-          font-size: 15px; color: var(--text-secondary);
-          line-height: 1.7; max-width: 440px; margin-bottom: 32px;
-        }
+        .ll-hero-desc { font-size: 15px; color: var(--text-secondary); line-height: 1.7; max-width: 440px; margin-bottom: 32px; }
         .ll-hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
 
+        /* ── Buttons ── */
         .btn-cta-primary {
-          background: var(--accent); color: #050f0c;
-          border: none; padding: 12px 28px;
-          border-radius: 8px; font-family: 'DM Sans', sans-serif;
-          font-size: 14px; font-weight: 700;
+          background: var(--accent); color: #050f0c; border: none; padding: 12px 28px;
+          border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700;
           cursor: pointer; transition: background 0.15s, transform 0.1s;
           text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
         }
         .btn-cta-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
 
         .btn-cta-ghost {
-          background: transparent; color: var(--text-secondary);
-          border: 1px solid var(--border); padding: 12px 22px;
-          border-radius: 8px; font-family: 'DM Sans', sans-serif;
-          font-size: 14px; font-weight: 600; cursor: pointer;
-          transition: all 0.15s; text-decoration: none;
-          display: inline-flex; align-items: center; gap: 7px;
+          background: transparent; color: var(--text-secondary); border: 1px solid var(--border);
+          padding: 12px 22px; border-radius: 8px; font-family: 'DM Sans', sans-serif;
+          font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+          text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
         }
         .btn-cta-ghost:hover { border-color: var(--accent); color: var(--accent); }
 
-        /* ── MOCK DASHBOARD WRAPPER (tilted) ── */
-        .mock-dashboard-wrap {
-          position: relative; perspective: 1000px;
-        }
+        /* ── Mock Dashboard ── */
+        .mock-dashboard-wrap { position: relative; perspective: 1000px; }
         .mock-dashboard-wrap::before {
           content: ''; position: absolute; inset: 30px -10px -20px;
-          background: var(--accent); opacity: 0.07;
-          border-radius: 20px; filter: blur(40px); z-index: 0;
+          background: var(--accent); opacity: 0.07; border-radius: 20px; filter: blur(40px); z-index: 0;
         }
         .mock-dashboard {
-          background: var(--bg-card); border: 1px solid var(--border);
-          border-radius: 16px; overflow: hidden;
-          box-shadow: 0 32px 80px rgba(0,0,0,0.4), 0 0 0 1px var(--border);
-          animation: floatTilt 5s ease-in-out infinite;
+          background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+          overflow: hidden; box-shadow: 0 32px 80px rgba(0,0,0,0.4), 0 0 0 1px var(--border);
           position: relative; z-index: 1;
           transform: perspective(900px) rotateY(-6deg) rotateX(3deg);
         }
-        @keyframes floatTilt {
-          0%, 100% { transform: perspective(900px) rotateY(-6deg) rotateX(3deg) translateY(0); }
-          50%       { transform: perspective(900px) rotateY(-6deg) rotateX(3deg) translateY(-10px); }
-        }
         .mock-topbar {
           background: var(--bg); border-bottom: 1px solid var(--border);
-          padding: 11px 16px; display: flex; align-items: center;
-          justify-content: space-between;
+          padding: 11px 16px; display: flex; align-items: center; justify-content: space-between;
         }
         .mock-topbar-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; }
-        .mock-topbar-sub { font-size: 10px; color: var(--text-muted); }
+        .mock-topbar-sub   { font-size: 10px; color: var(--text-muted); }
         .mock-add-btn {
-          background: var(--accent); color: #050f0c;
-          border: none; padding: 5px 12px; border-radius: 6px;
-          font-size: 10px; font-weight: 700; cursor: default; white-space: nowrap;
+          background: var(--accent); color: #050f0c; border: none; padding: 5px 12px;
+          border-radius: 6px; font-size: 10px; font-weight: 700; cursor: default; white-space: nowrap;
         }
         .mock-body { padding: 12px; }
-
         .mock-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 10px; }
-        .mock-stat {
-          background: var(--bg); border: 1px solid var(--border);
-          border-radius: 8px; padding: 9px 10px;
-        }
+        .mock-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; }
         .mock-stat-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 3px; }
         .mock-stat-value { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; line-height: 1; }
-
         .mock-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-        .mock-chart-card {
-          background: var(--bg); border: 1px solid var(--border);
-          border-radius: 8px; padding: 10px 11px;
-        }
-        .mock-chart-title {
-          font-size: 8px; color: var(--text-muted); text-transform: uppercase;
-          letter-spacing: 0.7px; margin-bottom: 9px; font-weight: 600;
-        }
-
-        /* funnel */
+        .mock-chart-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 11px; }
+        .mock-chart-title { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 9px; font-weight: 600; }
         .mock-funnel { display: flex; align-items: center; gap: 4px; }
-        .funnel-box {
-          border-radius: 7px; display: flex; flex-direction: column;
-          align-items: center; justify-content: center;
-          font-family: sans-serif; font-weight: 800;
-          font-size: 14px; color: #050f0c;
-          padding: 9px 5px; flex: 1; gap: 1px;
-        }
+        .funnel-box { border-radius: 7px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; font-weight: 800; font-size: 14px; color: #050f0c; padding: 9px 5px; flex: 1; gap: 1px; }
         .funnel-label { font-size: 7px; font-weight: 600; font-family: 'DM Sans', sans-serif; color: rgba(0,0,0,0.65); }
         .funnel-arrow { color: var(--text-muted); font-size: 11px; flex-shrink: 0; }
         .funnel-rejected { font-size: 7px; color: var(--red); margin-top: 5px; text-align: right; }
-
-        /* donut + legend */
         .mock-donut-row { display: flex; align-items: center; gap: 10px; }
         .mock-donut-legend { display: flex; flex-direction: column; gap: 5px; flex: 1; }
-        .legend-item {
-          display: flex; align-items: center; justify-content: space-between;
-          font-size: 9px; color: var(--text-secondary);
-        }
+        .legend-item { display: flex; align-items: center; justify-content: space-between; font-size: 9px; color: var(--text-secondary); }
         .legend-left { display: flex; align-items: center; gap: 5px; }
         .legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
         .legend-val { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 9px; color: var(--text-primary); }
-
-        /* trend chart card */
         .trend-chart-wrap { width: 100%; }
         .trend-legend { display: flex; gap: 10px; margin-top: 6px; justify-content: center; }
         .trend-legend-item { display: flex; align-items: center; gap: 4px; font-size: 7.5px; color: var(--text-muted); }
         .trend-legend-dot { width: 5px; height: 5px; border-radius: 50%; }
-        .trend-legend-dash { width: 10px; height: 1.5px; background: #f59e0b; border-radius: 2px; opacity: 0.8; }
 
-        /* ── STATS STRIP ── */
-        .ll-stats-strip {
-          border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-          background: var(--bg-card);
-        }
-        .ll-stats-strip-inner {
-          max-width: 1200px; margin: 0 auto; padding: 40px;
-          display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
-        }
-        .strip-stat { text-align: center; padding: 0 20px; position: relative; }
-        .strip-stat + .strip-stat::before {
-          content: ''; position: absolute; left: 0; top: 10%; height: 80%;
-          width: 1px; background: var(--border);
-        }
-        .strip-stat-value {
-          font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 800;
-          color: var(--accent); line-height: 1;
-        }
-        .strip-stat-label { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
-
-        /* ── FEATURES ── */
+        /* ── Features ── */
         .ll-features { max-width: 1200px; margin: 0 auto; padding: 80px 40px; }
-        .ll-section-eyebrow {
-          font-size: 12px; font-weight: 600; color: var(--accent);
-          text-transform: uppercase; letter-spacing: 1.5px;
-          margin-bottom: 10px; text-align: center;
-        }
-        .ll-section-title {
-          font-family: sans-serif; font-size: clamp(26px, 3vw, 38px);
-          font-weight: 800; color: var(--text-primary);
-          text-align: center; margin-bottom: 48px; letter-spacing: -0.5px;
-        }
-        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-        .feature-card {
-          background: var(--bg-card); border: 1px solid var(--border);
-          border-radius: 12px; padding: 24px;
-          transition: border-color 0.15s, transform 0.15s;
-        }
+        .ll-section-eyebrow { font-size: 12px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; text-align: center; }
+        .ll-section-title { font-family: sans-serif; font-size: clamp(26px, 3vw, 38px); font-weight: 800; color: var(--text-primary); text-align: center; margin-bottom: 8px; letter-spacing: -0.5px; }
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 36px; }
+        .feature-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: border-color 0.15s, transform 0.15s; }
         .feature-card:hover { border-color: var(--accent-border); transform: translateY(-3px); }
-        .feature-icon { font-size: 28px; margin-bottom: 12px; }
-        .feature-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
-        .feature-desc { font-size: 13px; color: var(--text-muted); line-height: 1.65; }
+        .feature-icon { font-size: 26px; margin-bottom: 10px; }
+        .feature-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+        .feature-desc { font-size: 12px; color: var(--text-muted); line-height: 1.65; }
 
-        /* ── CTA BANNER ── */
-        .ll-cta-banner {
-          max-width: 1200px; margin: 0 auto 80px; padding: 0 40px;
+        /* ── Demo chart cards ── */
+        .demo-chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+        .demo-chart-title { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 16px; }
+
+        /* ── Stat cards: 4 per row desktop, 2 per row mobile ── */
+        .stat-cards-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 12px;
+          margin-bottom: 20px;
         }
-        .cta-inner {
-          background: var(--accent-dim); border: 1px solid var(--accent-border);
-          border-radius: 16px; padding: 56px 40px;
-          text-align: center;
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; transition: border-color 0.15s; }
+        .stat-card:hover { border-color: var(--border-light); }
+        .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.6px; }
+
+        /* ── Donut chart grid: side-by-side desktop, stacked mobile ── */
+        .donut-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px;
+          margin-bottom: 16px;
         }
+
+        /* ── Pie chart container: fixed height, no overflow ── */
+        .pie-chart-wrap {
+          width: 100%;
+          height: 200px;
+          min-width: 0;
+          overflow: hidden;
+        }
+
+        /* ── CTA banner ── */
+        .ll-cta-banner { max-width: 1200px; margin: 0 auto 80px; padding: 0 40px; }
+        .cta-inner { background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 16px; padding: 56px 40px; text-align: center; }
         .cta-inner h2 { font-family: sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 800; color: var(--text-primary); margin-bottom: 12px; }
         .cta-inner p { font-size: 15px; color: var(--text-secondary); margin-bottom: 28px; }
 
-        /* ── FOOTER ── */
-        .ll-footer {
-          border-top: 1px solid var(--border);
-          padding: 24px 40px;
-          display: flex; align-items: center; justify-content: space-between;
-          max-width: 1200px; margin: 0 auto;
-        }
-        .ll-footer-logo { font-family: sans-serif; font-size: 14px; font-weight: 800; color: var(--text-muted); }
-        .ll-footer-logo span { color: var(--accent); }
+        /* ── Footer ── */
+        .ll-footer { padding: 24px 40px; display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto; }
         .ll-footer-copy { font-size: 12px; color: var(--text-muted); }
 
-        /* ── RESPONSIVE ── */
+        /* ── Responsive: tablet ── */
         @media (max-width: 900px) {
-          .ll-hero { grid-template-columns: 1fr; padding: 48px 24px 40px; }
-          .mock-stats { grid-template-columns: repeat(2, 1fr); }
-          .mock-charts { grid-template-columns: 1fr; }
-          .features-grid { grid-template-columns: repeat(2, 1fr); }
-          .ll-stats-strip-inner { grid-template-columns: 1fr; gap: 24px; }
-          .strip-stat + .strip-stat::before { display: none; }
-          .ll-nav { padding: 0 20px; }
-          .ll-footer { flex-direction: column; gap: 8px; text-align: center; }
+          .ll-hero         { grid-template-columns: 1fr; padding: 40px 24px; }
+          .mock-stats      { grid-template-columns: repeat(2, 1fr); }
+          .mock-charts     { grid-template-columns: 1fr; }
+          .features-grid   { grid-template-columns: repeat(2, 1fr); }
+          .ll-nav          { padding: 0 20px; }
+          .ll-footer       { flex-direction: column; gap: 8px; text-align: center; }
         }
-        @media (max-width: 600px) {
-          .features-grid { grid-template-columns: 1fr; }
-          .ll-hero h1 { font-size: 28px; }
-          .ll-features, .ll-cta-banner { padding: 48px 20px; }
+
+        /* ── Responsive: mobile ── */
+        @media (max-width: 640px) {
+          .features-grid      { grid-template-columns: 1fr; }
+          .ll-hero h1         { font-size: 28px; }
+          .ll-features,
+          .ll-cta-banner      { padding: 48px 20px; }
+
+          /* 4+4 stat grid → 2+2+2+2 on mobile */
+          .stat-cards-grid    { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+          .stat-card          { padding: 14px 16px; }
+          .stat-card div[style] { font-size: 22px !important; }
+
+          /* Pie charts: stack vertically on mobile, constrain height */
+          .donut-grid         { grid-template-columns: 1fr; gap: 12px; }
+          .pie-chart-wrap     { height: 180px; }
         }
       `}</style>
 
       <div className="ll-page">
         {/* NAV */}
         <nav className="ll-nav">
-          <div className="ll-nav-logo">
-            Leader<span>Lab.</span>
-          </div>
+          <div className="ll-nav-logo">Leader<span>Lab.</span></div>
           <div className="ll-nav-right">
-            <button
-              className="theme-toggle"
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            >
+            <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme" title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
               <div className={`theme-toggle-thumb ${theme}`} />
             </button>
             <SignInButton mode="modal">
-              <button className="btn-cta-ghost" style={{ padding: "7px 16px", fontSize: 13 }}>
-                Sign in
-              </button>
+              <button className="btn-cta-ghost" style={{ padding: "7px 16px", fontSize: 13 }}>Sign in</button>
             </SignInButton>
-           
           </div>
         </nav>
 
         {/* HERO */}
         <section className="ll-hero">
           <div>
-           
-            <h1>
-              Your Job Search,<br />
-              Finally <em>Under Control</em>
-            </h1>
+            <h1>Your Job Search,<br />Finally <em>Under Control</em></h1>
             <p className="ll-hero-desc">
               LeaderLab is a placement tracker that turns scattered applications into a clean, visual command centre — so you always know where you stand and what to do next.
             </p>
-            <div className="ll-hero-ctas">
-              <SignUpButton mode="modal">
-                <button className="btn-cta-primary">
-                  Start Tracking Free
-                </button>
-              </SignUpButton>
-             
-            </div>
+           
           </div>
 
-          {/* MOCK DASHBOARD PREVIEW — tilted */}
           <div className="mock-dashboard-wrap">
             <div className="mock-dashboard">
               <div className="mock-topbar">
                 <div>
                   <div className="mock-topbar-title">Analytics</div>
-                  <div className="mock-topbar-sub">Total 24 applications tracked</div>
+                  <div className="mock-topbar-sub">35 applications tracked</div>
                 </div>
                 <div className="mock-add-btn">+ Add Application</div>
               </div>
               <div className="mock-body">
-                {/* stat row */}
                 <div className="mock-stats">
-                  <div className="mock-stat">
-                    <div className="mock-stat-label">Total Applied</div>
-                    <div className="mock-stat-value" style={{ color: "var(--accent)" }}>24</div>
-                  </div>
-                  <div className="mock-stat">
-                    <div className="mock-stat-label">Interviews</div>
-                    <div className="mock-stat-value" style={{ color: "var(--yellow)" }}>8</div>
-                  </div>
-                  <div className="mock-stat">
-                    <div className="mock-stat-label">Offers</div>
-                    <div className="mock-stat-value" style={{ color: "var(--green)" }}>2</div>
-                  </div>
-                  <div className="mock-stat">
-                    <div className="mock-stat-label">Success Rate</div>
-                    <div className="mock-stat-value" style={{ color: "var(--green)", fontSize: 16 }}>8.3%</div>
-                  </div>
+                  <div className="mock-stat"><div className="mock-stat-label">Total Applied</div><div className="mock-stat-value" style={{ color: "var(--accent)" }}>35</div></div>
+                  <div className="mock-stat"><div className="mock-stat-label">Interviews</div><div className="mock-stat-value" style={{ color: "var(--yellow)" }}>10</div></div>
+                  <div className="mock-stat"><div className="mock-stat-label">Offers</div><div className="mock-stat-value" style={{ color: "var(--green)" }}>3</div></div>
+                  <div className="mock-stat"><div className="mock-stat-label">Success Rate</div><div className="mock-stat-value" style={{ color: "var(--green)", fontSize: 16 }}>8.6%</div></div>
                 </div>
-
-                {/* charts */}
                 <div className="mock-charts">
-                  {/* funnel — fixed: key on outer element, no bare fragment */}
                   <div className="mock-chart-card">
-                    <div className="mock-chart-title">Application Funnel · 8.3% rate</div>
+                    <div className="mock-chart-title">Application Funnel</div>
                     <div className="mock-funnel">
-                      {FUNNEL.map((f, i) => (
+                      {[
+                        { label: "Applied",   value: 35, color: "#60a5fa" },
+                        { label: "Interview", value: 10, color: "#f59e0b" },
+                        { label: "Offer",     value: 3,  color: "#34d399" },
+                      ].map((f, i, arr) => (
                         <div key={f.label} style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>
-                          <div
-                            className="funnel-box"
-                            style={{ background: f.color, flex: 1 }}
-                          >
-                            {f.value}
-                            <div className="funnel-label">{f.label}</div>
+                          <div className="funnel-box" style={{ background: f.color, flex: 1 }}>
+                            {f.value}<div className="funnel-label">{f.label}</div>
                           </div>
-                          {i < FUNNEL.length - 1 && (
-                            <div className="funnel-arrow">→</div>
-                          )}
+                          {i < arr.length - 1 && <div className="funnel-arrow">→</div>}
                         </div>
                       ))}
                     </div>
-                    <div className="funnel-rejected">Rejected: 14</div>
+                    <div className="funnel-rejected">Rejected: 9</div>
                   </div>
-
-                  {/* donut with improved legend */}
                   <div className="mock-chart-card">
                     <div className="mock-chart-title">Status Distribution</div>
                     <div className="mock-donut-row">
-                      <DonutChart />
+                      <DonutChart size={90} />
                       <div className="mock-donut-legend">
                         {[
-                          { label: "Applied", color: "#60a5fa", val: "48%" },
-                          { label: "Interview", color: "#f59e0b", val: "16%" },
-                          { label: "Offer", color: "#34d399", val: "8%" },
-                          { label: "Rejected", color: "#f87171", val: "28%" },
+                          { label: "Applied",   color: "#60a5fa", val: "37%" },
+                          { label: "Interview", color: "#f59e0b", val: "29%" },
+                          { label: "Offer",     color: "#34d399", val: "9%"  },
+                          { label: "Rejected",  color: "#f87171", val: "26%" },
                         ].map((l) => (
                           <div className="legend-item" key={l.label}>
-                            <div className="legend-left">
-                              <div className="legend-dot" style={{ background: l.color }} />
-                              <span>{l.label}</span>
-                            </div>
+                            <div className="legend-left"><div className="legend-dot" style={{ background: l.color }} /><span>{l.label}</span></div>
                             <span className="legend-val">{l.val}</span>
                           </div>
                         ))}
                       </div>
                     </div>
                   </div>
-
-                  {/* weekly trend chart — full width */}
                   <div className="mock-chart-card" style={{ gridColumn: "1 / -1" }}>
-                    <div className="mock-chart-title">Weekly Application Trend</div>
-                    <div className="trend-chart-wrap">
-                      <MiniTrendChart />
-                      <div className="trend-legend">
-                        <div className="trend-legend-item">
-                          <div className="trend-legend-dot" style={{ background: "#60a5fa" }} />
-                          Applied
-                        </div>
-                        <div className="trend-legend-item">
-                          <div className="trend-legend-dash" />
-                          Interviews
-                        </div>
-                      </div>
+                    <div className="mock-chart-title">Weekly Trend</div>
+                    <MiniTrendChart />
+                    <div className="trend-legend">
+                      <div className="trend-legend-item"><div className="trend-legend-dot" style={{ background: "#60a5fa" }} />Applied</div>
+                      <div className="trend-legend-item"><div className="trend-legend-dot" style={{ background: "#f59e0b" }} />Interviews</div>
                     </div>
                   </div>
                 </div>
@@ -667,44 +840,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* STATS STRIP */}
-        <div className="ll-stats-strip">
-          <div className="ll-stats-strip-inner">
-            <div className="strip-stat">
-              <div className="strip-stat-value">
-                <Counter target={2400} suffix="+" />
-              </div>
-              <div className="strip-stat-label">Applications Tracked</div>
-            </div>
-            <div className="strip-stat">
-              <div className="strip-stat-value">
-                <Counter target={89} suffix="%" />
-              </div>
-              <div className="strip-stat-label">Users land interviews faster</div>
-            </div>
-            <div className="strip-stat">
-              <div className="strip-stat-value">
-                <Counter target={100} suffix="%" />
-              </div>
-              <div className="strip-stat-label">Free to get started</div>
-            </div>
-          </div>
-        </div>
-
-        {/* FEATURES */}
-        <section className="ll-features">
-          <p className="ll-section-eyebrow">Everything you need</p>
-          <h2 className="ll-section-title">Built for serious job seekers</h2>
-          <div className="features-grid">
-            {FEATURES.map((f) => (
-              <div className="feature-card" key={f.title}>
-                <div className="feature-icon">{f.icon}</div>
-                <div className="feature-title">{f.title}</div>
-                <div className="feature-desc">{f.desc}</div>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* ANALYTICS DEMO */}
+        <AnalyticsDemo />
 
         {/* CTA BANNER */}
         <div className="ll-cta-banner">
@@ -713,14 +850,14 @@ export default function HomePage() {
             <p>Join hundreds of candidates who track smarter and land faster with LeaderLab.</p>
             <SignUpButton mode="modal">
               <button className="btn-cta-primary" style={{ margin: "0 auto", fontSize: 15, padding: "14px 36px" }}>
-               Create Free Account
+                Create Free Account
               </button>
             </SignUpButton>
           </div>
         </div>
 
         {/* FOOTER */}
-        <footer style={{ borderTop: "1px solid var(--border)" }}>
+        <footer>
           <div className="ll-footer">
             <div className="ll-nav-logo">Leader<span>Lab.</span></div>
             <div className="ll-footer-copy">© {new Date().getFullYear()} LeaderLab. All rights reserved.</div>

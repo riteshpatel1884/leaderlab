@@ -3,8 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Data Preprocessor — distils raw applications into a rich stats object
-// that gets sent to Claude. No raw PII (company names stripped to categories).
+// Data Preprocessor
 // ─────────────────────────────────────────────────────────────────────────────
 function buildAnalyticsPayload(applications) {
   if (!applications?.length) return null;
@@ -13,11 +12,9 @@ function buildAnalyticsPayload(applications) {
   const now = new Date();
   const ghostCutoff = new Date(now - 14 * 864e5);
 
-  // ── Status breakdown ──────────────────────────────────────────────────────
   const byStatus = { Applied: 0, Interview: 0, Offer: 0, Rejected: 0 };
   applications.forEach((a) => { byStatus[a.status] = (byStatus[a.status] || 0) + 1; });
 
-  // ── Platform breakdown ────────────────────────────────────────────────────
   const platformMap = {};
   applications.forEach((a) => {
     if (!a.platform) return;
@@ -30,14 +27,12 @@ function buildAnalyticsPayload(applications) {
     if (a.status === "Applied" && appliedDate < ghostCutoff) platformMap[a.platform].ghosts++;
   });
   const platforms = Object.entries(platformMap).map(([name, d]) => ({
-    name,
-    total: d.total,
+    name, total: d.total,
     callbackRate: d.total > 0 ? +((( d.interviews + d.offers) / d.total) * 100).toFixed(1) : 0,
     rejectionRate: d.total > 0 ? +((d.rejections / d.total) * 100).toFixed(1) : 0,
     ghostRate: d.total > 0 ? +((d.ghosts / d.total) * 100).toFixed(1) : 0,
   })).sort((a, b) => b.total - a.total);
 
-  // ── Work type breakdown ───────────────────────────────────────────────────
   const workTypeMap = {};
   applications.forEach((a) => {
     if (!a.workType) return;
@@ -46,21 +41,19 @@ function buildAnalyticsPayload(applications) {
     if (a.status === "Interview" || a.status === "Offer") workTypeMap[a.workType].callbacks++;
   });
   const workTypes = Object.entries(workTypeMap).map(([name, d]) => ({
-    name,
-    total: d.total,
+    name, total: d.total,
     callbackRate: d.total > 0 ? +((d.callbacks / d.total) * 100).toFixed(1) : 0,
   }));
 
-  // ── Role category breakdown ───────────────────────────────────────────────
   const classifyRole = (role = "") => {
     const r = role.toLowerCase();
-    if (r.includes("backend") || r.includes("back-end") || r.includes("back end")) return "Backend";
-    if (r.includes("frontend") || r.includes("front-end") || r.includes("front end")) return "Frontend";
+    if (r.includes("backend") || r.includes("back-end")) return "Backend";
+    if (r.includes("frontend") || r.includes("front-end")) return "Frontend";
     if (r.includes("full") && r.includes("stack")) return "Fullstack";
     if (r.includes("data") && (r.includes("science") || r.includes("analyst"))) return "Data Science";
     if (r.includes("data engineer")) return "Data Engineering";
-    if (r.includes("ml") || r.includes("machine learning") || r.includes("ai ") || r.includes("deep learning")) return "ML/AI";
-    if (r.includes("devops") || r.includes("sre") || r.includes("cloud") || r.includes("infra")) return "DevOps/Cloud";
+    if (r.includes("ml") || r.includes("machine learning") || r.includes("ai ")) return "ML/AI";
+    if (r.includes("devops") || r.includes("sre") || r.includes("cloud")) return "DevOps/Cloud";
     if (r.includes("mobile") || r.includes("android") || r.includes("ios")) return "Mobile";
     if (r.includes("intern")) return "Internship";
     return "Other";
@@ -76,14 +69,12 @@ function buildAnalyticsPayload(applications) {
   const roles = Object.entries(roleMap)
     .filter(([, d]) => d.total >= 2)
     .map(([name, d]) => ({
-      name,
-      total: d.total,
+      name, total: d.total,
       callbackRate: +((d.callbacks / d.total) * 100).toFixed(1),
       rejectionRate: +((d.rejections / d.total) * 100).toFixed(1),
     }))
     .sort((a, b) => b.callbackRate - a.callbackRate);
 
-  // ── Apply type breakdown (Direct / Referral / etc.) ───────────────────────
   const applyTypeMap = {};
   applications.forEach((a) => {
     const t = a.applyType || "Direct Apply";
@@ -93,12 +84,10 @@ function buildAnalyticsPayload(applications) {
     if (a.status === "Rejected") applyTypeMap[t].rejections++;
   });
   const applyTypes = Object.entries(applyTypeMap).map(([name, d]) => ({
-    name,
-    total: d.total,
+    name, total: d.total,
     callbackRate: +((d.callbacks / d.total) * 100).toFixed(1),
   }));
 
-  // ── Job type breakdown (Job / Internship) ─────────────────────────────────
   const jobTypeMap = {};
   applications.forEach((a) => {
     const t = a.jobType || "Job";
@@ -111,7 +100,6 @@ function buildAnalyticsPayload(applications) {
     callbackRate: +((d.callbacks / d.total) * 100).toFixed(1),
   }));
 
-  // ── Resume version breakdown ──────────────────────────────────────────────
   const resumeMap = {};
   applications.forEach((a) => {
     if (!a.resumeVersion) return;
@@ -124,13 +112,10 @@ function buildAnalyticsPayload(applications) {
     callbackRate: +((d.callbacks / d.total) * 100).toFixed(1),
   })).sort((a, b) => b.callbackRate - a.callbackRate);
 
-  // ── Response time (days from apply → first status change) ─────────────────
   const responseTimes = [];
   applications.forEach((a) => {
     if (a.statusHistory?.length > 1) {
-      const delta = Math.round(
-        (new Date(a.statusHistory[1].date) - new Date(a.statusHistory[0].date)) / 864e5
-      );
+      const delta = Math.round((new Date(a.statusHistory[1].date) - new Date(a.statusHistory[0].date)) / 864e5);
       if (delta >= 0) responseTimes.push(delta);
     }
   });
@@ -138,14 +123,12 @@ function buildAnalyticsPayload(applications) {
     ? +(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length).toFixed(1)
     : null;
 
-  // ── Ghost rate ────────────────────────────────────────────────────────────
   const ghosts = applications.filter((a) => {
     if (a.status !== "Applied") return false;
     return new Date(a.dateApplied || a.createdAt) < ghostCutoff;
   });
   const ghostRate = +((ghosts.length / total) * 100).toFixed(1);
 
-  // ── Weekly velocity ───────────────────────────────────────────────────────
   const weekMap = {};
   applications.forEach((a) => {
     const d = new Date(a.dateApplied || a.createdAt);
@@ -160,9 +143,7 @@ function buildAnalyticsPayload(applications) {
     ? +(weekCounts.reduce((a, b) => a + b, 0) / weekCounts.length).toFixed(1)
     : 0;
   const maxGap = (() => {
-    const dates = applications
-      .map((a) => new Date(a.dateApplied || a.createdAt))
-      .sort((a, b) => a - b);
+    const dates = applications.map((a) => new Date(a.dateApplied || a.createdAt)).sort((a, b) => a - b);
     let max = 0;
     for (let i = 1; i < dates.length; i++) {
       const gap = Math.round((dates[i] - dates[i - 1]) / 864e5);
@@ -171,7 +152,6 @@ function buildAnalyticsPayload(applications) {
     return max;
   })();
 
-  // ── Rejection stage (pre-interview vs post) ───────────────────────────────
   const rejectedApps = applications.filter((a) => a.status === "Rejected");
   const preInterviewRejections = rejectedApps.filter(
     (a) => !a.statusHistory?.some((h) => h.status === "Interview")
@@ -180,21 +160,12 @@ function buildAnalyticsPayload(applications) {
 
   return {
     summary: {
-      total,
-      byStatus,
+      total, byStatus,
       callbackRate: +((( byStatus.Interview + byStatus.Offer) / total) * 100).toFixed(1),
       offerRate: +(( byStatus.Offer / total) * 100).toFixed(1),
-      ghostRate,
-      avgResponseDays,
-      avgPerWeek,
-      maxGapDays: maxGap,
+      ghostRate, avgResponseDays, avgPerWeek, maxGapDays: maxGap,
     },
-    platforms,
-    workTypes,
-    roles,
-    applyTypes,
-    jobTypes,
-    resumeVersions,
+    platforms, workTypes, roles, applyTypes, jobTypes, resumeVersions,
     rejectionBreakdown: {
       total: rejectedApps.length,
       preInterview: preInterviewRejections,
@@ -205,9 +176,6 @@ function buildAnalyticsPayload(applications) {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Prompt builder — structured, specific, forces Claude to be data-driven
-// ─────────────────────────────────────────────────────────────────────────────
 function buildPrompt(payload) {
   return `You are an expert placement coach and data analyst helping a student or job seeker understand their job application performance.
 
@@ -216,121 +184,227 @@ ${JSON.stringify(payload, null, 2)}
 
 Generate exactly 6 sharp, data-driven insights. Each insight must:
 1. Reference a specific number or percentage from the data
-2. Name the exact metric or dimension (platform, role type, work type, apply method, etc.)
+2. Name the exact metric or dimension
 3. Include a concrete, actionable recommendation
-4. Be written in plain conversational English — not corporate speak
+4. Be written in plain conversational English
 5. Feel personally relevant and slightly surprising
 
 Insight types to cover (pick the most relevant 6 based on the data):
-- Platform performance differences (ghost rates, callback rates)
-- Role category performance gaps  
-- Apply method impact (referral vs direct, if data exists)
-- Resume version comparison (if multiple versions exist)
-- Rejection pattern analysis (pre vs post interview)
-- Work type (remote/onsite/hybrid) callback differences
-- Application consistency and velocity patterns
-- Response speed patterns
+- Platform performance differences
+- Role category performance gaps
+- Apply method impact
+- Resume version comparison
+- Rejection pattern analysis
+- Work type callback differences
+- Application consistency patterns
 - Ghost rate analysis
 
 Rules:
-- ONLY generate an insight if the data actually supports it (minimum 2 data points)
-- If data is insufficient for a dimension, skip it and pick another
-- Do NOT hallucinate numbers not present in the data
-- Be direct. Lead with the finding, not "You might want to consider..."
-- Short sentences. Max 2 sentences per insight body.
+- ONLY generate an insight if the data actually supports it
+- Do NOT hallucinate numbers
+- Be direct. Lead with the finding.
+- Max 2 sentences per insight body.
 
-Respond ONLY with a valid JSON object containing a single key "insights" whose value is an array. No preamble, no markdown.
+Respond ONLY with a valid JSON object. No preamble, no markdown.
 
 Format:
 {
   "insights": [
-  {
-    "id": "unique_slug",
-    "type": "positive" | "warning" | "neutral" | "critical",
-    "icon": "single emoji",
-    "headline": "Short punchy headline under 10 words",
-    "body": "The specific finding with numbers. One action sentence.",
-    "metric": "the key number to highlight e.g. 4x or 34%",
-    "metricLabel": "what the metric means e.g. higher callback rate",
-    "dimension": "platform|role|apply_type|resume|consistency|ghost|rejection|worktype|response_speed"
-  }
+    {
+      "id": "unique_slug",
+      "type": "positive" | "warning" | "neutral" | "critical",
+      "icon": "single emoji",
+      "headline": "Short punchy headline under 10 words",
+      "body": "The specific finding with numbers. One action sentence.",
+      "metric": "the key number e.g. 4x or 34%",
+      "metricLabel": "what the metric means",
+      "dimension": "platform|role|apply_type|resume|consistency|ghost|rejection|worktype|response_speed"
+    }
   ]
 }`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Insight Card
+// Styles
 // ─────────────────────────────────────────────────────────────────────────────
+const KEYFRAMES = `
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50%       { opacity: 0.9; }
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes dotPulse {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+    40%            { transform: scale(1);   opacity: 1; }
+  }
+`;
+
+// Type configs — green accent with opacity variations, red only for critical
 const TYPE_CONFIG = {
-  positive: { accent: "#22c55e", bg: "rgba(34,197,94,0.07)", border: "rgba(34,197,94,0.2)", label: "Win" },
-  warning:  { accent: "#f59e0b", bg: "rgba(245,158,11,0.07)", border: "rgba(245,158,11,0.2)", label: "Watch" },
-  critical: { accent: "#ef4444", bg: "rgba(239,68,68,0.07)",  border: "rgba(239,68,68,0.2)",  label: "Action" },
-  neutral:  { accent: "#6c63ff", bg: "rgba(108,99,255,0.07)", border: "rgba(108,99,255,0.2)", label: "Insight" },
+  positive: {
+    label: "WIN",
+    leftBar: "var(--accent, #10b981)",
+    metricColor: "var(--accent, #10b981)",
+    labelBg: "rgba(16,185,129,0.12)",
+    labelColor: "var(--accent, #10b981)",
+  },
+  warning: {
+    label: "WATCH",
+    leftBar: "rgba(245,158,11,0.7)",
+    metricColor: "#f59e0b",
+    labelBg: "rgba(245,158,11,0.08)",
+    labelColor: "#f59e0b",
+  },
+  critical: {
+    label: "ACTION",
+    leftBar: "rgba(248,113,113,0.7)",
+    metricColor: "#f87171",
+    labelBg: "rgba(248,113,113,0.08)",
+    labelColor: "#f87171",
+  },
+  neutral: {
+    label: "INSIGHT",
+    leftBar: "var(--border-light, #273330)",
+    metricColor: "var(--accent, #10b981)",
+    labelBg: "rgba(16,185,129,0.08)",
+    labelColor: "var(--text-muted, #4d6159)",
+  },
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Insight Card — editorial / refined minimal
+// ─────────────────────────────────────────────────────────────────────────────
 function InsightCard({ insight, index }) {
   const cfg = TYPE_CONFIG[insight.type] || TYPE_CONFIG.neutral;
 
   return (
     <div
       style={{
-        background: cfg.bg,
-        border: `1px solid ${cfg.border}`,
-        borderRadius: 14,
-        padding: "18px 20px",
+        position: "relative",
+        background: "var(--bg-card, #111714)",
+        border: "1px solid var(--border, #1e2722)",
+        borderRadius: 10,
+        padding: "18px 20px 18px 24px",
         display: "flex",
-        gap: 16,
+        gap: 18,
         alignItems: "flex-start",
-        animation: `fadeSlideIn 0.4s ease both`,
-        animationDelay: `${index * 80}ms`,
+        animation: `fadeUp 0.35s ease both`,
+        animationDelay: `${index * 70}ms`,
+        transition: "border-color 0.15s",
+        overflow: "hidden",
       }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = "var(--border-light, #273330)"}
+      onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border, #1e2722)"}
     >
-      {/* Icon + metric pill */}
-      <div style={{ flexShrink: 0, textAlign: "center" }}>
-        <div style={{ fontSize: 26, lineHeight: 1, marginBottom: 8 }}>{insight.icon}</div>
+      {/* Left accent bar */}
+      <div style={{
+        position: "absolute",
+        left: 0, top: 0, bottom: 0,
+        width: 3,
+        background: cfg.leftBar,
+        borderRadius: "10px 0 0 10px",
+      }} />
+
+      {/* Metric block */}
+      <div style={{
+        flexShrink: 0,
+        width: 64,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        paddingTop: 2,
+        gap: 4,
+      }}>
+        <div style={{ fontSize: 22, lineHeight: 1 }}>{insight.icon}</div>
         {insight.metric && (
           <div style={{
-            background: cfg.accent,
-            color: "#fff",
-            fontSize: 13,
-            fontWeight: 800,
             fontFamily: "'Syne', sans-serif",
-            padding: "3px 8px",
-            borderRadius: 8,
-            whiteSpace: "nowrap",
-            lineHeight: 1.3,
-            textAlign: "center",
+            fontSize: 18,
+            fontWeight: 800,
+            color: cfg.metricColor,
+            lineHeight: 1,
+            letterSpacing: "-0.5px",
           }}>
             {insight.metric}
           </div>
         )}
         {insight.metricLabel && (
-          <div style={{ fontSize: 9, color: cfg.accent, marginTop: 3, maxWidth: 56, lineHeight: 1.3, textAlign: "center" }}>
+          <div style={{
+            fontSize: 9,
+            color: "var(--text-muted, #4d6159)",
+            textAlign: "center",
+            lineHeight: 1.4,
+            letterSpacing: "0.2px",
+            maxWidth: 60,
+          }}>
             {insight.metricLabel}
           </div>
         )}
       </div>
 
+      {/* Divider */}
+      <div style={{
+        width: 1,
+        alignSelf: "stretch",
+        background: "var(--border, #1e2722)",
+        flexShrink: 0,
+      }} />
+
       {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+        {/* Label pill */}
+        <div style={{
+          display: "inline-flex",
+          alignItems: "center",
+          padding: "2px 8px",
+          borderRadius: 4,
+          background: cfg.labelBg,
+          marginBottom: 7,
+        }}>
           <span style={{
-            fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 99,
-            background: cfg.accent, color: "#fff",
-            fontFamily: "'Syne', sans-serif", letterSpacing: "0.5px",
+            fontFamily: "'Syne', sans-serif",
+            fontSize: 9,
+            fontWeight: 700,
+            color: cfg.labelColor,
+            letterSpacing: "0.8px",
             textTransform: "uppercase",
           }}>
             {cfg.label}
           </span>
         </div>
+
+        {/* Headline */}
         <div style={{
-          fontSize: 14, fontWeight: 700, color: "var(--text-primary)",
-          fontFamily: "'Syne', sans-serif", marginBottom: 5, lineHeight: 1.4,
+          fontFamily: "'Syne', sans-serif",
+          fontSize: 14,
+          fontWeight: 700,
+          color: "var(--text-primary, #eef2f0)",
+          lineHeight: 1.35,
+          marginBottom: 6,
+          letterSpacing: "-0.2px",
         }}>
           {insight.headline}
         </div>
+
+        {/* Body */}
         <div style={{
-          fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.65,
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: 12.5,
+          color: "var(--text-secondary, #8a9e96)",
+          lineHeight: 1.65,
         }}>
           {insight.body}
         </div>
@@ -340,50 +414,77 @@ function InsightCard({ insight, index }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Skeleton loader
+// Skeleton
 // ─────────────────────────────────────────────────────────────────────────────
-function SkeletonCard() {
+function SkeletonCard({ delay = 0 }) {
   return (
     <div style={{
-      background: "rgba(108,99,255,0.04)",
-      border: "1px solid rgba(108,99,255,0.1)",
-      borderRadius: 14,
-      padding: "18px 20px",
+      background: "var(--bg-card, #111714)",
+      border: "1px solid var(--border, #1e2722)",
+      borderRadius: 10,
+      padding: "18px 20px 18px 24px",
       display: "flex",
-      gap: 16,
+      gap: 18,
       alignItems: "flex-start",
+      overflow: "hidden",
+      position: "relative",
+      animationDelay: `${delay}ms`,
     }}>
-      <div style={{ flexShrink: 0 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,0.05)", animation: "pulse 1.5s ease infinite" }} />
+      {/* Shimmer overlay */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        background: "linear-gradient(90deg, transparent, rgba(16,185,129,0.03), transparent)",
+        backgroundSize: "200% 100%",
+        animation: "shimmer 1.8s ease infinite",
+        animationDelay: `${delay}ms`,
+        pointerEvents: "none",
+      }} />
+      {/* Left bar placeholder */}
+      <div style={{
+        position: "absolute", left: 0, top: 0, bottom: 0, width: 3,
+        background: "var(--border, #1e2722)", borderRadius: "10px 0 0 10px",
+        animation: "pulse 1.5s ease infinite",
+      }} />
+      {/* Icon block */}
+      <div style={{ flexShrink: 0, width: 64, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, paddingTop: 2 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 6, background: "var(--bg-hover, #161d1a)", animation: "pulse 1.5s ease infinite" }} />
+        <div style={{ width: 36, height: 20, borderRadius: 4, background: "var(--bg-hover, #161d1a)", animation: "pulse 1.5s ease infinite" }} />
+        <div style={{ width: 48, height: 10, borderRadius: 3, background: "var(--bg-hover, #161d1a)", animation: "pulse 1.5s ease infinite" }} />
       </div>
+      <div style={{ width: 1, alignSelf: "stretch", background: "var(--border, #1e2722)", flexShrink: 0 }} />
       <div style={{ flex: 1 }}>
-        <div style={{ height: 10, width: "30%", borderRadius: 6, background: "rgba(255,255,255,0.06)", marginBottom: 10, animation: "pulse 1.5s ease infinite" }} />
-        <div style={{ height: 14, width: "65%", borderRadius: 6, background: "rgba(255,255,255,0.08)", marginBottom: 8, animation: "pulse 1.5s ease 0.1s infinite" }} />
-        <div style={{ height: 12, width: "90%", borderRadius: 6, background: "rgba(255,255,255,0.05)", marginBottom: 5, animation: "pulse 1.5s ease 0.2s infinite" }} />
-        <div style={{ height: 12, width: "75%", borderRadius: 6, background: "rgba(255,255,255,0.05)", animation: "pulse 1.5s ease 0.3s infinite" }} />
+        <div style={{ width: 48, height: 14, borderRadius: 4, background: "var(--bg-hover, #161d1a)", marginBottom: 10, animation: "pulse 1.5s ease infinite" }} />
+        <div style={{ width: "55%", height: 16, borderRadius: 4, background: "var(--bg-hover, #161d1a)", marginBottom: 8, animation: "pulse 1.5s ease infinite" }} />
+        <div style={{ width: "90%", height: 11, borderRadius: 3, background: "var(--bg-hover, #161d1a)", marginBottom: 5, animation: "pulse 1.5s ease infinite" }} />
+        <div style={{ width: "70%", height: 11, borderRadius: 3, background: "var(--bg-hover, #161d1a)", animation: "pulse 1.5s ease infinite" }} />
       </div>
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Main InsightsEngine component
+// Loading dots
+// ─────────────────────────────────────────────────────────────────────────────
+function LoadingDots() {
+  return (
+    <span style={{ display: "inline-flex", gap: 3, alignItems: "center", marginLeft: 6 }}>
+      {[0, 1, 2].map((i) => (
+        <span key={i} style={{
+          width: 4, height: 4, borderRadius: "50%",
+          background: "var(--accent, #10b981)",
+          display: "inline-block",
+          animation: `dotPulse 1.2s ease ${i * 0.2}s infinite`,
+        }} />
+      ))}
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main InsightsEngine
 // ─────────────────────────────────────────────────────────────────────────────
 const MIN_APPS_FOR_AI = 3;
-
-const KEYFRAMES = `
-  @keyframes fadeSlideIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 0.5; }
-    50%       { opacity: 1; }
-  }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-`;
 
 export default function InsightsEngine({ applications }) {
   const [insights, setInsights] = useState(null);
@@ -396,14 +497,12 @@ export default function InsightsEngine({ applications }) {
     const payload = buildAnalyticsPayload(applications);
     if (!payload) return;
 
-    // Guard: check key is present before hitting network
     const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
     if (!apiKey) {
       setError("NEXT_PUBLIC_GROQ_API_KEY is not set. Add it to your .env.local file and restart the dev server.");
       return;
     }
 
-    // Cancel any in-flight request
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
 
@@ -435,10 +534,8 @@ export default function InsightsEngine({ applications }) {
       });
 
       if (!response.ok) {
-        // Groq returns structured error bodies — surface the real message
         const errBody = await response.json().catch(() => ({}));
         const msg = errBody?.error?.message || `API error ${response.status}`;
-        // 401 = bad key, 429 = rate limit, surface clearly
         if (response.status === 401) throw new Error("Invalid API key. Check NEXT_PUBLIC_GROQ_API_KEY in .env.local.");
         if (response.status === 429) throw new Error("Rate limit hit. Wait a moment then try again.");
         throw new Error(msg);
@@ -446,8 +543,6 @@ export default function InsightsEngine({ applications }) {
 
       const data = await response.json();
       const raw = data.choices?.[0]?.message?.content || "{}";
-
-      // Groq json_object mode wraps array as { "insights": [...] }
       const clean = raw.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
       const insightsArray = Array.isArray(parsed)
@@ -462,9 +557,7 @@ export default function InsightsEngine({ applications }) {
       setLastGeneratedAt(new Date());
     } catch (err) {
       if (err.name === "AbortError") return;
-      // Surface the actual error message so it's debuggable
       setError(err.message || "Couldn't generate insights. Try again.");
-      console.error("[InsightsEngine]", err);
     } finally {
       setLoading(false);
     }
@@ -478,181 +571,299 @@ export default function InsightsEngine({ applications }) {
     <div style={{ marginBottom: 24 }}>
       <style dangerouslySetInnerHTML={{ __html: KEYFRAMES }} />
 
-      {/* Header */}
+      {/* ── Section header ── */}
       <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        marginBottom: 16, flexWrap: "wrap", gap: 10,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 16,
+        gap: 12,
+        flexWrap: "wrap",
       }}>
-        <div>
+        {/* Left: title */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* Icon mark */}
           <div style={{
-            fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 800,
-            color: "var(--text-primary)", letterSpacing: "-0.3px",
-            display: "flex", alignItems: "center", gap: 8,
+            width: 28, height: 28,
+            border: "1px solid var(--accent-border, rgba(16,185,129,0.25))",
+            borderRadius: 6,
+            background: "var(--accent-dim, rgba(16,185,129,0.10))",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 12,
+            color: "var(--accent, #10b981)",
+            fontFamily: "'Syne', sans-serif",
+            fontWeight: 800,
           }}>
-            <span style={{
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: 24, height: 24, borderRadius: 6,
-              background: "linear-gradient(135deg, #6c63ff, #22c55e)",
-              fontSize: 12,
-            }}>✦</span>
-            AI Insights
+            ✦
           </div>
-          <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>
-            {hasEnoughData
-              ? lastGeneratedAt
-                ? `Last generated ${lastGeneratedAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
-                : "Analyses your actual data patterns"
-              : `Add ${needsMore} more application${needsMore !== 1 ? "s" : ""} to unlock AI insights`}
+          <div>
+            <div style={{
+              fontFamily: "'Syne', sans-serif",
+              fontSize: 14,
+              fontWeight: 700,
+              color: "var(--text-primary, #eef2f0)",
+              letterSpacing: "-0.2px",
+              lineHeight: 1,
+            }}>
+              AI Insights
+              {loading && <LoadingDots />}
+            </div>
+            <div style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 11,
+              color: "var(--text-muted, #4d6159)",
+              marginTop: 3,
+            }}>
+              {hasEnoughData
+                ? lastGeneratedAt
+                  ? `Last generated ${lastGeneratedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                  : "Pattern analysis across all your applications"
+                : `${needsMore} more application${needsMore !== 1 ? "s" : ""} needed to unlock`}
+            </div>
           </div>
         </div>
 
+        {/* Right: action button */}
         {hasEnoughData && (
           <button
             onClick={generate}
             disabled={loading}
             style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "9px 18px",
-              borderRadius: 10,
-              border: "1px solid rgba(108,99,255,0.3)",
-              background: loading
-                ? "rgba(108,99,255,0.08)"
-                : "linear-gradient(135deg, rgba(108,99,255,0.15), rgba(34,197,94,0.1))",
-              color: loading ? "var(--text-muted)" : "#6c63ff",
-              fontSize: 13, fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              padding: "8px 16px",
+              borderRadius: 6,
+              border: "1px solid var(--border, #1e2722)",
+              background: "var(--bg-card, #111714)",
+              color: loading ? "var(--text-muted, #4d6159)" : "var(--text-secondary, #8a9e96)",
+              fontSize: 12,
+              fontWeight: 500,
               cursor: loading ? "not-allowed" : "pointer",
-              fontFamily: "'Syne', sans-serif",
-              transition: "all 0.2s",
+              fontFamily: "'DM Sans', sans-serif",
+              transition: "all 0.15s",
               outline: "none",
               whiteSpace: "nowrap",
+            }}
+            onMouseEnter={e => {
+              if (!loading) {
+                e.currentTarget.style.borderColor = "var(--border-light, #273330)";
+                e.currentTarget.style.color = "var(--text-primary, #eef2f0)";
+                e.currentTarget.style.background = "var(--bg-hover, #161d1a)";
+              }
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = "var(--border, #1e2722)";
+              e.currentTarget.style.color = loading ? "var(--text-muted, #4d6159)" : "var(--text-secondary, #8a9e96)";
+              e.currentTarget.style.background = "var(--bg-card, #111714)";
             }}
           >
             {loading ? (
               <>
                 <span style={{
-                  width: 12, height: 12, border: "2px solid rgba(108,99,255,0.3)",
-                  borderTopColor: "#6c63ff", borderRadius: "50%",
-                  display: "inline-block", animation: "spin 0.7s linear infinite",
+                  width: 10, height: 10,
+                  border: "1.5px solid var(--border-light, #273330)",
+                  borderTopColor: "var(--accent, #10b981)",
+                  borderRadius: "50%",
+                  display: "inline-block",
+                  animation: "spin 0.7s linear infinite",
                 }} />
-                Analysing…
+                Analysing
               </>
             ) : insights ? (
-              <>↻ Refresh Insights</>
+              <> ↻ Refresh</>
             ) : (
-              <>✦ Generate Insights</>
+              <> ✦ Generate</>
             )}
           </button>
         )}
       </div>
 
-      {/* Not enough data state */}
+      {/* ── Divider ── */}
+      <div style={{ height: 1, background: "var(--border, #1e2722)", marginBottom: 16 }} />
+
+      {/* ── Not enough data ── */}
       {!hasEnoughData && (
         <div style={{
-          background: "rgba(108,99,255,0.05)",
-          border: "1px solid rgba(108,99,255,0.15)",
-          borderRadius: 14,
-          padding: "28px 24px",
+          background: "var(--bg-card, #111714)",
+          border: "1px solid var(--border, #1e2722)",
+          borderRadius: 10,
+          padding: "32px 24px",
           textAlign: "center",
         }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>🧠</div>
           <div style={{
-            fontSize: 14, fontWeight: 700, color: "var(--text-primary)",
-            fontFamily: "'Syne', sans-serif", marginBottom: 8,
+            width: 44, height: 44,
+            borderRadius: 10,
+            background: "var(--accent-dim, rgba(16,185,129,0.10))",
+            border: "1px solid var(--accent-border, rgba(16,185,129,0.25))",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 18, margin: "0 auto 14px",
+          }}>🧠</div>
+          <div style={{
+            fontFamily: "'Syne', sans-serif",
+            fontSize: 14, fontWeight: 700,
+            color: "var(--text-primary, #eef2f0)",
+            marginBottom: 6,
           }}>
-            AI needs more data to work with
+            Not enough data yet
           </div>
-          <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7, maxWidth: 380, margin: "0 auto" }}>
-            You have <strong style={{ color: "#6c63ff" }}>{total}</strong> application{total !== 1 ? "s" : ""}.
-            Add {needsMore} more and the AI will start finding patterns — which platforms ghost you, which roles convert better, and what's actually working.
+          <div style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 12.5,
+            color: "var(--text-secondary, #8a9e96)",
+            lineHeight: 1.7,
+            maxWidth: 340, margin: "0 auto 20px",
+          }}>
+            You have <strong style={{ color: "var(--accent, #10b981)" }}>{total}</strong> application{total !== 1 ? "s" : ""}. Add {needsMore} more and the AI will start finding patterns — platform ghost rates, role conversion gaps, and what's actually working.
           </div>
-          {/* Progress */}
-          <div style={{ maxWidth: 240, margin: "20px auto 0" }}>
-            <div style={{ height: 4, background: "rgba(108,99,255,0.1)", borderRadius: 99, overflow: "hidden" }}>
+          <div style={{ maxWidth: 200, margin: "0 auto" }}>
+            <div style={{
+              height: 3,
+              background: "var(--bg-hover, #161d1a)",
+              borderRadius: 99, overflow: "hidden",
+            }}>
               <div style={{
                 height: "100%",
                 width: `${(total / MIN_APPS_FOR_AI) * 100}%`,
-                background: "linear-gradient(90deg, #6c63ff, #22c55e)",
-                borderRadius: 99, transition: "width 0.5s",
+                background: "var(--accent, #10b981)",
+                borderRadius: 99,
+                transition: "width 0.6s ease",
               }} />
             </div>
-            <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 6 }}>
+            <div style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 10,
+              color: "var(--text-muted, #4d6159)",
+              marginTop: 7,
+            }}>
               {total} / {MIN_APPS_FOR_AI} applications
             </div>
           </div>
         </div>
       )}
 
-      {/* Idle state — enough data but not yet generated */}
+      {/* ── Idle — enough data ── */}
       {hasEnoughData && !loading && !insights && !error && (
         <div style={{
-          background: "rgba(108,99,255,0.05)",
-          border: "1px dashed rgba(108,99,255,0.25)",
-          borderRadius: 14,
-          padding: "32px 24px",
+          background: "var(--bg-card, #111714)",
+          border: "1px dashed var(--border-light, #273330)",
+          borderRadius: 10,
+          padding: "36px 24px",
           textAlign: "center",
         }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>✦</div>
           <div style={{
-            fontSize: 14, fontWeight: 700, color: "var(--text-primary)",
-            fontFamily: "'Syne', sans-serif", marginBottom: 8,
+            fontFamily: "'Syne', sans-serif",
+            fontSize: 28,
+            fontWeight: 800,
+            color: "var(--accent, #10b981)",
+            marginBottom: 10,
+            letterSpacing: "-1px",
+            opacity: 0.4,
+          }}>✦</div>
+          <div style={{
+            fontFamily: "'Syne', sans-serif",
+            fontSize: 14, fontWeight: 700,
+            color: "var(--text-primary, #eef2f0)",
+            marginBottom: 6,
           }}>
-            Ready to analyse your {total} applications
+            Ready to analyse {total} applications
           </div>
           <div style={{
-            fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7,
-            maxWidth: 400, margin: "0 auto 20px",
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 12.5,
+            color: "var(--text-secondary, #8a9e96)",
+            lineHeight: 1.7,
+            maxWidth: 360, margin: "0 auto 22px",
           }}>
-            Llama 3.3 will scan your data for patterns — platform ghost rates, role performance gaps, resume effectiveness, and more.
+            Scans for platform ghost rates, role performance gaps, resume effectiveness, and consistency patterns in your data.
           </div>
           <button
             onClick={generate}
             style={{
-              padding: "11px 28px",
-              borderRadius: 10,
-              border: "none",
-              background: "linear-gradient(135deg, #6c63ff, #4f46e5)",
-              color: "#fff",
-              fontSize: 13, fontWeight: 700,
+              padding: "9px 22px",
+              borderRadius: 6,
+              border: "1px solid var(--accent-border, rgba(16,185,129,0.25))",
+              background: "var(--accent-dim, rgba(16,185,129,0.10))",
+              color: "var(--accent, #10b981)",
+              fontSize: 13,
+              fontWeight: 600,
               cursor: "pointer",
               fontFamily: "'Syne', sans-serif",
-              boxShadow: "0 4px 20px rgba(108,99,255,0.35)",
+              transition: "all 0.15s",
               outline: "none",
+              letterSpacing: "0.2px",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = "rgba(16,185,129,0.16)";
+              e.currentTarget.style.borderColor = "rgba(16,185,129,0.4)";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = "var(--accent-dim, rgba(16,185,129,0.10))";
+              e.currentTarget.style.borderColor = "var(--accent-border, rgba(16,185,129,0.25))";
             }}
           >
-            ✦ Generate AI Insights
+            ✦ Generate Insights
           </button>
         </div>
       )}
 
-      {/* Loading skeletons */}
+      {/* ── Skeletons ── */}
       {loading && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} delay={i * 80} />)}
         </div>
       )}
 
-      {/* Error */}
+      {/* ── Error ── */}
       {error && !loading && (
         <div style={{
-          background: "rgba(239,68,68,0.07)",
-          border: "1px solid rgba(239,68,68,0.2)",
-          borderRadius: 14,
+          background: "var(--bg-card, #111714)",
+          border: "1px solid rgba(248,113,113,0.2)",
+          borderRadius: 10,
           padding: "16px 20px",
           display: "flex",
           alignItems: "center",
           gap: 12,
         }}>
-          <span style={{ fontSize: 20 }}>⚠️</span>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>⚠</span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, color: "#ef4444", fontWeight: 600, marginBottom: 4 }}>Failed to generate insights</div>
-            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{error}</div>
+            <div style={{
+              fontFamily: "'Syne', sans-serif",
+              fontSize: 12, fontWeight: 600,
+              color: "var(--red, #f87171)",
+              marginBottom: 2,
+            }}>
+              Failed to generate insights
+            </div>
+            <div style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 11,
+              color: "var(--text-muted, #4d6159)",
+            }}>
+              {error}
+            </div>
           </div>
           <button
             onClick={generate}
             style={{
-              padding: "7px 14px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.3)",
-              background: "transparent", color: "#ef4444", fontSize: 12,
-              cursor: "pointer", fontFamily: "'DM Sans', sans-serif", outline: "none",
+              padding: "6px 12px",
+              borderRadius: 6,
+              border: "1px solid var(--border, #1e2722)",
+              background: "transparent",
+              color: "var(--text-secondary, #8a9e96)",
+              fontSize: 11,
+              cursor: "pointer",
+              fontFamily: "'DM Sans', sans-serif",
+              outline: "none",
+              transition: "all 0.15s",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = "var(--bg-hover, #161d1a)";
+              e.currentTarget.style.color = "var(--text-primary, #eef2f0)";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--text-secondary, #8a9e96)";
             }}
           >
             Retry
@@ -660,10 +871,10 @@ export default function InsightsEngine({ applications }) {
         </div>
       )}
 
-      {/* Insights grid */}
+      {/* ── Insights list ── */}
       {insights && !loading && (
         <>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {insights.map((insight, i) => (
               <InsightCard key={insight.id || i} insight={insight} index={i} />
             ))}
@@ -671,10 +882,37 @@ export default function InsightsEngine({ applications }) {
 
           {/* Footer */}
           <div style={{
-            marginTop: 14, fontSize: 11, color: "var(--text-muted)",
-            textAlign: "center", lineHeight: 1.6,
+            marginTop: 16,
+            paddingTop: 14,
+            borderTop: "1px solid var(--border, #1e2722)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
           }}>
-            Based on {total} applications · Insights refresh automatically as you add more data
+            <span style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 11,
+              color: "var(--text-muted, #4d6159)",
+            }}>
+              Based on {total} applications
+            </span>
+            <span style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 10,
+              color: "var(--text-muted, #4d6159)",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}>
+              <span style={{
+                width: 5, height: 5, borderRadius: "50%",
+                background: "var(--accent, #10b981)",
+                display: "inline-block",
+                opacity: 0.6,
+              }} />
+              Llama 3.3 · {lastGeneratedAt?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </span>
           </div>
         </>
       )}
