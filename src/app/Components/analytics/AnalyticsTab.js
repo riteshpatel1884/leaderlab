@@ -1897,10 +1897,10 @@ function WeeklyTrendChart({ weeks, total, applications }) {
   }
 
   // Build per-week data for all metrics
-  const ghostCutoff = useMemo(
-  () => new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-  []
-);
+ const ghostCutoff = useMemo(() => {
+  const now = new Date();
+  return new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+}, []);
 
   const weekMap = {};
   weeks.forEach(([key]) => {
