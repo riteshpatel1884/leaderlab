@@ -1892,15 +1892,15 @@ function WeeklyTrendChart({ weeks, total, applications }) {
   const [primary, setPrimary] = useState("applied");
   const [secondary, setSecondary] = useState("interviews");
 
+  // ✅ useMemo BEFORE the early return
+  const ghostCutoff = useMemo(() => {
+    const now = new Date();
+    return new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+  }, []);
+
   if (total < THRESHOLDS.WEEKLY_CHART || !weeks || weeks.length === 0) {
     return <LockedCard title="Weekly Application Trend" unlockAt={THRESHOLDS.WEEKLY_CHART} current={total} icon="📈" />;
   }
-
-  // Build per-week data for all metrics
- const ghostCutoff = useMemo(() => {
-  const now = new Date();
-  return new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-}, []);
 
   const weekMap = {};
   weeks.forEach(([key]) => {
