@@ -5,13 +5,13 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { useTheme } from "../../utils/themeProvider/Themeprovider"; // adjust path as needed
+import NotificationBell from "./applications/Notificationbell";
 
 const navItems = [
   { id: "dashboard", icon: "⊞", label: "Dashboard" },
   { id: "applications", icon: "☰", label: "Applications" },
   { id: "analytics", icon: "◈", label: "Analytics" },
   { id: "resume", icon: "⬡", label: "Resume Matcher" },
-  { id: "prep", icon: "◎", label: "Prep Tracker" },
    { id: "community", icon: "◎", label: "Community" },
 ];
 
@@ -217,11 +217,11 @@ export default function Sidebar() {
           {/* Theme toggle */}
           <ThemeToggle />
 
-          {/* Local storage note */}
-          <div style={{ fontSize: 10, color: "var(--text-muted)", lineHeight: 1.6 }}>
-            Data stored locally in your browser
-          </div>
-
+       
+       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 2px" }}>
+  <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 500 }}>Notifications</span>
+  <NotificationBell />
+</div>
           {/* Version / changelog button */}
           <button
             suppressHydrationWarning

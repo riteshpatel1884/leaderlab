@@ -38,9 +38,7 @@ export function ApplicationsProvider({ children }) {
   }
   fetch("/api/applications")
     .then((r) => r.json())
-    .then(({ applications }) => {
-      setApplications(applications || []);
-    })
+    .then((data) => { setApplications(Array.isArray(data) ? data : []); })
     .catch(console.error)
     .finally(() => setLoading(false));
 }, [user, isLoaded]);
@@ -62,7 +60,7 @@ export function ApplicationsProvider({ children }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newJob),
       });
-      const { application } = await res.json();
+      const application  = await res.json();
       // Replace optimistic entry with server response
       setApplications((prev) =>
         prev.map((a) => (a.id === newJob.id ? application : a)),

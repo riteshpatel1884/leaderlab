@@ -689,6 +689,7 @@ export default function HomePage() {
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 12px;
           margin-bottom: 20px;
+       
         }
         .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; transition: border-color 0.15s; }
         .stat-card:hover { border-color: var(--border-light); }

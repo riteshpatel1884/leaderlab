@@ -5,13 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { useTheme } from "../../utils/themeProvider/Themeprovider"; // adjust path as needed
+import NotificationBell from "./applications/Notificationbell";
 
 const navItems = [
   { id: "dashboard", icon: "⊞", label: "Dashboard" },
   { id: "applications", icon: "☰", label: "Applications" },
   { id: "analytics", icon: "◈", label: "Analytics" },
   { id: "resume", icon: "⬡", label: "Resume Matcher" },
-  { id: "prep", icon: "◎", label: "Prep Tracker" },
    { id: "community", icon: "◎", label: "Community" },
 ];
 
@@ -241,6 +241,21 @@ export default function BottomNav() {
 
               {/* Theme toggle */}
               <DrawerThemeToggle />
+
+              {/* Notifications row in drawer */}
+<div style={{
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "10px 16px",
+  borderBottom: "1px solid var(--border)",
+}}>
+  <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text-secondary)", fontWeight: 500 }}>
+    <span>🔔</span>
+    <span>Notifications</span>
+  </div>
+  <NotificationBell />
+</div>
 
               {/* Version / changelog */}
               <button
