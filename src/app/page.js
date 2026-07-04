@@ -2146,9 +2146,6 @@
 //   );
 // }
 
-
-
-
 "use client";
 
 import { useState } from "react";
@@ -2187,13 +2184,35 @@ function DonutChart({ size = 100 }) {
   );
 }
 
+/* ─── Progress Ring (Resume Performance showcase) ─── */
+function ProgressRing({ size = 84, pct = 0.6, color = "#34d399", strokeWidth = 8 }) {
+  const r = (size - strokeWidth) / 2;
+  const c = 2 * Math.PI * r;
+  const offset = c * (1 - Math.min(Math.max(pct, 0), 1));
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle
+        cx={size / 2} cy={size / 2} r={r} fill="none"
+        stroke="var(--border)" strokeWidth={strokeWidth}
+      />
+      <circle
+        cx={size / 2} cy={size / 2} r={r} fill="none"
+        stroke={color} strokeWidth={strokeWidth}
+        strokeDasharray={c} strokeDashoffset={offset}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+      />
+    </svg>
+  );
+}
+
 /* ─── Mini Trend (hero + dashboard showcase) ─── */
 const HERO_TREND = [
   { label: "Wk1", applied: 3, interviews: 0 }, { label: "Wk2", applied: 4, interviews: 1 },
   { label: "Wk3", applied: 5, interviews: 2 }, { label: "Wk4", applied: 6, interviews: 2 },
   { label: "Wk5", applied: 7, interviews: 3 }, { label: "Wk6", applied: 7, interviews: 3 },
 ];
-function MiniTrendChart() {
+function MiniTrendChart({ highlightIndex = 3 }) {
   const W = 280, H = 80, PAD = { top: 8, right: 8, bottom: 18, left: 18 };
   const iW = W - PAD.left - PAD.right, iH = H - PAD.top - PAD.bottom;
   const n = HERO_TREND.length, maxV = 8;
@@ -2211,22 +2230,51 @@ function MiniTrendChart() {
   const iPts = HERO_TREND.map((d, i) => [xOf(i), yOf(d.interviews)]);
   const aLine = smooth(aPts), iLine = smooth(iPts);
   const aArea = aLine + ` L${xOf(n - 1)},${PAD.top + iH} L${PAD.left},${PAD.top + iH} Z`;
+
+  const hi = Math.max(0, Math.min(HERO_TREND.length - 1, highlightIndex));
+  const hData = HERO_TREND[hi];
+  const hx = xOf(hi), hyA = yOf(hData.applied), hyI = yOf(hData.interviews);
+  const tooltipLeft = (hx / W) * 100;
+  const tooltipTop = (Math.min(hyA, hyI) / H) * 100;
+  const flipLeft = tooltipLeft > 58;
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
-      <defs>
-        <linearGradient id="heroAreaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.02" />
-        </linearGradient>
-      </defs>
-      {[0, 0.5, 1].map((t, i) => <line key={i} x1={PAD.left} x2={PAD.left + iW} y1={PAD.top + t * iH} y2={PAD.top + t * iH} stroke="rgba(255,255,255,0.05)" strokeWidth="1" strokeDasharray="3 4" />)}
-      <path d={aArea} fill="url(#heroAreaGrad)" />
-      <path d={aLine} fill="none" stroke="#60a5fa" strokeWidth="1.8" strokeLinecap="round" />
-      <path d={iLine} fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="3 2" />
-      <circle cx={aPts[n - 1][0]} cy={aPts[n - 1][1]} r="3" fill="#60a5fa" stroke="var(--bg-card)" strokeWidth="1.2" />
-      <circle cx={iPts[n - 1][0]} cy={iPts[n - 1][1]} r="3" fill="#f59e0b" stroke="var(--bg-card)" strokeWidth="1.2" />
-      {HERO_TREND.map((d, i) => <text key={i} x={xOf(i)} y={H - 3} textAnchor="middle" fontSize="5.5" fill="rgba(138,158,150,0.7)" fontFamily="'IBM Plex Mono', monospace">{d.label}</text>)}
-    </svg>
+    <div className="trend-chart-wrap">
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
+        <defs>
+          <linearGradient id="heroAreaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        {[0, 0.5, 1].map((t, i) => <line key={i} x1={PAD.left} x2={PAD.left + iW} y1={PAD.top + t * iH} y2={PAD.top + t * iH} stroke="rgba(255,255,255,0.05)" strokeWidth="1" strokeDasharray="3 4" />)}
+        <path d={aArea} fill="url(#heroAreaGrad)" />
+        <path d={aLine} fill="none" stroke="#60a5fa" strokeWidth="1.8" strokeLinecap="round" />
+        <path d={iLine} fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="3 2" />
+
+        {/* highlighted week guide */}
+        <line x1={hx} x2={hx} y1={PAD.top} y2={PAD.top + iH} stroke="rgba(138,158,150,0.35)" strokeWidth="1" />
+        <circle cx={hx} cy={hyA} r="4" fill="#60a5fa" stroke="var(--bg-card)" strokeWidth="1.4" />
+        <circle cx={hx} cy={hyI} r="4" fill="#f59e0b" stroke="var(--bg-card)" strokeWidth="1.4" />
+
+        <circle cx={aPts[n - 1][0]} cy={aPts[n - 1][1]} r="3" fill="#60a5fa" stroke="var(--bg-card)" strokeWidth="1.2" />
+        <circle cx={iPts[n - 1][0]} cy={iPts[n - 1][1]} r="3" fill="#f59e0b" stroke="var(--bg-card)" strokeWidth="1.2" />
+        {HERO_TREND.map((d, i) => <text key={i} x={xOf(i)} y={H - 3} textAnchor="middle" fontSize="5.5" fill={i === hi ? "var(--text-secondary)" : "rgba(138,158,150,0.7)"} fontWeight={i === hi ? "700" : "400"} fontFamily="'IBM Plex Mono', monospace">{d.label}</text>)}
+      </svg>
+
+      <div
+        className="trend-tooltip"
+        style={{
+          left: `${tooltipLeft}%`,
+          top: `${tooltipTop}%`,
+          transform: flipLeft ? "translate(-100%, -50%) translateX(-10px)" : "translate(0, -50%) translateX(10px)",
+        }}
+      >
+        <div className="trend-tooltip-date">{hData.label}</div>
+        <div className="trend-tooltip-row"><span className="trend-tooltip-key">Applied:</span> <span className="trend-tooltip-val" style={{ color: "#60a5fa" }}>{hData.applied}</span></div>
+        <div className="trend-tooltip-row"><span className="trend-tooltip-key">Interviews:</span> <span className="trend-tooltip-val" style={{ color: "#f59e0b" }}>{hData.interviews}</span></div>
+      </div>
+    </div>
   );
 }
 
@@ -2236,7 +2284,7 @@ function MiniTrendChart() {
    below. Pulled into one function so the hero and the section
    never drift out of sync with each other again.
 ───────────────────────────────────────────────────────── */
-function DashboardMock({ donutSize = 88 }) {
+function DashboardMock({ donutSize = 88, ringSize = 76 }) {
   return (
     <div className="mock-dashboard">
       <div className="mock-chrome">
@@ -2265,14 +2313,25 @@ function DashboardMock({ donutSize = 88 }) {
                 { label: "Applied",   value: 35, color: "#60a5fa" },
                 { label: "Interview", value: 10, color: "#f59e0b" },
                 { label: "Offer",     value: 3,  color: "#34d399" },
-              ].map((f, i, arr) => (
-                <div key={f.label} style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>
-                  <div className="funnel-box" style={{ background: f.color, flex: 1 }}>
-                    {f.value}<div className="funnel-label">{f.label}</div>
+              ].map((f, i, arr) => {
+                const ofTotal = Math.round((f.value / arr[0].value) * 100);
+                const conv = i < arr.length - 1 ? Math.round((arr[i + 1].value / f.value) * 100) : null;
+                return (
+                  <div key={f.label} className="funnel-item">
+                    <div className="funnel-box" style={{ background: f.color }}>
+                      {f.value}
+                      <div className="funnel-label">{f.label}</div>
+                      <div className="funnel-pct">{ofTotal}% of total</div>
+                    </div>
+                    {i < arr.length - 1 && (
+                      <div className="funnel-arrow-wrap">
+                        <div className="funnel-arrow">→</div>
+                        <div className="funnel-conv-pct">{conv}%</div>
+                      </div>
+                    )}
                   </div>
-                  {i < arr.length - 1 && <div className="funnel-arrow">→</div>}
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="funnel-rejected">Rejected: 9</div>
           </div>
@@ -2295,6 +2354,47 @@ function DashboardMock({ donutSize = 88 }) {
               </div>
             </div>
           </div>
+
+          {/* ── Resume Performance ── */}
+          <div className="mock-chart-card mock-resume-card" style={{ gridColumn: "1 / -1" }}>
+            <div className="mock-chart-title">Resume Performance</div>
+            <div className="resume-rings-row">
+              <div className="resume-ring-item">
+                <div className="ring-wrap">
+                  <ProgressRing size={ringSize} pct={0.6} color="#34d399" />
+                  <div className="ring-center-text">60%</div>
+                </div>
+                <div className="ring-label">v2 <span className="best-badge">Best</span></div>
+                <div className="ring-sub">20 applications</div>
+              </div>
+              <div className="resume-ring-item">
+                <div className="ring-wrap">
+                  <ProgressRing size={ringSize} pct={0.067} color="#34d399" />
+                  <div className="ring-center-text">6.7%</div>
+                </div>
+                <div className="ring-label">v1</div>
+                <div className="ring-sub">15 applications</div>
+              </div>
+            </div>
+            <div className="resume-highlight">
+              <strong>v2</strong> has a 60% callback rate — it's your strongest resume right now.
+            </div>
+          </div>
+
+          {/* ── Ghost Rate ── */}
+          <div className="mock-chart-card mock-ghost-card" style={{ gridColumn: "1 / -1" }}>
+            <div className="ghost-rate-row">
+              <div className="ghost-rate-left">
+                <div className="ghost-rate-value">43<span className="ghost-percent">%</span></div>
+                <div className="ghost-rate-label">Ghost Rate</div>
+              </div>
+              <div className="ghost-divider" />
+              <div className="ghost-rate-text">
+                <strong>15 applications</strong> received no response after 14 days. Try personalising outreach or targeting roles with a closer match.
+              </div>
+            </div>
+          </div>
+
           <div className="mock-chart-card" style={{ gridColumn: "1 / -1" }}>
             <div className="mock-chart-title">Weekly Trend</div>
             <MiniTrendChart />
@@ -2324,12 +2424,12 @@ function DashboardShowcase() {
         <span className="ll-eyebrow">Your dashboard</span>
         <h2 className="ll-section-title">Every application, one clear picture</h2>
         <p className="ll-section-desc">
-          Funnel, status split, and weekly trend — the same view you land on the moment you sign in, built from your own applications instead of a spreadsheet you have to maintain by hand.
+          Funnel, status split, resume performance, and weekly trend — the same view you land on the moment you sign in, built from your own applications instead of a spreadsheet you have to maintain by hand.
         </p>
       </div>
       <div className="ll-showcase-wrap">
         <div className="ll-showcase-dashboard">
-          <DashboardMock donutSize={104} />
+          <DashboardMock donutSize={104} ringSize={92} />
         </div>
       </div>
     </section>
@@ -2550,10 +2650,27 @@ export default function HomePage() {
         .mock-chart-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 11px 12px; }
         .mock-chart-title { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 10px; font-weight: 700; }
         .mock-funnel { display: flex; align-items: center; gap: 4px; }
+        .funnel-item { display: flex; align-items: center; gap: 4px; flex: 1; }
         .funnel-box { border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 13px; color: #04120d; padding: 9px 5px; flex: 1; gap: 1px; }
         .funnel-label { font-size: 7px; font-weight: 600; font-family: 'Inter', sans-serif; color: rgba(4,18,13,0.65); }
-        .funnel-arrow { color: var(--text-muted); font-size: 11px; flex-shrink: 0; }
+        .funnel-pct { font-size: 6px; font-weight: 500; font-family: 'IBM Plex Mono', monospace; color: rgba(4,18,13,0.6); }
+        .funnel-arrow-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; }
+        .funnel-arrow { color: var(--text-muted); font-size: 11px; flex-shrink: 0; line-height: 1; }
+        .funnel-conv-pct { font-size: 7px; font-weight: 600; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; white-space: nowrap; }
         .funnel-rejected { font-size: 7px; color: var(--red); margin-top: 5px; text-align: right; font-family: 'IBM Plex Mono', monospace; }
+
+        /* ── Weekly Trend tooltip ── */
+        .trend-chart-wrap { position: relative; }
+        .trend-tooltip {
+          position: absolute; z-index: 6; pointer-events: none;
+          background: #0e1116; border-radius: 8px; padding: 8px 11px;
+          box-shadow: 0 10px 26px rgba(0,0,0,0.35);
+          min-width: 100px;
+        }
+        .trend-tooltip-date { font-family: 'Manrope', sans-serif; font-size: 10px; font-weight: 700; color: #ffffff; margin-bottom: 5px; }
+        .trend-tooltip-row { display: flex; align-items: center; gap: 4px; font-size: 8.5px; font-family: 'IBM Plex Mono', monospace; color: rgba(255,255,255,0.55); line-height: 1.7; }
+        .trend-tooltip-key { color: rgba(255,255,255,0.55); }
+        .trend-tooltip-val { font-weight: 700; }
         .mock-donut-row { display: flex; align-items: center; gap: 10px; }
         .mock-donut-legend { display: flex; flex-direction: column; gap: 5px; flex: 1; }
         .legend-item { display: flex; align-items: center; justify-content: space-between; font-size: 9px; color: var(--text-secondary); }
@@ -2563,6 +2680,40 @@ export default function HomePage() {
         .trend-legend { display: flex; gap: 10px; margin-top: 6px; justify-content: center; }
         .trend-legend-item { display: flex; align-items: center; gap: 4px; font-size: 7.5px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
         .trend-legend-dot { width: 5px; height: 5px; border-radius: 50%; }
+
+        /* ── Resume Performance card ── */
+        .resume-rings-row { display: flex; align-items: flex-start; justify-content: center; gap: 34px; margin-bottom: 12px; }
+        .resume-ring-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .ring-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+        .ring-center-text {
+          position: absolute; font-family: 'IBM Plex Mono', monospace; font-weight: 700;
+          font-size: 13px; color: var(--text-primary); pointer-events: none;
+        }
+        .ring-label { display: flex; align-items: center; gap: 5px; font-family: 'Manrope', sans-serif; font-size: 11px; font-weight: 700; color: var(--text-primary); }
+        .best-badge {
+          font-family: 'Inter', sans-serif; font-size: 8px; font-weight: 700;
+          color: var(--green); background: color-mix(in srgb, var(--green) 16%, transparent);
+          padding: 1px 6px; border-radius: 999px; text-transform: none;
+        }
+        .ring-sub { font-size: 8.5px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+        .resume-highlight {
+          background: color-mix(in srgb, var(--green) 10%, transparent);
+          border: 1px solid color-mix(in srgb, var(--green) 30%, transparent);
+          border-radius: 8px; padding: 9px 12px;
+          font-size: 10px; line-height: 1.6; color: var(--text-secondary);
+        }
+        .resume-highlight strong { color: var(--text-primary); }
+
+        /* ── Ghost Rate card ── */
+        .mock-ghost-card { background: var(--bg); }
+        .ghost-rate-row { display: flex; align-items: center; gap: 16px; }
+        .ghost-rate-left { display: flex; flex-direction: column; align-items: flex-start; flex-shrink: 0; }
+        .ghost-rate-value { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 26px; color: var(--red); line-height: 1; }
+        .ghost-percent { font-size: 13px; font-weight: 700; margin-left: 1px; }
+        .ghost-rate-label { font-size: 8px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.7px; margin-top: 4px; }
+        .ghost-divider { width: 1px; align-self: stretch; background: var(--border); flex-shrink: 0; }
+        .ghost-rate-text { font-size: 10.5px; line-height: 1.6; color: var(--text-secondary); }
+        .ghost-rate-text strong { color: var(--text-primary); }
 
         /* ── Logo/trust strip ── */
         .ll-strip { max-width: 1180px; margin: 0 auto; padding: 0 40px 60px; text-align: center; }
@@ -2596,7 +2747,7 @@ export default function HomePage() {
            "Live demo" section — reuses the hero mockup at a larger
            size instead of re-rendering the same charts a second time) ── */
         .ll-showcase-wrap { animation: fadeUp 0.5s ease both; }
-        .ll-showcase-dashboard { max-width: 780px; margin: 0 auto; }
+        .ll-showcase-dashboard { max-width: 850px; margin: 0 auto; }
         .ll-showcase-dashboard .mock-body { padding: 24px; }
         .ll-showcase-dashboard .mock-stats { gap: 12px; margin-bottom: 14px; }
         .ll-showcase-dashboard .mock-stat { padding: 14px 14px; }
@@ -2613,6 +2764,22 @@ export default function HomePage() {
         .ll-showcase-dashboard .mock-topbar-title { font-size: 15px; }
         .ll-showcase-dashboard .mock-topbar-sub { font-size: 11px; }
         .ll-showcase-dashboard .mock-add-btn { font-size: 12px; padding: 7px 14px; }
+        .ll-showcase-dashboard .resume-rings-row { gap: 56px; margin-bottom: 18px; }
+        .ll-showcase-dashboard .ring-center-text { font-size: 16px; }
+        .ll-showcase-dashboard .ring-label { font-size: 13px; }
+        .ll-showcase-dashboard .best-badge { font-size: 9px; }
+        .ll-showcase-dashboard .ring-sub { font-size: 10.5px; }
+        .ll-showcase-dashboard .resume-highlight { font-size: 12.5px; padding: 12px 16px; }
+        .ll-showcase-dashboard .ghost-rate-value { font-size: 32px; }
+        .ll-showcase-dashboard .ghost-percent { font-size: 16px; }
+        .ll-showcase-dashboard .ghost-rate-label { font-size: 10px; }
+        .ll-showcase-dashboard .ghost-rate-text { font-size: 13px; }
+        .ll-showcase-dashboard .funnel-pct { font-size: 9px; }
+        .ll-showcase-dashboard .funnel-arrow { font-size: 15px; }
+        .ll-showcase-dashboard .funnel-conv-pct { font-size: 10px; }
+        .ll-showcase-dashboard .trend-tooltip { padding: 11px 15px; min-width: 130px; }
+        .ll-showcase-dashboard .trend-tooltip-date { font-size: 13px; margin-bottom: 7px; }
+        .ll-showcase-dashboard .trend-tooltip-row { font-size: 11px; line-height: 1.9; }
 
         /* ── CTA banner ── */
        .ll-cta-banner { max-width: 1200px; margin: 0 auto 80px; padding: 0 40px; }
@@ -2626,9 +2793,8 @@ export default function HomePage() {
 
         /* ── Responsive: tablet ── */
         @media (max-width: 900px) {
-          .ll-hero         { grid-template-columns: 1fr; padding: 32px 24px 44px; gap: 36px; }
+          .ll-hero         { padding: 32px 24px 44px; }
           .ll-hero-copy    { padding-top: 0; }
-          .ll-hero-desc    { max-width: none; }
           .mock-stats      { grid-template-columns: repeat(2, 1fr); }
           .mock-charts     { grid-template-columns: 1fr; }
           .features-grid   { grid-template-columns: repeat(2, 1fr); }
@@ -2660,6 +2826,21 @@ export default function HomePage() {
 
           .ll-showcase-dashboard .mock-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .ll-showcase-dashboard .mock-body { padding: 16px; }
+          .ll-showcase-dashboard .resume-rings-row { gap: 28px; }
+          .ghost-rate-row { flex-wrap: wrap; }
+          .ghost-divider { display: none; }
+
+          /* Application Funnel: stack stages instead of squeezing 3 into a row */
+          .mock-funnel { flex-direction: column; align-items: stretch; gap: 8px; }
+          .funnel-item { flex-direction: column; align-items: stretch; gap: 6px; }
+          .funnel-box { flex: none; width: 100%; }
+          .funnel-arrow-wrap { flex-direction: row; justify-content: center; gap: 6px; }
+          .funnel-arrow { display: inline-block; transform: rotate(90deg); }
+
+          /* Weekly Trend tooltip: shrink so it stops covering the chart */
+          .trend-tooltip, .ll-showcase-dashboard .trend-tooltip { padding: 6px 8px; min-width: 0; border-radius: 6px; }
+          .trend-tooltip-date, .ll-showcase-dashboard .trend-tooltip-date { font-size: 8px; margin-bottom: 3px; }
+          .trend-tooltip-row, .ll-showcase-dashboard .trend-tooltip-row { font-size: 6.5px; line-height: 1.5; gap: 2px; }
         }
 
         /* ── Responsive: very small phones ── */
@@ -2711,8 +2892,6 @@ export default function HomePage() {
             </div>
           
           </div>
-
-      
         </section>
 
         {/* DASHBOARD SHOWCASE (replaces the old interactive "Live demo" section) */}
