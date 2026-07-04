@@ -550,17 +550,18 @@ export default function HomePage() {
           backdrop-filter: blur(14px);
           border-bottom: 1px solid var(--border);
         }
-        .ll-nav-logo { display: flex; align-items: center; gap: 9px; }
+        .ll-nav-logo { display: flex; align-items: center; gap: 9px; flex-shrink: 0; min-width: 0; }
         .ll-logo-mark {
           width: 26px; height: 26px; border-radius: 7px;
           background: var(--accent-dim); border: 1px solid var(--accent-border);
           display: flex; align-items: center; justify-content: center;
           color: var(--accent); font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 13px;
+          flex-shrink: 0;
         }
-        .ll-nav-wordmark { font-family: 'Manrope', sans-serif; font-size: 16px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.3px; }
-        .ll-nav-right { display: flex; align-items: center; gap: 8px; }
+        .ll-nav-wordmark { font-family: 'Manrope', sans-serif; font-size: 16px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.3px; white-space: nowrap; }
+        .ll-nav-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .ll-nav-links { display: flex; align-items: center; gap: 28px; margin-right: 8px; }
-        .ll-nav-link { font-size: 13.5px; font-weight: 500; color: var(--text-secondary); text-decoration: none; transition: color 0.15s; }
+        .ll-nav-link { font-size: 13.5px; font-weight: 500; color: var(--text-secondary); text-decoration: none; transition: color 0.15s; white-space: nowrap; }
         .ll-nav-link:hover { color: var(--text-primary); }
 
         /* ── Theme toggle ── */
@@ -581,7 +582,8 @@ export default function HomePage() {
           background: var(--accent); color: #ffffff; border: none; padding: 12px 28px;
           border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
           cursor: pointer; transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-          text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
+          text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
+          gap: 7px; white-space: nowrap; text-align: center;
         }
         .btn-cta-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 10px 28px rgba(91,108,249,0.28); }
         .btn-lg { padding: 13px 30px; font-size: 14.5px; }
@@ -590,14 +592,15 @@ export default function HomePage() {
           background: transparent; color: var(--text-secondary); border: 1px solid var(--border);
           padding: 11px 22px; border-radius: 8px; font-family: 'Inter', sans-serif;
           font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s;
-          text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+          text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
+          gap: 8px; white-space: nowrap; text-align: center;
         }
         .btn-outline:hover { border-color: var(--border-light); color: var(--text-primary); background: var(--bg-hover); }
 
         .btn-nav-ghost {
           background: transparent; color: var(--text-secondary); border: none;
           padding: 8px 14px; font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 600;
-          cursor: pointer; transition: color 0.15s;
+          cursor: pointer; transition: color 0.15s; white-space: nowrap;
         }
         .btn-nav-ghost:hover { color: var(--text-primary); }
 
@@ -617,10 +620,11 @@ export default function HomePage() {
         .ll-hero {
           position: relative;
           display: grid; grid-template-columns: 1fr 1fr;
-          gap: 56px; align-items: center;
+          gap: 56px; align-items: start;
           max-width: 1180px; margin: 0 auto;
-          padding: 68px 40px 76px;
+          padding: 44px 40px 72px;
         }
+        .ll-hero-copy { padding-top: 6px; }
 
         .ll-badge {
           display: inline-flex; align-items: center; gap: 7px;
@@ -801,7 +805,8 @@ export default function HomePage() {
 
         /* ── Responsive: tablet ── */
         @media (max-width: 900px) {
-          .ll-hero         { grid-template-columns: 1fr; padding: 44px 24px 56px; gap: 44px; }
+          .ll-hero         { grid-template-columns: 1fr; padding: 32px 24px 44px; gap: 36px; }
+          .ll-hero-copy    { padding-top: 0; }
           .ll-hero-desc    { max-width: none; }
           .mock-stats      { grid-template-columns: repeat(2, 1fr); }
           .mock-charts     { grid-template-columns: 1fr; }
@@ -813,9 +818,21 @@ export default function HomePage() {
 
         /* ── Responsive: mobile ── */
         @media (max-width: 640px) {
+          .ll-nav               { padding: 0 14px; height: 58px; }
+          .ll-nav-right         { gap: 6px; }
+          .ll-nav-wordmark      { font-size: 14px; }
+          .ll-logo-mark         { width: 22px; height: 22px; font-size: 11px; }
+          .theme-toggle         { width: 32px; height: 19px; }
+          .theme-toggle-thumb   { width: 13px; height: 13px; top: 2px; }
+          .theme-toggle-thumb.dark  { left: 2.5px; }
+          .theme-toggle-thumb.light { left: 16.5px; }
+          .btn-nav-ghost        { padding: 6px 8px; font-size: 12px; }
+          .ll-nav-right .btn-cta-primary { padding: 7px 12px; font-size: 12px; }
+
           .features-grid       { grid-template-columns: 1fr; }
           .ll-hero h1           { font-size: 30px; letter-spacing: -1px; }
           .ll-hero, .ll-strip   { padding-left: 20px; padding-right: 20px; }
+          .ll-hero              { padding-top: 24px; padding-bottom: 36px; }
           .ll-section, .ll-cta-banner { padding: 52px 20px; }
           .ll-hero-ctas         { flex-direction: column; }
           .ll-hero-ctas a, .ll-hero-ctas button { width: 100%; }
@@ -830,6 +847,12 @@ export default function HomePage() {
           .ll-ghost-callout     { flex-direction: column; text-align: center; }
           .ll-ghost-text        { border-left: none; padding-left: 0; border-top: 2px solid var(--yellow); padding-top: 14px; }
           .is-high .ll-ghost-text { border-top-color: var(--red); }
+        }
+
+        /* ── Responsive: very small phones ── */
+        @media (max-width: 380px) {
+          .ll-nav-right .btn-cta-primary { padding: 6px 10px; font-size: 11px; }
+          .btn-nav-ghost { padding: 6px 6px; font-size: 11px; }
         }
       `}</style>
 
@@ -859,7 +882,7 @@ export default function HomePage() {
 
         {/* HERO */}
         <section className="ll-hero">
-          <div>
+          <div className="ll-hero-copy">
             <h1>The command centre<br />for your <em>job search.</em></h1>
             <p className="ll-hero-desc">
               Replace scattered spreadsheets and sticky notes with one clean system. Track every application, see what's actually working, and always know your next move.
