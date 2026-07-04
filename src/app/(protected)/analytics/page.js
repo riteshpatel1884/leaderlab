@@ -78,7 +78,7 @@ function Loader() {
         }}
       />
       <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
-        Loading analytics...
+        Loading analytics....
       </p>
       <style>{`
         @keyframes spin {
