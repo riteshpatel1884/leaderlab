@@ -28,7 +28,8 @@ model Application {
   statusHistory   Json      @default("[]")          @map("status_history")
   createdAt       DateTime  @default(now())         @map("created_at")
   updatedAt       DateTime  @updatedAt              @map("updated_at")
-
+  
+  notifications   Notification[]
   @@index([clerkUserId])
   @@index([clerkUserId, status])
   @@map("applications")
