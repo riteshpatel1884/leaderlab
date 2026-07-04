@@ -4,7 +4,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = process.env.EMAIL_FROM || "LeaderLab <noreply@leaderlab.in>";
 
-// ── Shared HTML wrapper ────────────────────────────────────────────────────────
+// ── Shared HTML wrapper ────────────────────────────────────────────────
 function htmlWrapper(content) {
   return `<!DOCTYPE html>
 <html lang="en">
