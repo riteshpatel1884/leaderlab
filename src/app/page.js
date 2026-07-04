@@ -548,7 +548,7 @@ export default function HomePage() {
           padding: 0 40px; height: 64px;
           background: color-mix(in srgb, var(--bg) 88%, transparent);
           backdrop-filter: blur(14px);
-          border-bottom: 1px solid var(--border);
+      
         }
         .ll-nav-logo { display: flex; align-items: center; gap: 9px; flex-shrink: 0; min-width: 0; }
         .ll-logo-mark {
@@ -559,7 +559,7 @@ export default function HomePage() {
           flex-shrink: 0;
         }
         .ll-nav-wordmark { font-family: 'Manrope', sans-serif; font-size: 16px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.3px; white-space: nowrap; }
-        .ll-nav-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .ll-nav-right { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
         .ll-nav-links { display: flex; align-items: center; gap: 28px; margin-right: 8px; }
         .ll-nav-link { font-size: 13.5px; font-weight: 500; color: var(--text-secondary); text-decoration: none; transition: color 0.15s; white-space: nowrap; }
         .ll-nav-link:hover { color: var(--text-primary); }
@@ -963,22 +963,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* FEATURES */}
-        <section className="ll-section" id="features">
-          <div className="ll-section-head">
-            <h2 className="ll-section-title">Everything your search needs, nothing it doesn't</h2>
-            <p className="ll-section-desc">Purpose-built tools that turn a pile of applications into a search you can actually manage.</p>
-          </div>
-          <div className="features-grid">
-            {FEATURES.map((f) => (
-              <div key={f.title} className="feature-card">
-                <div className="feature-icon-box"><FeatureIcon name={f.icon} /></div>
-                <div className="feature-title">{f.title}</div>
-                <div className="feature-desc">{f.desc}</div>
-              </div>
-            ))}
-          </div>
-        </section>
+
 
         {/* ANALYTICS DEMO */}
         <AnalyticsDemo />
