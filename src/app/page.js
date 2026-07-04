@@ -863,20 +863,15 @@ export default function HomePage() {
             <div className="ll-logo-mark">L</div>
             <div className="ll-nav-wordmark">LeaderLab</div>
           </div>
-          <div className="ll-nav-links">
-            <a href="#features" className="ll-nav-link">Features</a>
-            <a href="#demo" className="ll-nav-link">Demo</a>
-          </div>
+          
           <div className="ll-nav-right">
             <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme" title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
               <div className={`theme-toggle-thumb ${theme}`} />
             </button>
+           
             <SignInButton mode="modal">
-              <button className="btn-nav-ghost">Sign in</button>
+              <button className="btn-cta-primary" style={{ padding: "9px 18px", fontSize: 13.5 }}>Sign in</button>
             </SignInButton>
-            <SignUpButton mode="modal">
-              <button className="btn-cta-primary" style={{ padding: "9px 18px", fontSize: 13.5 }}>Get started</button>
-            </SignUpButton>
           </div>
         </nav>
 
