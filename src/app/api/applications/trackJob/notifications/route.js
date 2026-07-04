@@ -1,4 +1,4 @@
-// app/api/notifications/route.js
+// app/api/application/trackKJob/notifications/route.js
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getNotifications, markAllRead } from "../../../../../lib/TrackJob/notifications";

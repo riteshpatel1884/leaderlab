@@ -1,15 +1,5 @@
 // app/api/cron/trackJob/route.js
-//
-// This route is called daily by a cron job (e.g. Vercel Cron or external cron).
-// It finds all applications with followUpDate = tomorrow, then:
-//   1. Creates an in-app notification
-//   2. Sends a Resend email (if notifyEmail is set)
-//
-// Protect with CRON_SECRET env variable.
-// Add to vercel.json:
-// {
-//   "crons": [{ "path": "/api/cron/followup-reminders", "schedule": "0 7 * * *" }]
-// }
+
 
 import { NextResponse } from "next/server";
 import {prisma} from "../../../../lib/db";

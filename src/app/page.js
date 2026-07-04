@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { useTheme } from "../utils/themeProvider/Themeprovider";
@@ -9,7 +10,10 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 
-/* ─── 35 Mock Applications ─── */
+/* ─────────────────────────────────────────────────────────
+   Mock data — 35 sample applications used to power the
+   "see it in action" analytics demo on the landing page.
+───────────────────────────────────────────────────────── */
 const MOCK_APPS = [
   { id: 1,  company: "Stripe",      role: "Product Manager",       status: "Interview", platform: "LinkedIn",     workType: "Remote",  resumeVersion: "v2", dateApplied: "2025-04-01" },
   { id: 2,  company: "Notion",      role: "Senior PM",             status: "Applied",   platform: "Referral",     workType: "Hybrid",  resumeVersion: "v1", dateApplied: "2025-04-03" },
@@ -48,7 +52,9 @@ const MOCK_APPS = [
   { id: 35, company: "Datadog",     role: "PM – Observability",    status: "Offer",     platform: "Referral",     workType: "Onsite",  resumeVersion: "v2", dateApplied: "2025-04-02" },
 ];
 
-/* ─── Analytics computation ─── */
+/* ─────────────────────────────────────────────────────────
+   Analytics computation — unchanged business logic
+───────────────────────────────────────────────────────── */
 function computeAnalytics(apps) {
   const total = apps.length;
   const byStatus = { Applied: 0, Interview: 0, Offer: 0, Rejected: 0 };
@@ -123,14 +129,15 @@ function computeAnalytics(apps) {
 
 /* ─── Recharts tooltip ─── */
 const tooltipStyle = {
-  background: "rgba(14,14,18,0.97)", border: "1px solid rgba(108,99,255,0.2)",
-  borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#f0f0f2", outline: "none",
+  background: "rgba(10,12,11,0.97)", border: "1px solid var(--border-light)",
+  borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#f0f0f2", outline: "none",
+  fontFamily: "'Inter', sans-serif",
 };
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
     <div style={tooltipStyle}>
-      {label && <div style={{ fontWeight: 700, marginBottom: 4 }}>{label}</div>}
+      {label && <div style={{ fontWeight: 600, marginBottom: 4 }}>{label}</div>}
       {payload.map((p, i) => (
         <div key={i} style={{ color: p.color || "#a5b4fc", marginTop: 2 }}>
           <span style={{ color: "#8b8b9a", marginRight: 6 }}>{p.name}:</span>{p.value}
@@ -140,32 +147,9 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
-/* ─── Status colors ─── */
 const STATUS_COLORS = { Applied: "#3b82f6", Interview: "#f59e0b", Offer: "#22c55e", Rejected: "#ef4444" };
 
-/* ─── Animated Counter ─── */
-function Counter({ target, suffix = "" }) {
-  const [val, setVal] = useState(0);
-  const ref = useRef(null);
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return;
-      obs.disconnect();
-      let start = 0;
-      const step = Math.ceil(target / 40);
-      const t = setInterval(() => {
-        start = Math.min(start + step, target);
-        setVal(start);
-        if (start >= target) clearInterval(t);
-      }, 30);
-    }, { threshold: 0.4 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [target]);
-  return <span ref={ref}>{val}{suffix}</span>;
-}
-
-/* ─── Donut Chart (hero mock) ─── */
+/* ─── Donut Chart (hero preview) ─── */
 function DonutChart({ size = 100 }) {
   const data = [
     { pct: 0.48, color: "#60a5fa" }, { pct: 0.16, color: "#f59e0b" },
@@ -189,8 +173,8 @@ function DonutChart({ size = 100 }) {
   return (
     <svg viewBox={`0 0 ${size} ${size}`} style={{ width: size, height: size }}>
       {segments.map((seg, i) => <path key={i} d={segPath(seg.startAngle, seg.pct * 360, r)} fill={seg.color} opacity="0.92" />)}
-      <text x={cx} y={cy - 4} textAnchor="middle" fill="var(--text-primary)" fontSize={size * 0.13} fontWeight="800" fontFamily="Syne, sans-serif">35</text>
-      <text x={cx} y={cy + size * 0.1} textAnchor="middle" fill="var(--text-muted)" fontSize={size * 0.07} fontFamily="DM Sans, sans-serif">apps</text>
+      <text x={cx} y={cy - 4} textAnchor="middle" fill="var(--text-primary)" fontSize={size * 0.13} fontWeight="700" fontFamily="'IBM Plex Mono', monospace">35</text>
+      <text x={cx} y={cy + size * 0.1} textAnchor="middle" fill="var(--text-muted)" fontSize={size * 0.07} fontFamily="'Inter', sans-serif">apps</text>
     </svg>
   );
 }
@@ -233,12 +217,14 @@ function MiniTrendChart() {
       <path d={iLine} fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="3 2" />
       <circle cx={aPts[n - 1][0]} cy={aPts[n - 1][1]} r="3" fill="#60a5fa" stroke="var(--bg-card)" strokeWidth="1.2" />
       <circle cx={iPts[n - 1][0]} cy={iPts[n - 1][1]} r="3" fill="#f59e0b" stroke="var(--bg-card)" strokeWidth="1.2" />
-      {HERO_TREND.map((d, i) => <text key={i} x={xOf(i)} y={H - 3} textAnchor="middle" fontSize="5.5" fill="rgba(138,158,150,0.7)" fontFamily="DM Sans, sans-serif">{d.label}</text>)}
+      {HERO_TREND.map((d, i) => <text key={i} x={xOf(i)} y={H - 3} textAnchor="middle" fontSize="5.5" fill="rgba(138,158,150,0.7)" fontFamily="'IBM Plex Mono', monospace">{d.label}</text>)}
     </svg>
   );
 }
 
-/* ─── Analytics Demo Section ─── */
+/* ─────────────────────────────────────────────────────────
+   Analytics demo section
+───────────────────────────────────────────────────────── */
 function AnalyticsDemo() {
   const [analysed, setAnalysed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -250,7 +236,7 @@ function AnalyticsDemo() {
       setStats(computeAnalytics(MOCK_APPS));
       setLoading(false);
       setAnalysed(true);
-    }, 1200);
+    }, 1000);
   }, []);
 
   const RECHARTS_RESET = `
@@ -262,117 +248,94 @@ function AnalyticsDemo() {
   `;
 
   return (
-    <section className="ll-features" style={{ paddingTop: 60, paddingBottom: 80 }}>
+    <section className="ll-section" id="demo">
       <style dangerouslySetInnerHTML={{ __html: RECHARTS_RESET }} />
-      <p className="ll-section-eyebrow">See it in action</p>
-      <h2 className="ll-section-title">Your job search analytics</h2>
-      <p style={{ textAlign: "center", color: "var(--text-secondary)", fontSize: 14, marginBottom: 36, lineHeight: 1.6, maxWidth: 520, margin: "0 auto 36px" }}>
-        35 real-world applications. Click Analyse to instantly see your full performance breakdown — funnel, platforms, trends and more.
-      </p>
+      <div className="ll-section-head">
+        <span className="ll-eyebrow">Live demo</span>
+        <h2 className="ll-section-title">See your data, not just your list</h2>
+        <p className="ll-section-desc">
+          35 sample applications, six weeks of activity. Run the analysis and get the full breakdown — funnel, platforms, trends, and where your resume is actually working.
+        </p>
+      </div>
 
-      {/* CTA */}
       {!analysed && (
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <button
-            onClick={handleAnalyse}
-            disabled={loading}
-            style={{
-              padding: "14px 36px", borderRadius: 10,
-              background: loading ? "rgba(108,99,255,0.3)" : "linear-gradient(135deg, #6c63ff, #22c55e)",
-              border: "none", color: "#fff", fontSize: 15, fontWeight: 700,
-              cursor: loading ? "not-allowed" : "pointer",
-              fontFamily: "'Syne', sans-serif", letterSpacing: "0.2px",
-              boxShadow: loading ? "none" : "0 8px 32px rgba(108,99,255,0.35)",
-              transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 10,
-            }}
-          >
+        <div className="ll-demo-cta">
+          <button onClick={handleAnalyse} disabled={loading} className="btn-cta-primary" style={{ margin: "0 auto", fontSize: 15, padding: "14px 36px" }}>
             {loading ? (
               <>
-                <span style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin 0.7s linear infinite" }} />
+                <span className="ll-spinner" />
                 Analysing 35 applications…
               </>
             ) : (
-              <> Analyse My Applications</>
+              "See it in action"
             )}
           </button>
-          <div style={{ marginTop: 12, fontSize: 12, color: "var(--text-muted)" }}>Based on 35 mock applications across 6 weeks</div>
+          <div className="ll-demo-caption">Sample dataset · 35 applications · 6 weeks</div>
         </div>
       )}
 
-      {/* Charts */}
       {analysed && stats && (
-        <div style={{ animation: "fadeUp 0.4s ease both" }}>
-          {/* Refresh button */}
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
+        <div className="ll-demo-results">
+          <div className="ll-demo-reset-row">
             <button
               onClick={() => { setAnalysed(false); setStats(null); }}
-              style={{ padding: "7px 16px", borderRadius: 6, border: "1px solid var(--border)", background: "transparent", color: "var(--text-muted)", fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.borderColor = "var(--border-light)"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.borderColor = "var(--border)"; }}
+              className="btn-ghost-sm"
             >
-              ↺ Reset
+              ↺ Reset demo
             </button>
           </div>
 
-          {/* ── Stat cards: 4 per row on desktop, 2 per row on mobile ── */}
-          <div className="stat-cards-grid">
+          <div className="ll-stat-grid">
             {[
-              { label: "Total Applied",  value: stats.total,              color: "#3b82f6" },
-              { label: "Callback Rate",  value: `${stats.callbackRate}%`, color: "#6c63ff" },
-              { label: "Offer Rate",     value: `${stats.offerRate}%`,    color: "#22c55e" },
-              { label: "Ghost Rate",     value: `${stats.ghostRate}%`,    color: "#f59e0b" },
-              { label: "Interviews",     value: stats.byStatus.Interview, color: "#f59e0b" },
-              { label: "Offers",         value: stats.byStatus.Offer,     color: "#22c55e" },
-              { label: "Rejected",       value: stats.byStatus.Rejected,  color: "#ef4444" },
-              { label: "Pending",        value: stats.byStatus.Applied,   color: "#3b82f6" },
+              { label: "Total Applied",  value: stats.total,              color: "var(--blue)" },
+              { label: "Callback Rate",  value: `${stats.callbackRate}%`, color: "var(--accent)" },
+              { label: "Offer Rate",     value: `${stats.offerRate}%`,    color: "var(--green)" },
+              { label: "Ghost Rate",     value: `${stats.ghostRate}%`,    color: "var(--yellow)" },
+              { label: "Interviews",     value: stats.byStatus.Interview, color: "var(--yellow)" },
+              { label: "Offers",         value: stats.byStatus.Offer,     color: "var(--green)" },
+              { label: "Rejected",       value: stats.byStatus.Rejected,  color: "var(--red)" },
+              { label: "Pending",        value: stats.byStatus.Applied,   color: "var(--blue)" },
             ].map((s) => (
-              <div key={s.label} className="stat-card" style={{ animation: "fadeUp 0.4s ease both" }}>
-                <div className="stat-label">{s.label}</div>
-                <div style={{ fontFamily: "sans-serif", fontSize: 28, fontWeight: 800, color: s.color, lineHeight: 1.1, margin: "6px 0 4px" }}>{s.value}</div>
+              <div key={s.label} className="ll-stat-card">
+                <div className="ll-stat-label">{s.label}</div>
+                <div className="ll-stat-value" style={{ color: s.color }}>{s.value}</div>
               </div>
             ))}
           </div>
 
-          {/* Funnel */}
-          <div className="demo-chart-card" style={{ marginBottom: 16 }}>
-            <div className="demo-chart-title">Application Funnel</div>
+          <div className="ll-chart-card">
+            <div className="ll-chart-title">Application funnel</div>
             {[
-              { label: "Applied",   count: stats.total,                color: "#3b82f6" },
-              { label: "Interview", count: stats.byStatus.Interview,   color: "#f59e0b" },
-              { label: "Offer",     count: stats.byStatus.Offer,       color: "#22c55e" },
+              { label: "Applied",   count: stats.total,                color: "var(--blue)" },
+              { label: "Interview", count: stats.byStatus.Interview,   color: "var(--yellow)" },
+              { label: "Offer",     count: stats.byStatus.Offer,       color: "var(--green)" },
             ].map((step, i, arr) => {
               const prev = i === 0 ? stats.total : arr[i - 1].count;
-              const conv = i > 0 && prev > 0 ? `${((step.count / prev) * 100).toFixed(0)}% conv.` : null;
+              const conv = i > 0 && prev > 0 ? `${((step.count / prev) * 100).toFixed(0)}% conversion` : null;
               return (
-                <div key={step.label} style={{ marginBottom: 10 }}>
-                  {conv && <div style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 3 }}>{conv}</div>}
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 70, fontSize: 11, color: "var(--text-muted)", textAlign: "right" }}>{step.label}</div>
-                    <div style={{ flex: 1, height: 28, background: "var(--bg)", borderRadius: 6, overflow: "hidden" }}>
-                      <div style={{
-                        width: `${(step.count / stats.total) * 100}%`, height: "100%",
-                        background: step.color, borderRadius: 6, display: "flex", alignItems: "center", paddingLeft: 8,
-                        transition: "width 1.2s cubic-bezier(.4,0,.2,1)",
-                      }}>
-                        <span style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{step.count}</span>
+                <div key={step.label} className="ll-funnel-row">
+                  {conv && <div className="ll-funnel-conv">{conv}</div>}
+                  <div className="ll-funnel-track-row">
+                    <div className="ll-funnel-label">{step.label}</div>
+                    <div className="ll-funnel-track">
+                      <div className="ll-funnel-fill" style={{ width: `${(step.count / stats.total) * 100}%`, background: step.color }}>
+                        <span>{step.count}</span>
                       </div>
                     </div>
-                    <div style={{ width: 40, fontSize: 11, color: "var(--text-muted)" }}>{((step.count / stats.total) * 100).toFixed(0)}%</div>
+                    <div className="ll-funnel-pct">{((step.count / stats.total) * 100).toFixed(0)}%</div>
                   </div>
                 </div>
               );
             })}
-            <div style={{ marginTop: 8, fontSize: 11, color: "#ef4444" }}>Rejected: {stats.byStatus.Rejected}</div>
+            <div className="ll-funnel-rejected">Rejected: {stats.byStatus.Rejected}</div>
           </div>
 
-          {/* ── Donut charts: side-by-side, mobile-safe ── */}
-          <div className="donut-grid">
-            {/* Status Donut */}
-            <div className="demo-chart-card">
-              <div className="demo-chart-title">Status Distribution</div>
-              <div className="pie-chart-wrap">
+          <div className="ll-donut-grid">
+            <div className="ll-chart-card">
+              <div className="ll-chart-title">Status distribution</div>
+              <div className="ll-pie-wrap">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart style={{ outline: "none" }} tabIndex={-1}>
+                  <PieChart tabIndex={-1}>
                     <Pie
                       isAnimationActive={false}
                       data={Object.entries(stats.byStatus).filter(([, v]) => v > 0).map(([name, value]) => ({ name, value, fill: STATUS_COLORS[name] }))}
@@ -384,21 +347,17 @@ function AnalyticsDemo() {
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend
-                      iconType="circle" iconSize={7}
-                      formatter={(v) => <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{v}</span>}
-                    />
+                    <Legend iconType="circle" iconSize={7} formatter={(v) => <span className="ll-legend-label">{v}</span>} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Work Type Donut */}
-            <div className="demo-chart-card">
-              <div className="demo-chart-title">Work Type Split</div>
-              <div className="pie-chart-wrap">
+            <div className="ll-chart-card">
+              <div className="ll-chart-title">Work type split</div>
+              <div className="ll-pie-wrap">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart style={{ outline: "none" }} tabIndex={-1}>
+                  <PieChart tabIndex={-1}>
                     <Pie
                       isAnimationActive={false}
                       data={stats.workTypeData}
@@ -408,21 +367,17 @@ function AnalyticsDemo() {
                       {stats.workTypeData.map((e, i) => <Cell key={i} fill={e.fill} tabIndex={-1} />)}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend
-                      iconType="circle" iconSize={7}
-                      formatter={(v) => <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{v}</span>}
-                    />
+                    <Legend iconType="circle" iconSize={7} formatter={(v) => <span className="ll-legend-label">{v}</span>} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
           </div>
 
-          {/* Weekly Trend */}
-          <div className="demo-chart-card" style={{ marginBottom: 16 }}>
-            <div className="demo-chart-title">Weekly Application Trend</div>
-            <ResponsiveContainer width="100%" height={200} style={{ background: "transparent", outline: "none" }}>
-              <AreaChart data={stats.weeks} style={{ outline: "none" }} tabIndex={-1} margin={{ left: -10, right: 8 }}>
+          <div className="ll-chart-card">
+            <div className="ll-chart-title">Weekly application trend</div>
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={stats.weeks} tabIndex={-1} margin={{ left: -10, right: 8 }}>
                 <defs>
                   <linearGradient id="gApplied2" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
@@ -434,94 +389,83 @@ function AnalyticsDemo() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="week" tick={{ fill: "#555562", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#555562", fontSize: 10 }} axisLine={false} tickLine={false} width={24} />
+                <XAxis dataKey="week" tick={{ fill: "var(--text-muted)", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "var(--text-muted)", fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} width={24} />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend iconType="circle" iconSize={7} formatter={(v) => <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{v}</span>} />
+                <Legend iconType="circle" iconSize={7} formatter={(v) => <span className="ll-legend-label">{v}</span>} />
                 <Area isAnimationActive={false} type="monotone" dataKey="applied" name="Applied" stroke="#3b82f6" strokeWidth={2} fill="url(#gApplied2)" dot={false} />
                 <Area isAnimationActive={false} type="monotone" dataKey="interviews" name="Interviews" stroke="#f59e0b" strokeWidth={2} fill="url(#gInterview2)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Platform Success Rate */}
-          <div className="demo-chart-card" style={{ marginBottom: 16 }}>
-            <div className="demo-chart-title">Platform Success Rate</div>
-            <ResponsiveContainer width="100%" height={180} style={{ background: "transparent", outline: "none" }}>
-              <BarChart data={stats.platformData} layout="vertical" style={{ outline: "none" }} tabIndex={-1}>
+          <div className="ll-chart-card">
+            <div className="ll-chart-title">Platform success rate</div>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={stats.platformData} layout="vertical" tabIndex={-1}>
                 <defs>
                   <linearGradient id="gPlatform2" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#6c63ff" />
+                    <stop offset="0%" stopColor="var(--accent)" />
                     <stop offset="100%" stopColor="#22c55e" />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
-                <XAxis type="number" tick={{ fill: "#555562", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
-                <YAxis type="category" dataKey="name" tick={{ fill: "#8b8b9a", fontSize: 12 }} axisLine={false} tickLine={false} width={100} />
+                <XAxis type="number" tick={{ fill: "var(--text-muted)", fontSize: 10, fontFamily: "'IBM Plex Mono', monospace" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+                <YAxis type="category" dataKey="name" tick={{ fill: "var(--text-secondary)", fontSize: 12, fontFamily: "'Inter', sans-serif" }} axisLine={false} tickLine={false} width={100} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar isAnimationActive={false} dataKey="rate" name="Success Rate %" fill="url(#gPlatform2)" radius={[0, 6, 6, 0]} barSize={16} tabIndex={-1} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Resume Performance */}
-          <div className="demo-chart-card" style={{ marginBottom: 16 }}>
-            <div className="demo-chart-title">Resume Performance</div>
-            <div style={{ display: "flex", gap: 24, justifyContent: "center", alignItems: "center", padding: "12px 0" }}>
+          <div className="ll-chart-card">
+            <div className="ll-chart-title">Resume performance</div>
+            <div className="ll-resume-row">
               {stats.resumeData.map((r, i) => {
                 const R = 34, CIRC = 2 * Math.PI * R;
                 const filled = (r.rate / 100) * CIRC;
-                const colors = ["#22c55e", "#6c63ff"];
+                const colors = ["var(--green)", "var(--accent)"];
                 const color = colors[i % colors.length];
                 const isBest = i === 0;
                 return (
-                  <div key={r.name} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                    <div style={{ position: "relative" }}>
+                  <div key={r.name} className="ll-resume-item">
+                    <div className="ll-resume-ring-wrap">
                       <svg width={100} height={100} viewBox="0 0 100 100">
                         <circle cx={50} cy={50} r={R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={8} />
                         <circle cx={50} cy={50} r={R} fill="none" stroke={color} strokeWidth={8}
                           strokeLinecap="round" strokeDasharray={`${filled} ${CIRC}`}
                           transform="rotate(-90 50 50)" style={{ transition: "stroke-dasharray 0.7s ease" }} />
                       </svg>
-                      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                        <span style={{ fontSize: 20, fontWeight: 800, color, fontFamily: "'Syne', sans-serif" }}>{r.rate}%</span>
+                      <div className="ll-resume-ring-center">
+                        <span style={{ color }}>{r.rate}%</span>
                       </div>
                     </div>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 5, justifyContent: "center" }}>
-                        <span style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 600 }}>{r.name}</span>
-                        {isBest && <span style={{ fontSize: 9, padding: "1px 6px", borderRadius: 99, background: "rgba(34,197,94,0.15)", color: "#22c55e", fontWeight: 700 }}>BEST</span>}
+                    <div className="ll-resume-meta">
+                      <div className="ll-resume-name-row">
+                        <span>{r.name}</span>
+                        {isBest && <span className="ll-best-tag">Best</span>}
                       </div>
-                      <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{r.total} apps</div>
+                      <div className="ll-resume-count">{r.total} applications</div>
                     </div>
                   </div>
                 );
               })}
             </div>
-            <div style={{ fontSize: 12, color: "#22c55e", background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.18)", borderRadius: 8, padding: "8px 12px", marginTop: 4 }}>
-              ✦ <strong>{stats.resumeData[0]?.name}</strong> has a {stats.resumeData[0]?.rate}% callback rate — use it as your primary resume.
+            <div className="ll-insight-note">
+              <strong>{stats.resumeData[0]?.name}</strong> has a {stats.resumeData[0]?.rate}% callback rate — it's your strongest performer right now.
             </div>
           </div>
 
-          {/* Ghost rate callout */}
-          <div style={{
-            background: "var(--bg-card)",
-            border: `1px solid ${stats.ghostRate > 40 ? "rgba(239,68,68,0.3)" : "rgba(245,158,11,0.3)"}`,
-            borderRadius: 10, padding: "20px 24px", display: "flex", alignItems: "center", gap: 20, marginBottom: 16,
-          }}>
-            <div style={{ textAlign: "center", flexShrink: 0 }}>
-              <div style={{ fontSize: 42, fontWeight: 800, lineHeight: 1, color: stats.ghostRate > 40 ? "#ef4444" : "#f59e0b", fontFamily: "'Syne', sans-serif" }}>
-                {stats.ghostRate.toFixed(0)}<span style={{ fontSize: 20 }}>%</span>
-              </div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>Ghost Rate</div>
+          <div className={`ll-ghost-callout ${stats.ghostRate > 40 ? "is-high" : ""}`}>
+            <div className="ll-ghost-figure">
+              <div className="ll-ghost-number">{stats.ghostRate.toFixed(0)}<span>%</span></div>
+              <div className="ll-ghost-label">Ghost rate</div>
             </div>
-            <div style={{ flex: 1, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7, borderLeft: `2px solid ${stats.ghostRate > 40 ? "#ef4444" : "#f59e0b"}`, paddingLeft: 16 }}>
-              <strong style={{ color: "var(--text-primary)" }}>{Math.round((stats.ghostRate / 100) * stats.total)} applications</strong> received no response after 14 days.
-              {stats.ghostRate > 40 ? " Try personalising your outreach or targeting roles with higher match." : " Within normal range — keep applying consistently."}
+            <div className="ll-ghost-text">
+              <strong>{Math.round((stats.ghostRate / 100) * stats.total)} applications</strong> received no response after 14 days.
+              {stats.ghostRate > 40 ? " Try personalising outreach or targeting roles with a closer match." : " That's within a normal range — keep applying consistently."}
             </div>
           </div>
-
-         
         </div>
       )}
     </section>
@@ -529,15 +473,34 @@ function AnalyticsDemo() {
 }
 
 const FEATURES = [
-  { icon: "📊", title: "Visual Analytics",  desc: "Track your application funnel, conversion rate, and success metrics in real time." },
-  { icon: "🗓️", title: "Timeline View",     desc: "See applications over time and spot the best windows to apply for maximum response." },
-  { icon: "🤝", title: "Resume Matcher",    desc: "Match your resume to job descriptions and boost your interview call-back rate." },
-  { icon: "🎯", title: "Prep Tracker",      desc: "Log interview rounds, notes, and prep tasks so you walk in fully confident." },
-  { icon: "🔔", title: "Smart Reminders",   desc: "Never let a follow-up slip. Get nudged at the right time for every application." },
-  { icon: "🌗", title: "Light & Dark Mode", desc: "Pristine in daylight, easy on the eyes at midnight. Your tracker, your vibe." },
+  { icon: "chart", title: "Visual analytics",   desc: "Track your application funnel, conversion rate, and success metrics as they happen." },
+  { icon: "calendar", title: "Timeline view",    desc: "See applications laid out over time and spot the windows where response rates are highest." },
+  { icon: "match", title: "Resume matcher",      desc: "Match your resume against a job description and see where it's falling short before you apply." },
+  { icon: "target", title: "Prep tracker",       desc: "Log interview rounds, notes, and prep tasks so you walk in ready, every round." },
+  { icon: "bell", title: "Smart reminders",      desc: "Automatic nudges for follow-ups, so nothing slips through after two weeks of silence." },
+  { icon: "moon", title: "Light & dark mode",    desc: "A tracker that looks as sharp at 9am as it does at midnight before a deadline." },
 ];
 
-/* ─── Main Page ─── */
+const FEATURE_ICONS = {
+  chart: (<path d="M4 19V10M10 19V5M16 19v-7M22 19H2" />),
+  calendar: (<><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4M16 3v4M3 10h18" /></>),
+  match: (<><path d="M12 2l2.5 5.5L20 8l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z" /></>),
+  target: (<><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="0.5" /></>),
+  bell: (<><path d="M6 8a6 6 0 0112 0c0 5 2 6 2 6H4s2-1 2-6" /><path d="M10 21a2 2 0 004 0" /></>),
+  moon: (<path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z" />),
+};
+
+function FeatureIcon({ name }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      {FEATURE_ICONS[name]}
+    </svg>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   Main Page
+───────────────────────────────────────────────────────── */
 export default function HomePage() {
   const { isSignedIn, isLoaded } = useAuth();
   const router = useRouter();
@@ -552,229 +515,370 @@ export default function HomePage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
 
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+        @media (prefers-reduced-motion: reduce) {
+          .ll-page *, .ll-page *::before, .ll-page *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
         }
 
-        .ll-page { min-height: 100vh; background: var(--bg); color: var(--text-primary); font-family: 'DM Sans', sans-serif; }
+        .ll-page {
+          min-height: 100vh;
+          background: var(--bg);
+          color: var(--text-primary);
+          font-family: 'Inter', sans-serif;
+          -webkit-font-smoothing: antialiased;
+        }
+        .ll-page :focus-visible {
+          outline: 2px solid var(--accent);
+          outline-offset: 2px;
+          border-radius: 4px;
+        }
+
+        .ll-mono { font-family: 'IBM Plex Mono', monospace; }
+        .ll-display { font-family: 'Manrope', sans-serif; }
 
         /* ── Nav ── */
         .ll-nav {
           position: sticky; top: 0; z-index: 80;
           display: flex; align-items: center; justify-content: space-between;
-          padding: 0 40px; height: 60px;
-          background: var(--bg);
-          backdrop-filter: blur(12px);
+          padding: 0 40px; height: 64px;
+          background: color-mix(in srgb, var(--bg) 88%, transparent);
+          backdrop-filter: blur(14px);
+          border-bottom: 1px solid var(--border);
         }
-        .ll-nav-logo { font-family: sans-serif; font-size: 18px; font-weight: 800; color: var(--text-primary); }
-        .ll-nav-logo span { color: var(--accent); }
-        .ll-nav-right { display: flex; align-items: center; gap: 10px; }
+        .ll-nav-logo { display: flex; align-items: center; gap: 9px; }
+        .ll-logo-mark {
+          width: 26px; height: 26px; border-radius: 7px;
+          background: var(--accent-dim); border: 1px solid var(--accent-border);
+          display: flex; align-items: center; justify-content: center;
+          color: var(--accent); font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 13px;
+        }
+        .ll-nav-wordmark { font-family: 'Manrope', sans-serif; font-size: 16px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.3px; }
+        .ll-nav-right { display: flex; align-items: center; gap: 8px; }
+        .ll-nav-links { display: flex; align-items: center; gap: 28px; margin-right: 8px; }
+        .ll-nav-link { font-size: 13.5px; font-weight: 500; color: var(--text-secondary); text-decoration: none; transition: color 0.15s; }
+        .ll-nav-link:hover { color: var(--text-primary); }
 
         /* ── Theme toggle ── */
         .theme-toggle {
           background: var(--bg); border: 1px solid var(--border);
-          border-radius: 20px; width: 42px; height: 24px;
+          border-radius: 20px; width: 40px; height: 23px;
           cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0;
         }
         .theme-toggle-thumb {
-          position: absolute; top: 3px; width: 18px; height: 18px;
+          position: absolute; top: 2.5px; width: 16px; height: 16px;
           border-radius: 50%; background: var(--accent); transition: left 0.2s;
         }
         .theme-toggle-thumb.dark  { left: 3px; }
         .theme-toggle-thumb.light { left: 21px; }
 
-        /* ── Hero ── */
-        .ll-hero {
-          display: grid; grid-template-columns: 1fr 1fr;
-          gap: 40px; align-items: center;
-          max-width: 1200px; margin: 0 auto;
-          padding: 40px 40px 60px;
-        }
-        .ll-hero h1 {
-          font-family: sans-serif; font-size: clamp(32px, 4vw, 52px);
-          font-weight: 800; line-height: 1.1; color: var(--text-primary);
-          margin-bottom: 18px; letter-spacing: -1px;
-        }
-        .ll-hero h1 em { color: var(--accent); font-style: normal; }
-        .ll-hero-desc { font-size: 15px; color: var(--text-secondary); line-height: 1.7; max-width: 440px; margin-bottom: 32px; }
-        .ll-hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
-
         /* ── Buttons ── */
         .btn-cta-primary {
-          background: var(--accent); color: #050f0c; border: none; padding: 12px 28px;
-          border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700;
-          cursor: pointer; transition: background 0.15s, transform 0.1s;
+          background: var(--accent); color: #ffffff; border: none; padding: 12px 28px;
+          border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+          cursor: pointer; transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
           text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
         }
-        .btn-cta-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-cta-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 10px 28px rgba(91,108,249,0.28); }
+        .btn-lg { padding: 13px 30px; font-size: 14.5px; }
 
-        .btn-cta-ghost {
+        .btn-outline {
           background: transparent; color: var(--text-secondary); border: 1px solid var(--border);
-          padding: 12px 22px; border-radius: 8px; font-family: 'DM Sans', sans-serif;
+          padding: 11px 22px; border-radius: 8px; font-family: 'Inter', sans-serif;
           font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s;
-          text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
+          text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
         }
-        .btn-cta-ghost:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-outline:hover { border-color: var(--border-light); color: var(--text-primary); background: var(--bg-hover); }
 
-        /* ── Mock Dashboard ── */
-        .mock-dashboard-wrap { position: relative; perspective: 1000px; }
-        .mock-dashboard-wrap::before {
-          content: ''; position: absolute; inset: 30px -10px -20px;
-          background: var(--accent); opacity: 0.07; border-radius: 20px; filter: blur(40px); z-index: 0;
+        .btn-nav-ghost {
+          background: transparent; color: var(--text-secondary); border: none;
+          padding: 8px 14px; font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 600;
+          cursor: pointer; transition: color 0.15s;
         }
+        .btn-nav-ghost:hover { color: var(--text-primary); }
+
+        .btn-ghost-sm {
+          padding: 7px 14px; border-radius: 7px; border: 1px solid var(--border);
+          background: transparent; color: var(--text-muted); font-size: 12px; font-weight: 500;
+          cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s;
+        }
+        .btn-ghost-sm:hover { color: var(--text-primary); border-color: var(--border-light); background: var(--bg-hover); }
+
+        .ll-spinner {
+          width: 13px; height: 13px; border: 2px solid rgba(4,18,13,0.25); border-top-color: #04120d;
+          border-radius: 50%; display: inline-block; animation: spin 0.7s linear infinite;
+        }
+
+        /* ── Hero ── */
+        .ll-hero {
+          position: relative;
+          display: grid; grid-template-columns: 1fr 1fr;
+          gap: 56px; align-items: center;
+          max-width: 1180px; margin: 0 auto;
+          padding: 68px 40px 76px;
+        }
+
+        .ll-badge {
+          display: inline-flex; align-items: center; gap: 7px;
+          padding: 6px 12px 6px 10px; border-radius: 999px;
+          background: var(--bg-card); border: 1px solid var(--border);
+          font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500;
+          color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px;
+          margin-bottom: 22px;
+        }
+        .ll-badge-dot {
+          width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+          animation: pulse 2s ease-in-out infinite; flex-shrink: 0;
+        }
+
+        .ll-hero h1 {
+          font-family: 'Manrope', sans-serif;
+          font-size: clamp(34px, 4vw, 54px);
+          font-weight: 800; line-height: 1.08; color: var(--text-primary);
+          margin-bottom: 20px; letter-spacing: -1.4px;
+        }
+        .ll-hero h1 em { color: var(--accent); font-style: normal; }
+
+        .ll-hero-desc { font-size: 16px; color: var(--text-secondary); line-height: 1.7; max-width: 440px; margin-bottom: 30px; }
+        .ll-hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+        .ll-hero-trust {
+          display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+          font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--text-muted); letter-spacing: 0.2px;
+        }
+        .ll-hero-trust span:not(:last-child)::after { content: '·'; margin-left: 10px; color: var(--border-light); }
+
+        /* ── Mock Dashboard preview ── */
+        .mock-dashboard-wrap { position: relative; }
         .mock-dashboard {
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
-          overflow: hidden; box-shadow: 0 32px 80px rgba(0,0,0,0.4), 0 0 0 1px var(--border);
+          background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+          overflow: hidden;
           position: relative; z-index: 1;
-          transform: perspective(900px) rotateY(-6deg) rotateX(3deg);
+        }
+        .mock-chrome {
+          display: flex; align-items: center; gap: 12px;
+          padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--bg);
+        }
+        .mock-chrome-dots { display: flex; gap: 5px; }
+        .mock-chrome-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--border-light); }
+        .mock-chrome-url {
+          flex: 1; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px;
+          color: var(--text-muted); background: var(--bg-hover); border-radius: 5px; padding: 3px 10px;
         }
         .mock-topbar {
           background: var(--bg); border-bottom: 1px solid var(--border);
-          padding: 11px 16px; display: flex; align-items: center; justify-content: space-between;
+          padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
         }
-        .mock-topbar-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; }
-        .mock-topbar-sub   { font-size: 10px; color: var(--text-muted); }
+        .mock-topbar-title { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700; }
+        .mock-topbar-sub   { font-size: 10px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; margin-top: 1px; }
         .mock-add-btn {
-          background: var(--accent); color: #050f0c; border: none; padding: 5px 12px;
+          background: var(--accent); color: #04120d; border: none; padding: 5px 12px;
           border-radius: 6px; font-size: 10px; font-weight: 700; cursor: default; white-space: nowrap;
         }
-        .mock-body { padding: 12px; }
-        .mock-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 10px; }
-        .mock-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; }
-        .mock-stat-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 3px; }
-        .mock-stat-value { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; line-height: 1; }
-        .mock-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-        .mock-chart-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 11px; }
-        .mock-chart-title { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 9px; font-weight: 600; }
+        .mock-body { padding: 14px; }
+        .mock-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+        .mock-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 10px; }
+        .mock-stat-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; font-weight: 600; }
+        .mock-stat-value { font-family: 'IBM Plex Mono', monospace; font-size: 19px; font-weight: 600; line-height: 1; }
+        .mock-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .mock-chart-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 11px 12px; }
+        .mock-chart-title { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 10px; font-weight: 700; }
         .mock-funnel { display: flex; align-items: center; gap: 4px; }
-        .funnel-box { border-radius: 7px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; font-weight: 800; font-size: 14px; color: #050f0c; padding: 9px 5px; flex: 1; gap: 1px; }
-        .funnel-label { font-size: 7px; font-weight: 600; font-family: 'DM Sans', sans-serif; color: rgba(0,0,0,0.65); }
+        .funnel-box { border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 13px; color: #04120d; padding: 9px 5px; flex: 1; gap: 1px; }
+        .funnel-label { font-size: 7px; font-weight: 600; font-family: 'Inter', sans-serif; color: rgba(4,18,13,0.65); }
         .funnel-arrow { color: var(--text-muted); font-size: 11px; flex-shrink: 0; }
-        .funnel-rejected { font-size: 7px; color: var(--red); margin-top: 5px; text-align: right; }
+        .funnel-rejected { font-size: 7px; color: var(--red); margin-top: 5px; text-align: right; font-family: 'IBM Plex Mono', monospace; }
         .mock-donut-row { display: flex; align-items: center; gap: 10px; }
         .mock-donut-legend { display: flex; flex-direction: column; gap: 5px; flex: 1; }
         .legend-item { display: flex; align-items: center; justify-content: space-between; font-size: 9px; color: var(--text-secondary); }
         .legend-left { display: flex; align-items: center; gap: 5px; }
         .legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-        .legend-val { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 9px; color: var(--text-primary); }
-        .trend-chart-wrap { width: 100%; }
+        .legend-val { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 9px; color: var(--text-primary); }
         .trend-legend { display: flex; gap: 10px; margin-top: 6px; justify-content: center; }
-        .trend-legend-item { display: flex; align-items: center; gap: 4px; font-size: 7.5px; color: var(--text-muted); }
+        .trend-legend-item { display: flex; align-items: center; gap: 4px; font-size: 7.5px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
         .trend-legend-dot { width: 5px; height: 5px; border-radius: 50%; }
 
+        /* ── Logo/trust strip ── */
+        .ll-strip { max-width: 1180px; margin: 0 auto; padding: 0 40px 60px; text-align: center; }
+        .ll-strip-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; }
+
+        /* ── Section shell ── */
+        .ll-section { max-width: 1180px; margin: 0 auto; padding: 76px 40px; }
+        .ll-section-head { max-width: 620px; margin: 0 auto 44px; text-align: center; }
+        .ll-eyebrow {
+          display: block; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; font-weight: 600;
+          color: var(--accent); text-transform: uppercase; letter-spacing: 1.4px; margin-bottom: 12px;
+        }
+        .ll-section-title {
+          font-family: 'Manrope', sans-serif; font-size: clamp(26px, 3vw, 36px);
+          font-weight: 800; color: var(--text-primary); margin-bottom: 12px; letter-spacing: -0.8px; line-height: 1.2;
+        }
+        .ll-section-desc { font-size: 15px; color: var(--text-secondary); line-height: 1.7; }
+
         /* ── Features ── */
-        .ll-features { max-width: 1200px; margin: 0 auto; padding: 80px 40px; }
-        .ll-section-eyebrow { font-size: 12px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; text-align: center; }
-        .ll-section-title { font-family: sans-serif; font-size: clamp(26px, 3vw, 38px); font-weight: 800; color: var(--text-primary); text-align: center; margin-bottom: 8px; letter-spacing: -0.5px; }
-        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 36px; }
-        .feature-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: border-color 0.15s, transform 0.15s; }
-        .feature-card:hover { border-color: var(--accent-border); transform: translateY(-3px); }
-        .feature-icon { font-size: 26px; margin-bottom: 10px; }
-        .feature-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
-        .feature-desc { font-size: 12px; color: var(--text-muted); line-height: 1.65; }
-
-        /* ── Demo chart cards ── */
-        .demo-chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
-        .demo-chart-title { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 16px; }
-
-        /* ── Stat cards: 4 per row desktop, 2 per row mobile ── */
-        .stat-cards-grid {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 12px;
-          margin-bottom: 20px;
-       
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+        .feature-card { background: var(--bg-card); padding: 26px 24px; transition: background 0.15s; }
+        .feature-card:hover { background: var(--bg-hover); }
+        .feature-icon-box {
+          width: 34px; height: 34px; border-radius: 8px; background: var(--accent-dim); border: 1px solid var(--accent-border);
+          display: flex; align-items: center; justify-content: center; color: var(--accent); margin-bottom: 16px;
         }
-        .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; transition: border-color 0.15s; }
-        .stat-card:hover { border-color: var(--border-light); }
-        .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.6px; }
+        .feature-title { font-family: 'Manrope', sans-serif; font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 7px; letter-spacing: -0.2px; }
+        .feature-desc { font-size: 13.5px; color: var(--text-muted); line-height: 1.65; }
 
-        /* ── Donut chart grid: side-by-side desktop, stacked mobile ── */
-        .donut-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 16px;
-          margin-bottom: 16px;
-        }
+        /* ── Demo CTA ── */
+        .ll-demo-cta { text-align: center; margin-bottom: 8px; }
+        .ll-demo-caption { margin-top: 14px; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--text-muted); }
+        .ll-demo-results { animation: fadeUp 0.4s ease both; }
+        .ll-demo-reset-row { display: flex; justify-content: flex-end; margin-bottom: 20px; }
 
-        /* ── Pie chart container: fixed height, no overflow ── */
-        .pie-chart-wrap {
-          width: 100%;
-          height: 200px;
-          min-width: 0;
-          overflow: hidden;
+        /* Stat cards */
+        .ll-stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .ll-stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; transition: border-color 0.15s; animation: fadeUp 0.4s ease both; }
+        .ll-stat-card:hover { border-color: var(--border-light); }
+        .ll-stat-label { font-size: 11px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.6px; }
+        .ll-stat-value { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; line-height: 1.1; margin-top: 7px; }
+
+        /* Chart cards */
+        .ll-chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+        .ll-chart-title { font-family: 'Manrope', sans-serif; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 16px; }
+        .ll-legend-label { font-size: 11px; color: var(--text-secondary); font-family: 'Inter', sans-serif; }
+
+        .ll-funnel-row { margin-bottom: 10px; }
+        .ll-funnel-conv { font-size: 10px; color: var(--text-muted); margin-bottom: 3px; font-family: 'IBM Plex Mono', monospace; }
+        .ll-funnel-track-row { display: flex; align-items: center; gap: 10px; }
+        .ll-funnel-label { width: 70px; font-size: 11px; color: var(--text-muted); text-align: right; }
+        .ll-funnel-track { flex: 1; height: 28px; background: var(--bg); border-radius: 6px; overflow: hidden; }
+        .ll-funnel-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 10px; transition: width 1.1s cubic-bezier(.4,0,.2,1); }
+        .ll-funnel-fill span { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: #04120d; }
+        .ll-funnel-pct { width: 40px; font-size: 11px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+        .ll-funnel-rejected { margin-top: 8px; font-size: 11px; color: var(--red); font-family: 'IBM Plex Mono', monospace; }
+
+        .ll-donut-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+        .ll-pie-wrap { width: 100%; height: 200px; min-width: 0; overflow: hidden; }
+
+        .ll-resume-row { display: flex; gap: 28px; justify-content: center; align-items: center; padding: 12px 0; flex-wrap: wrap; }
+        .ll-resume-item { display: flex; flex-direction: column; align-items: center; gap: 9px; }
+        .ll-resume-ring-wrap { position: relative; }
+        .ll-resume-ring-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+        .ll-resume-ring-center span { font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; }
+        .ll-resume-meta { text-align: center; }
+        .ll-resume-name-row { display: flex; align-items: center; gap: 6px; justify-content: center; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+        .ll-best-tag { font-family: 'IBM Plex Mono', monospace; font-size: 9px; padding: 1px 6px; border-radius: 4px; background: var(--accent-dim); color: var(--accent); font-weight: 600; }
+        .ll-resume-count { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-family: 'IBM Plex Mono', monospace; }
+        .ll-insight-note {
+          font-size: 12.5px; color: var(--accent); background: var(--accent-dim); border: 1px solid var(--accent-border);
+          border-radius: 8px; padding: 10px 14px; margin-top: 6px; line-height: 1.6;
         }
+        .ll-insight-note strong { color: var(--text-primary); }
+
+        .ll-ghost-callout {
+          background: var(--bg-card); border: 1px solid rgba(245,158,11,0.3); border-radius: 10px;
+          padding: 22px 24px; display: flex; align-items: center; gap: 22px;
+        }
+        .ll-ghost-callout.is-high { border-color: rgba(239,68,68,0.3); }
+        .ll-ghost-figure { text-align: center; flex-shrink: 0; }
+        .ll-ghost-number { font-family: 'IBM Plex Mono', monospace; font-size: 38px; font-weight: 600; line-height: 1; color: var(--yellow); }
+        .is-high .ll-ghost-number { color: var(--red); }
+        .ll-ghost-number span { font-size: 18px; }
+        .ll-ghost-label { font-size: 11px; color: var(--text-muted); margin-top: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .ll-ghost-text { flex: 1; font-size: 13px; color: var(--text-secondary); line-height: 1.7; border-left: 2px solid var(--yellow); padding-left: 16px; }
+        .is-high .ll-ghost-text { border-left-color: var(--red); }
+        .ll-ghost-text strong { color: var(--text-primary); }
 
         /* ── CTA banner ── */
-        .ll-cta-banner { max-width: 1200px; margin: 0 auto 80px; padding: 0 40px; }
+       .ll-cta-banner { max-width: 1200px; margin: 0 auto 80px; padding: 0 40px; }
         .cta-inner { background: var(--accent-dim); border: 1px solid var(--accent-border); border-radius: 16px; padding: 56px 40px; text-align: center; }
-        .cta-inner h2 { font-family: sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 800; color: var(--text-primary); margin-bottom: 12px; }
-        .cta-inner p { font-size: 15px; color: var(--text-secondary); margin-bottom: 28px; }
+        .cta-inner h2 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(24px, 3vw, 34px); font-weight: 700; color: var(--text-primary); margin-bottom: 12px; letter-spacing: -0.6px; }
+        .cta-inner p { font-size: 15px; color: var(--text-secondary); margin-bottom: 28px; font-weight: 400; }
 
         /* ── Footer ── */
-        .ll-footer { padding: 24px 40px; display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto; }
-        .ll-footer-copy { font-size: 12px; color: var(--text-muted); }
+        .ll-footer-inner { padding: 28px 40px; display: flex; align-items: center; justify-content: space-between; max-width: 1180px; margin: 0 auto; border-top: 1px solid var(--border); }
+        .ll-footer-copy { font-size: 12px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
 
         /* ── Responsive: tablet ── */
         @media (max-width: 900px) {
-          .ll-hero         { grid-template-columns: 1fr; padding: 40px 24px; }
+          .ll-hero         { grid-template-columns: 1fr; padding: 44px 24px 56px; gap: 44px; }
+          .ll-hero-desc    { max-width: none; }
           .mock-stats      { grid-template-columns: repeat(2, 1fr); }
           .mock-charts     { grid-template-columns: 1fr; }
           .features-grid   { grid-template-columns: repeat(2, 1fr); }
           .ll-nav          { padding: 0 20px; }
-          .ll-footer       { flex-direction: column; gap: 8px; text-align: center; }
+          .ll-nav-links    { display: none; }
+          .ll-footer-inner { flex-direction: column; gap: 10px; text-align: center; }
         }
 
         /* ── Responsive: mobile ── */
         @media (max-width: 640px) {
-          .features-grid      { grid-template-columns: 1fr; }
-          .ll-hero h1         { font-size: 28px; }
-          .ll-features,
-          .ll-cta-banner      { padding: 48px 20px; }
+          .features-grid       { grid-template-columns: 1fr; }
+          .ll-hero h1           { font-size: 30px; letter-spacing: -1px; }
+          .ll-hero, .ll-strip   { padding-left: 20px; padding-right: 20px; }
+          .ll-section, .ll-cta-banner { padding: 52px 20px; }
+          .ll-hero-ctas         { flex-direction: column; }
+          .ll-hero-ctas a, .ll-hero-ctas button { width: 100%; }
 
-          /* 4+4 stat grid → 2+2+2+2 on mobile */
-          .stat-cards-grid    { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-          .stat-card          { padding: 14px 16px; }
-          .stat-card div[style] { font-size: 22px !important; }
+          .ll-stat-grid         { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+          .ll-stat-card         { padding: 14px 16px; }
+          .ll-stat-value        { font-size: 22px; }
 
-          /* Pie charts: stack vertically on mobile, constrain height */
-          .donut-grid         { grid-template-columns: 1fr; gap: 12px; }
-          .pie-chart-wrap     { height: 180px; }
+          .ll-donut-grid        { grid-template-columns: 1fr; gap: 12px; }
+          .ll-pie-wrap          { height: 180px; }
+
+          .ll-ghost-callout     { flex-direction: column; text-align: center; }
+          .ll-ghost-text        { border-left: none; padding-left: 0; border-top: 2px solid var(--yellow); padding-top: 14px; }
+          .is-high .ll-ghost-text { border-top-color: var(--red); }
         }
       `}</style>
 
       <div className="ll-page">
         {/* NAV */}
         <nav className="ll-nav">
-          <div className="ll-nav-logo">Leader<span>Lab.</span></div>
+          <div className="ll-nav-logo">
+            <div className="ll-logo-mark">L</div>
+            <div className="ll-nav-wordmark">LeaderLab</div>
+          </div>
+          <div className="ll-nav-links">
+            <a href="#features" className="ll-nav-link">Features</a>
+            <a href="#demo" className="ll-nav-link">Demo</a>
+          </div>
           <div className="ll-nav-right">
             <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme" title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
               <div className={`theme-toggle-thumb ${theme}`} />
             </button>
             <SignInButton mode="modal">
-              <button className="btn-cta-ghost" style={{ padding: "7px 16px", fontSize: 13 }}>Sign in</button>
+              <button className="btn-nav-ghost">Sign in</button>
             </SignInButton>
+            <SignUpButton mode="modal">
+              <button className="btn-cta-primary" style={{ padding: "9px 18px", fontSize: 13.5 }}>Get started</button>
+            </SignUpButton>
           </div>
         </nav>
 
         {/* HERO */}
         <section className="ll-hero">
           <div>
-            <h1>Your Job Search,<br />Finally <em>Under Control</em></h1>
+            <h1>The command centre<br />for your <em>job search.</em></h1>
             <p className="ll-hero-desc">
-              LeaderLab is a placement tracker that turns scattered applications into a clean, visual command centre — so you always know where you stand and what to do next.
+              Replace scattered spreadsheets and sticky notes with one clean system. Track every application, see what's actually working, and always know your next move.
             </p>
-           
+            <div className="ll-hero-ctas">
+              <SignUpButton mode="modal">
+                <button className="btn-cta-primary btn-lg">Get started free</button>
+              </SignUpButton>
+              <a href="#demo" className="btn-outline btn-lg">See it in action</a>
+            </div>
+          
           </div>
 
           <div className="mock-dashboard-wrap">
             <div className="mock-dashboard">
+              <div className="mock-chrome">
+                <div className="mock-chrome-dots"><span /><span /><span /></div>
+                <div className="mock-chrome-url">leaderlab.in/dashboard</div>
+              </div>
               <div className="mock-topbar">
                 <div>
                   <div className="mock-topbar-title">Analytics</div>
@@ -787,7 +891,7 @@ export default function HomePage() {
                   <div className="mock-stat"><div className="mock-stat-label">Total Applied</div><div className="mock-stat-value" style={{ color: "var(--accent)" }}>35</div></div>
                   <div className="mock-stat"><div className="mock-stat-label">Interviews</div><div className="mock-stat-value" style={{ color: "var(--yellow)" }}>10</div></div>
                   <div className="mock-stat"><div className="mock-stat-label">Offers</div><div className="mock-stat-value" style={{ color: "var(--green)" }}>3</div></div>
-                  <div className="mock-stat"><div className="mock-stat-label">Success Rate</div><div className="mock-stat-value" style={{ color: "var(--green)", fontSize: 16 }}>8.6%</div></div>
+                  <div className="mock-stat"><div className="mock-stat-label">Success Rate</div><div className="mock-stat-value" style={{ color: "var(--green)", fontSize: 15 }}>8.6%</div></div>
                 </div>
                 <div className="mock-charts">
                   <div className="mock-chart-card">
@@ -811,7 +915,7 @@ export default function HomePage() {
                   <div className="mock-chart-card">
                     <div className="mock-chart-title">Status Distribution</div>
                     <div className="mock-donut-row">
-                      <DonutChart size={90} />
+                      <DonutChart size={88} />
                       <div className="mock-donut-legend">
                         {[
                           { label: "Applied",   color: "#60a5fa", val: "37%" },
@@ -841,10 +945,27 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* FEATURES */}
+        <section className="ll-section" id="features">
+          <div className="ll-section-head">
+            <h2 className="ll-section-title">Everything your search needs, nothing it doesn't</h2>
+            <p className="ll-section-desc">Purpose-built tools that turn a pile of applications into a search you can actually manage.</p>
+          </div>
+          <div className="features-grid">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="feature-card">
+                <div className="feature-icon-box"><FeatureIcon name={f.icon} /></div>
+                <div className="feature-title">{f.title}</div>
+                <div className="feature-desc">{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* ANALYTICS DEMO */}
         <AnalyticsDemo />
 
-        {/* CTA BANNER */}
+         {/* CTA BANNER */}
         <div className="ll-cta-banner">
           <div className="cta-inner">
             <h2>Ready to take control of your job search?</h2>
@@ -859,8 +980,11 @@ export default function HomePage() {
 
         {/* FOOTER */}
         <footer>
-          <div className="ll-footer">
-            <div className="ll-nav-logo">Leader<span>Lab.</span></div>
+          <div className="ll-footer-inner">
+            <div className="ll-nav-logo">
+              <div className="ll-logo-mark">L</div>
+              <div className="ll-nav-wordmark">LeaderLab</div>
+            </div>
             <div className="ll-footer-copy">© {new Date().getFullYear()} LeaderLab. All rights reserved.</div>
           </div>
         </footer>
