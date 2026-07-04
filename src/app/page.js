@@ -860,10 +860,18 @@ export default function HomePage() {
         {/* NAV */}
         <nav className="ll-nav">
           <div className="ll-nav-logo">
-            <div className="ll-logo-mark">L</div>
-            <div className="ll-nav-wordmark">LeaderLab</div>
-          </div>
           
+           <div className="ll-nav-wordmark">
+             <img
+                 src={theme === "dark" ? "/dark_logo.png" : "/light_logo.png"}
+                  alt="LeaderLab"
+                 width={130}
+                 height={40}
+                 className="ll-logo-img"
+              />
+           </div>
+          </div>
+        
           <div className="ll-nav-right">
             <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme" title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
               <div className={`theme-toggle-thumb ${theme}`} />
@@ -983,8 +991,15 @@ export default function HomePage() {
         <footer>
           <div className="ll-footer-inner">
             <div className="ll-nav-logo">
-              <div className="ll-logo-mark">L</div>
-              <div className="ll-nav-wordmark">LeaderLab</div>
+              <div className="ll-nav-wordmark">
+             <img
+                 src={theme === "dark" ? "/dark_logo.png" : "/light_logo.png"}
+                  alt="LeaderLab"
+                 width={150}
+                 height={45}
+                 className="ll-logo-img"
+              />
+           </div>
             </div>
             <div className="ll-footer-copy">© {new Date().getFullYear()} LeaderLab. All rights reserved.</div>
           </div>

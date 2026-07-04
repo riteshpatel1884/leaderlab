@@ -1,7 +1,0 @@
-.btn-cta-primary {
-          background: var(--accent); color: #ffffff; border: none; padding: 12px 28px;
-          border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
-          cursor: pointer; transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-          text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
-        }
-        .btn-cta-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 10px 28px rgba(91,108,249,0.28); }
