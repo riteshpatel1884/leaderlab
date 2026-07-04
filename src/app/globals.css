@@ -117,7 +117,7 @@ html, body {
 /* Buttons */
 .btn-primary {
   background: var(--accent);
-  color: #050f0c;
+  color: #ffffff;
   border: none;
   padding: 9px 18px;
   border-radius: var(--radius-sm);

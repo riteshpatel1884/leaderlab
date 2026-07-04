@@ -106,6 +106,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { UserButton, useUser } from "@clerk/nextjs";
@@ -220,6 +221,7 @@ function ThemeToggle() {
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, isLoaded } = useUser();
+  const { theme } = useTheme();
   const [loadingId, setLoadingId] = useState(null);
 
   // Clear the loading state once navigation actually lands on the new route
@@ -244,7 +246,15 @@ export default function Sidebar() {
       <aside className="sidebar">
         {/* Logo */}
         <div className="sidebar-logo">
-          <div className="logo-mark">LeaderLab</div>
+          <Image
+            key={theme}
+            src={theme === "dark" ? "/dark_logo.png" : "/light_logo.png"}
+            alt="LeaderLab"
+            width={150}
+            height={40}
+            priority
+            style={{ height: 44, width: "auto", objectFit: "contain" }}
+          />
         </div>
 
         {/* Nav */}
