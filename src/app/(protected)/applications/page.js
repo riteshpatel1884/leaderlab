@@ -1,10 +1,113 @@
+// "use client";
+
+// import { useState } from "react";
+// import { useApplications } from "../../context/ApplicationsContext";
+// import ApplicationsTable from "../../Components/applications/ApplicationsTab";
+// import AddJobModal from "../../Components/applications/AddJobModal";
+// import ApplicationsSkeleton from "./Applicationsskeleton";
+
+// export default function ApplicationsPage() {
+//   const { applications, addApplication, updateApplication, deleteApplication, loading } =
+//     useApplications();
+//   const [showModal, setShowModal] = useState(false);
+//   const [editingJob, setEditingJob] = useState(null);
+
+//   return (
+//     <>
+//       <div className="topbar">
+//         <div>
+//           <h1 className="page-title">Applications</h1>
+//           <p className="page-subtitle">
+//             {applications.length} total application
+//             {applications.length !== 1 ? "s" : ""} tracked
+//           </p>
+//         </div>
+//         <button
+//           className="btn-primary"
+//           onClick={() => {
+//             setEditingJob(null);
+//             setShowModal(true);
+//           }}
+//         >
+//           <span>+</span> Add Application
+//         </button>
+//       </div>
+
+//       {loading ? (
+//         <ApplicationsSkeleton />
+//       ) : (
+//         <ApplicationsTable
+//           applications={applications}
+//           onUpdate={updateApplication}
+//           onDelete={deleteApplication}
+//           onEdit={(job) => {
+//             setEditingJob(job);
+//             setShowModal(true);
+//           }}
+//         />
+//       )}
+
+//       {showModal && (
+//         <AddJobModal
+//           onClose={() => {
+//             setShowModal(false);
+//             setEditingJob(null);
+//           }}
+//           onSave={(job) => {
+//             editingJob
+//               ? updateApplication(editingJob.id, job)
+//               : addApplication(job);
+//             setShowModal(false);
+//             setEditingJob(null);
+//           }}
+//           initialData={editingJob}
+//         />
+//       )}
+//     </>
+//   );
+// }
+
+
 "use client";
 
 import { useState } from "react";
 import { useApplications } from "../../context/ApplicationsContext";
 import ApplicationsTable from "../../Components/applications/ApplicationsTab";
 import AddJobModal from "../../Components/applications/AddJobModal";
-import ApplicationsSkeleton from "./Applicationsskeleton";
+
+function Loader() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 14,
+        padding: "80px 0",
+      }}
+    >
+      <div
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: "50%",
+          border: "3px solid var(--border)",
+          borderTopColor: "var(--accent, #6c63ff)",
+          animation: "spin 0.8s linear infinite",
+        }}
+      />
+      <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
+        Loading applications...
+      </p>
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
+}
 
 export default function ApplicationsPage() {
   const { applications, addApplication, updateApplication, deleteApplication, loading } =
@@ -34,7 +137,7 @@ export default function ApplicationsPage() {
       </div>
 
       {loading ? (
-        <ApplicationsSkeleton />
+        <Loader />
       ) : (
         <ApplicationsTable
           applications={applications}
