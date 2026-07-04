@@ -675,7 +675,7 @@ export default function HomePage() {
         .mock-topbar-title { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700; }
         .mock-topbar-sub   { font-size: 10px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; margin-top: 1px; }
         .mock-add-btn {
-          background: var(--accent); color: #04120d; border: none; padding: 5px 12px;
+          background: var(--accent); color: #ffffff; border: none; padding: 5px 12px;
           border-radius: 6px; font-size: 10px; font-weight: 700; cursor: default; white-space: nowrap;
         }
         .mock-body { padding: 14px; }
