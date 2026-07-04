@@ -963,8 +963,6 @@ export default function HomePage() {
           </div>
         </section>
 
-
-
         {/* ANALYTICS DEMO */}
         <AnalyticsDemo />
 
