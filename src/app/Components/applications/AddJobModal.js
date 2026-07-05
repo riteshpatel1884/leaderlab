@@ -442,7 +442,7 @@ const APPLY_TYPES = ["Direct Apply", "Referral", "Cold Apply"];
 
 const REJECTION_REASONS = [
   "No response / Ghosted",
-  "Resume rejected (ATS / Screening)",
+  "Resume rejected ( ATS / Screening )",
   "Resume shortlisted, rejected after screening call",
   "Failed aptitude / OA",
   "Failed coding assessment",
