@@ -441,15 +441,27 @@ const JOB_TYPES = ["Job", "Internship"];
 const APPLY_TYPES = ["Direct Apply", "Referral", "Cold Apply"];
 
 const REJECTION_REASONS = [
-  "No response",
-  "Resume shortlisted, rejected after",
-  "Failed aptitude/OA",
-  "Failed technical round",
-  "Failed HR round",
+  "No response / Ghosted",
+  "Resume rejected (ATS / Screening)",
+  "Resume shortlisted, rejected after screening call",
+  "Failed aptitude / OA",
+  "Failed coding assessment",
+  "Failed technical interview",
+  "Failed system design interview",
+  "Failed HR / Behavioral interview",
+  "Better candidate selected",
+  "Experience mismatch",
+  "Skills mismatch",
   "Overqualified",
   "Underqualified",
+  "Salary expectation mismatch",
+  "Location / Relocation issue",
+  "Work authorization / Visa issue",
   "Position filled internally",
-  "Role cancelled",
+  "Hiring freeze",
+  "Role cancelled / Closed",
+  "Candidate withdrew",
+  "Offer declined",
   "Other",
 ];
 
