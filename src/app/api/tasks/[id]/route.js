@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
-// PATCH /api/tasks/[id] — update a task, e.g. { done: true }
+// PATCH /api/dashboard/[id] — update a task, e.g. { done: true }
 export async function PATCH(request, { params }) {
   const { userId } = auth();
   if (!userId) {
