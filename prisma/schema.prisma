@@ -35,7 +35,17 @@ model Application {
   @@map("applications")
 }
 
+model Task {
+  id          String   @id @default(cuid())
+  clerkUserId String   @map("clerk_user_id")
+  text        String
+  done        Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
+  @@index([clerkUserId])
+  @@map("tasks")
+}
 
 
 
