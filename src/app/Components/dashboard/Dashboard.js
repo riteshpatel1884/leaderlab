@@ -707,6 +707,815 @@
 
 
 
+// "use client";
+
+// import { useMemo, useState, useEffect, useCallback } from "react";
+
+// const STATUS_COLORS = {
+//   Applied: "#3b82f6",
+//   Interview: "#eab308",
+//   Offer: "#22c55e",
+//   Rejected: "#ef4444",
+// };
+
+// // ── Streak & Daily Target helpers ─────────────────────────────────────────────
+// function getStreakData(applications) {
+//   if (!applications.length)
+//     return { streak: 0, appliedToday: 0, missedYesterday: false };
+
+//   const today = new Date();
+//   today.setHours(0, 0, 0, 0);
+//   const yesterday = new Date(today);
+//   yesterday.setDate(today.getDate() - 1);
+
+//   const dateSet = new Set();
+//   applications.forEach((a) => {
+//     const d = new Date(a.dateApplied || a.createdAt);
+//     d.setHours(0, 0, 0, 0);
+//     dateSet.add(d.getTime());
+//   });
+
+//   const appliedToday = applications.filter((a) => {
+//     const d = new Date(a.dateApplied || a.createdAt);
+//     d.setHours(0, 0, 0, 0);
+//     return d.getTime() === today.getTime();
+//   }).length;
+
+//   const missedYesterday =
+//     !dateSet.has(yesterday.getTime()) && appliedToday === 0;
+
+//   let streak = 0;
+//   let cursor = new Date(today);
+//   while (dateSet.has(cursor.getTime())) {
+//     streak++;
+//     cursor.setDate(cursor.getDate() - 1);
+//   }
+//   if (streak === 0 && dateSet.has(yesterday.getTime())) {
+//     cursor = new Date(yesterday);
+//     while (dateSet.has(cursor.getTime())) {
+//       streak++;
+//       cursor.setDate(cursor.getDate() - 1);
+//     }
+//   }
+
+//   return { streak, appliedToday, missedYesterday };
+// }
+
+// // ── Sub-components ────────────────────────────────────────────────────────────
+
+// function StreakCard({ applications }) {
+//   const DAILY_TARGET = 5;
+//   const { streak, appliedToday, missedYesterday } = useMemo(
+//     () => getStreakData(applications),
+//     [applications],
+//   );
+//   const progress = Math.min((appliedToday / DAILY_TARGET) * 100, 100);
+//   const remaining = Math.max(DAILY_TARGET - appliedToday, 0);
+
+//   return (
+//     <div
+//       style={{
+//         display: "grid",
+//         gridTemplateColumns: "1fr 1fr 1fr",
+//         gap: 12,
+//         marginBottom: 20,
+//       }}
+//     >
+//       {/* Streak */}
+//       <div
+//         className="card"
+//         style={{
+//           borderColor: streak >= 3 ? "rgba(234,179,8,0.3)" : "var(--border)",
+//           background: streak >= 3 ? "rgba(234,179,8,0.04)" : "var(--bg-card)",
+//         }}
+//       >
+//         <div className="stat-label">Apply Streak</div>
+//         <div
+//           className="stat-value"
+//           style={{
+//             color:
+//               streak >= 3
+//                 ? "var(--yellow)"
+//                 : streak > 0
+//                   ? "var(--text-primary)"
+//                   : "var(--text-muted)",
+//             fontSize: 30,
+//           }}
+//         >
+//           {streak}
+//           <span style={{ fontSize: 14, fontWeight: 500, marginLeft: 4 }}>
+//             days
+//           </span>
+//         </div>
+//         <div className="stat-sub">
+//           {missedYesterday
+//             ? "Streak broken — start again today"
+//             : streak >= 3
+//               ? "Keep it going"
+//               : streak > 0
+//                 ? "Building momentum"
+//                 : "No active streak"}
+//         </div>
+//       </div>
+
+//       {/* Daily target */}
+//       {/* <div className="card">
+//         <div className="stat-label">Today's Target</div>
+//         <div
+//           className="stat-value"
+//           style={{
+//             color: progress >= 100 ? "var(--green)" : "var(--text-primary)",
+//             fontSize: 30,
+//           }}
+//         >
+//           {appliedToday}
+//           <span
+//             style={{
+//               fontSize: 14,
+//               fontWeight: 500,
+//               color: "var(--text-muted)",
+//               marginLeft: 2,
+//             }}
+//           >
+//             / {DAILY_TARGET}
+//           </span>
+//         </div>
+//         <div style={{ marginTop: 8 }}>
+//           <div className="progress-bar-wrap" style={{ height: 5 }}>
+//             <div
+//               className="progress-bar"
+//               style={{
+//                 width: `${progress}%`,
+//                 background: progress >= 100 ? "var(--green)" : "var(--accent)",
+//                 transition: "width 0.5s ease",
+//               }}
+//             />
+//           </div>
+//           <div className="stat-sub" style={{ marginTop: 6 }}>
+//             {progress >= 100
+//               ? "Daily goal hit"
+//               : `${remaining} more to hit goal`}
+//           </div>
+//         </div>
+//       </div> */}
+
+//       {/* Aggressive message */}
+//       <div
+//         className="card"
+//         style={{
+//           borderColor: missedYesterday
+//             ? "rgba(239,68,68,0.3)"
+//             : "var(--border)",
+//           background: missedYesterday
+//             ? "rgba(239,68,68,0.04)"
+//             : "var(--bg-card)",
+//         }}
+//       >
+//         <div className="stat-label">Status Check</div>
+//         <div
+//           style={{
+//             fontSize: 13,
+//             color: missedYesterday
+//               ? "var(--red)"
+//               : appliedToday >= DAILY_TARGET
+//                 ? "var(--green)"
+//                 : "var(--text-secondary)",
+//             fontWeight: 600,
+//             marginTop: 8,
+//             lineHeight: 1.5,
+//           }}
+//         >
+//           {missedYesterday
+//             ? "You fell behind. Top candidates apply 10+ jobs daily. Catch up today."
+//             : appliedToday >= DAILY_TARGET
+//               ? "On track. Maintain consistency — most offers come from volume."
+//               : appliedToday > 0
+//                 ? `${appliedToday} done today. Strong candidates don't stop here.`
+//                 : "No applications today yet. The market doesn't wait."}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+// function TodaysPlan({ applications }) {
+//   const [tasks, setTasks] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState(null);
+//   const [newTask, setNewTask] = useState("");
+//   const [adding, setAdding] = useState(false);
+//   const [savingTaskId, setSavingTaskId] = useState(null); // id currently mid-request (toggle/delete)
+//   const [submitting, setSubmitting] = useState(false); // add-task in flight
+
+//   // ── Load tasks from the database on mount ──────────────────────────────────
+//   useEffect(() => {
+//     let cancelled = false;
+
+//     async function loadTasks() {
+//       setLoading(true);
+//       setError(null);
+//       try {
+//         const res = await fetch("/api/tasks");
+//         if (!res.ok) throw new Error("Failed to load tasks");
+//         const data = await res.json();
+//         if (!cancelled) setTasks(data);
+//       } catch (err) {
+//         if (!cancelled) setError("Couldn't load your tasks. Try refreshing.");
+//       } finally {
+//         if (!cancelled) setLoading(false);
+//       }
+//     }
+
+//     loadTasks();
+//     return () => {
+//       cancelled = true;
+//     };
+//   }, []);
+
+//   const followUps = useMemo(() => {
+//     return applications
+//       .filter((a) => {
+//         if (a.status !== "Applied" || !a.followUpDate) return false;
+//         return new Date(a.followUpDate) <= new Date();
+//       })
+//       .slice(0, 3);
+//   }, [applications]);
+
+//   // ── Toggle done/undone — optimistic update, synced to DB ───────────────────
+//   const toggle = useCallback(async (id) => {
+//     const current = tasks.find((t) => t.id === id);
+//     if (!current) return;
+//     const nextDone = !current.done;
+
+//     setSavingTaskId(id);
+//     setTasks((prev) =>
+//       prev.map((t) => (t.id === id ? { ...t, done: nextDone } : t)),
+//     );
+
+//     try {
+//       const res = await fetch(`/api/tasks/${id}`, {
+//         method: "PATCH",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({ done: nextDone }),
+//       });
+//       if (!res.ok) throw new Error("Failed to update task");
+//     } catch (err) {
+//       // Roll back on failure
+//       setTasks((prev) =>
+//         prev.map((t) => (t.id === id ? { ...t, done: current.done } : t)),
+//       );
+//       setError("Couldn't update that task. Please try again.");
+//     } finally {
+//       setSavingTaskId(null);
+//     }
+//   }, [tasks]);
+
+//   // ── Add a new task — persisted to DB first, then added to the list ─────────
+//   const addTask = useCallback(async () => {
+//     const text = newTask.trim();
+//     if (!text || submitting) return;
+
+//     setSubmitting(true);
+//     setError(null);
+//     try {
+//       const res = await fetch("/api/tasks", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({ text }),
+//       });
+//       if (!res.ok) throw new Error("Failed to add task");
+//       const created = await res.json();
+//       setTasks((prev) => [...prev, created]);
+//       setNewTask("");
+//       setAdding(false);
+//     } catch (err) {
+//       setError("Couldn't add that task. Please try again.");
+//     } finally {
+//       setSubmitting(false);
+//     }
+//   }, [newTask, submitting]);
+
+//   // ── Delete a task — optimistic removal, synced to DB ────────────────────────
+//   const removeTask = useCallback(async (id) => {
+//     const previousTasks = tasks;
+//     setSavingTaskId(id);
+//     setTasks((prev) => prev.filter((t) => t.id !== id));
+
+//     try {
+//       const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+//       if (!res.ok) throw new Error("Failed to delete task");
+//     } catch (err) {
+//       // Roll back on failure
+//       setTasks(previousTasks);
+//       setError("Couldn't delete that task. Please try again.");
+//     } finally {
+//       setSavingTaskId(null);
+//     }
+//   }, [tasks]);
+
+//   const doneCount = tasks.filter((t) => t.done).length;
+
+//   return (
+//     <div className="card" style={{ marginBottom: 20 }}>
+//       <div
+//         style={{
+//           display: "flex",
+//           justifyContent: "space-between",
+//           alignItems: "center",
+//           marginBottom: 14,
+//         }}
+//       >
+//         <div>
+//           <div className="card-title" style={{ marginBottom: 2 }}>
+//             Today's Plan
+//           </div>
+//           <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+//             {loading ? "Loading…" : `${doneCount}/${tasks.length} completed`}
+//           </div>
+//         </div>
+//         <button
+//           className="btn-ghost"
+//           style={{ fontSize: 11, padding: "5px 12px" }}
+//           onClick={() => setAdding(true)}
+//           disabled={loading}
+//         >
+//           + Add Task
+//         </button>
+//       </div>
+
+//       {error && (
+//         <div
+//           style={{
+//             marginBottom: 12,
+//             padding: "8px 12px",
+//             borderRadius: "var(--radius-sm)",
+//             background: "rgba(239,68,68,0.06)",
+//             border: "1px solid rgba(239,68,68,0.2)",
+//             color: "var(--red)",
+//             fontSize: 12,
+//           }}
+//         >
+//           {error}
+//         </div>
+//       )}
+
+//       {followUps.length > 0 && (
+//         <div
+//           style={{
+//             marginBottom: 12,
+//             padding: "10px 12px",
+//             borderRadius: "var(--radius-sm)",
+//             background: "rgba(234,179,8,0.06)",
+//             border: "1px solid rgba(234,179,8,0.2)",
+//           }}
+//         >
+//           <div
+//             style={{
+//               fontSize: 11,
+//               color: "var(--yellow)",
+//               fontWeight: 700,
+//               marginBottom: 6,
+//               textTransform: "uppercase",
+//               letterSpacing: "0.5px",
+//             }}
+//           >
+//             Follow-ups Due
+//           </div>
+//           {followUps.map((a) => (
+//             <div
+//               key={a.id}
+//               style={{
+//                 fontSize: 12,
+//                 color: "var(--text-secondary)",
+//                 padding: "2px 0",
+//               }}
+//             >
+//               Follow up with {a.company} — {a.role}
+//             </div>
+//           ))}
+//         </div>
+//       )}
+
+//       {loading ? (
+//         <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "8px 0" }}>
+//           Loading your tasks…
+//         </div>
+//       ) : tasks.length === 0 && !adding ? (
+//         <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "8px 0" }}>
+//           No tasks yet — add one to plan your day.
+//         </div>
+//       ) : (
+//         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+//           {tasks.map((task) => (
+//             <div
+//               key={task.id}
+//               style={{
+//                 display: "flex",
+//                 alignItems: "center",
+//                 gap: 10,
+//                 padding: "8px 10px",
+//                 borderRadius: "var(--radius-sm)",
+//                 background: task.done ? "var(--bg-hover)" : "transparent",
+//                 border: "1px solid var(--border)",
+//                 transition: "all 0.15s",
+//                 opacity: savingTaskId === task.id ? 0.6 : 1,
+//               }}
+//             >
+//               <div
+//                 onClick={() => toggle(task.id)}
+//                 style={{
+//                   width: 16,
+//                   height: 16,
+//                   borderRadius: 4,
+//                   border: `2px solid ${task.done ? "var(--accent)" : "var(--border-light)"}`,
+//                   background: task.done ? "var(--accent)" : "transparent",
+//                   flexShrink: 0,
+//                   cursor: "pointer",
+//                   display: "flex",
+//                   alignItems: "center",
+//                   justifyContent: "center",
+//                   transition: "all 0.15s",
+//                 }}
+//               >
+//                 {task.done && (
+//                   <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+//                     <path
+//                       d="M1 3L3 5L7 1"
+//                       stroke="white"
+//                       strokeWidth="1.5"
+//                       strokeLinecap="round"
+//                       strokeLinejoin="round"
+//                     />
+//                   </svg>
+//                 )}
+//               </div>
+//               <span
+//                 style={{
+//                   flex: 1,
+//                   fontSize: 13,
+//                   color: task.done
+//                     ? "var(--text-muted)"
+//                     : "var(--text-secondary)",
+//                   textDecoration: task.done ? "line-through" : "none",
+//                   cursor: "pointer",
+//                 }}
+//                 onClick={() => toggle(task.id)}
+//               >
+//                 {task.text}
+//               </span>
+//               <button
+//                 onClick={() => removeTask(task.id)}
+//                 disabled={savingTaskId === task.id}
+//                 style={{
+//                   background: "none",
+//                   border: "none",
+//                   color: "var(--text-muted)",
+//                   cursor: "pointer",
+//                   fontSize: 14,
+//                   lineHeight: 1,
+//                   padding: "0 2px",
+//                   opacity: 0.5,
+//                 }}
+//                 onMouseEnter={(e) => (e.currentTarget.style.opacity = 1)}
+//                 onMouseLeave={(e) => (e.currentTarget.style.opacity = 0.5)}
+//               >
+//                 x
+//               </button>
+//             </div>
+//           ))}
+//         </div>
+//       )}
+
+//       {adding && (
+//         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+//           <input
+//             autoFocus
+//             className="form-input"
+//             placeholder="Add a task..."
+//             value={newTask}
+//             onChange={(e) => setNewTask(e.target.value)}
+//             onKeyDown={(e) => {
+//               if (e.key === "Enter") addTask();
+//               if (e.key === "Escape") setAdding(false);
+//             }}
+//             style={{ fontSize: 12 }}
+//             disabled={submitting}
+//           />
+//           <button
+//             className="btn-primary"
+//             style={{ padding: "6px 14px", fontSize: 12, opacity: submitting ? 0.6 : 1 }}
+//             onClick={addTask}
+//             disabled={submitting}
+//           >
+//             {submitting ? "Adding…" : "Add"}
+//           </button>
+//           <button
+//             className="btn-ghost"
+//             style={{ padding: "6px 10px", fontSize: 12 }}
+//             onClick={() => setAdding(false)}
+//             disabled={submitting}
+//           >
+//             Cancel
+//           </button>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+// function TimelineList({ events, cardBg }) {
+//   return (
+//     <div style={{ position: "relative" }}>
+//       <div
+//         style={{
+//           position: "absolute",
+//           left: 7,
+//           top: 0,
+//           bottom: 0,
+//           width: 1,
+//           background: "var(--border)",
+//         }}
+//       />
+//       {events.map((ev, i) => (
+//         <div
+//           key={ev.id}
+//           style={{
+//             display: "flex",
+//             gap: 16,
+//             paddingBottom: i < events.length - 1 ? 16 : 0,
+//             position: "relative",
+//           }}
+//         >
+//           <div
+//             style={{
+//               width: 14,
+//               height: 14,
+//               borderRadius: "50%",
+//               background: STATUS_COLORS[ev.status] || "var(--border-light)",
+//               flexShrink: 0,
+//               marginTop: 2,
+//               border: `2px solid ${cardBg || "var(--bg-card)"}`,
+//               zIndex: 1,
+//             }}
+//           />
+//           <div style={{ flex: 1 }}>
+//             <div
+//               style={{
+//                 display: "flex",
+//                 justifyContent: "space-between",
+//                 alignItems: "baseline",
+//               }}
+//             >
+//               <span
+//                 style={{
+//                   fontSize: 13,
+//                   color: "var(--text-secondary)",
+//                   fontWeight: 500,
+//                 }}
+//               >
+//                 {ev.company}
+//               </span>
+//               <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
+//                 {ev.date.toLocaleDateString("en-IN", {
+//                   day: "2-digit",
+//                   month: "short",
+//                   year: "2-digit",
+//                 })}
+//               </span>
+//             </div>
+//             <div
+//               style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}
+//             >
+//               {ev.role} —{" "}
+//               <span
+//                 style={{ color: STATUS_COLORS[ev.status], fontWeight: 600 }}
+//               >
+//                 {ev.status}
+//               </span>
+//             </div>
+//           </div>
+//         </div>
+//       ))}
+//     </div>
+//   );
+// }
+
+// function TimelineModal({ events, onClose }) {
+//   return (
+//     <div
+//       style={{
+//         position: "fixed",
+//         inset: 0,
+//         zIndex: 9999,
+//         background: "rgba(0,0,0,0.6)",
+//         backdropFilter: "blur(4px)",
+//         display: "flex",
+//         alignItems: "center",
+//         justifyContent: "center",
+//         padding: 20,
+//       }}
+//       onClick={onClose}
+//     >
+//       <div
+//         style={{
+//           background: "var(--bg-card)",
+//           border: "1px solid var(--border-light)",
+//           borderRadius: 14,
+//           width: "100%",
+//           maxWidth: 480,
+//           maxHeight: "80vh",
+//           display: "flex",
+//           flexDirection: "column",
+//           boxShadow: "0 24px 64px rgba(0,0,0,0.5)",
+//         }}
+//         onClick={(e) => e.stopPropagation()}
+//       >
+//         <div
+//           style={{
+//             display: "flex",
+//             justifyContent: "space-between",
+//             alignItems: "center",
+//             padding: "18px 22px 14px",
+//             borderBottom: "1px solid var(--border)",
+//             flexShrink: 0,
+//           }}
+//         >
+//           <div>
+//             <div
+//               style={{
+//                 fontFamily: "'Syne', sans-serif",
+//                 fontSize: 15,
+//                 fontWeight: 700,
+//                 color: "var(--text-primary)",
+//               }}
+//             >
+//               Full Activity Timeline
+//             </div>
+//             <div
+//               style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}
+//             >
+//               {events.length} event{events.length !== 1 ? "s" : ""}
+//             </div>
+//           </div>
+//           <button
+//             onClick={onClose}
+//             style={{
+//               background: "none",
+//               border: "1px solid var(--border)",
+//               borderRadius: 8,
+//               color: "var(--text-muted)",
+//               fontSize: 16,
+//               cursor: "pointer",
+//               width: 32,
+//               height: 32,
+//               display: "flex",
+//               alignItems: "center",
+//               justifyContent: "center",
+//               transition: "all 0.15s",
+//             }}
+//             onMouseEnter={(e) => {
+//               e.currentTarget.style.borderColor = "var(--border-light)";
+//               e.currentTarget.style.color = "var(--text-primary)";
+//             }}
+//             onMouseLeave={(e) => {
+//               e.currentTarget.style.borderColor = "var(--border)";
+//               e.currentTarget.style.color = "var(--text-muted)";
+//             }}
+//           >
+//             x
+//           </button>
+//         </div>
+
+//         <div style={{ overflowY: "auto", padding: "18px 22px 22px", flex: 1 }}>
+//           <TimelineList events={events} cardBg="var(--bg-card)" />
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+// function ActivityTimeline({ applications }) {
+//   const [modalOpen, setModalOpen] = useState(false);
+//   const PREVIEW_COUNT = 5;
+
+//   const allEvents = useMemo(() => {
+//     const list = [];
+//     applications.forEach((app) => {
+//       if (app.statusHistory && app.statusHistory.length > 0) {
+//         app.statusHistory.forEach((h, idx) => {
+//           list.push({
+//             date: new Date(h.date),
+//             company: app.company,
+//             role: app.role,
+//             status: h.status,
+//             id: `${app.id}-${h.status}-${idx}`,
+//           });
+//         });
+//       } else {
+//         list.push({
+//           date: new Date(app.createdAt),
+//           company: app.company,
+//           role: app.role,
+//           status: "Applied",
+//           id: `${app.id}-applied`,
+//         });
+//       }
+//     });
+//     return list.sort((a, b) => b.date - a.date);
+//   }, [applications]);
+
+//   const preview = allEvents.slice(0, PREVIEW_COUNT);
+//   const remaining = allEvents.length - PREVIEW_COUNT;
+
+//   if (!allEvents.length) return null;
+
+//   return (
+//     <>
+//       <div className="card" style={{ marginBottom: 20 }}>
+//         <div
+//           style={{
+//             display: "flex",
+//             justifyContent: "space-between",
+//             alignItems: "center",
+//             marginBottom: 14,
+//           }}
+//         >
+//           <div className="card-title" style={{ marginBottom: 0 }}>
+//             Activity Timeline
+//           </div>
+//         </div>
+
+//         <TimelineList events={preview} cardBg="var(--bg-card)" />
+
+//         {remaining > 0 && (
+//           <button
+//             onClick={() => setModalOpen(true)}
+//             style={{
+//               marginTop: 14,
+//               width: "100%",
+//               padding: "9px",
+//               borderRadius: "var(--radius-sm)",
+//               border: "1px dashed var(--border-light)",
+//               background: "transparent",
+//               color: "var(--text-muted)",
+//               fontSize: 12,
+//               cursor: "pointer",
+//               fontFamily: "'DM Sans', sans-serif",
+//               transition: "all 0.15s",
+//             }}
+//             onMouseEnter={(e) => {
+//               e.currentTarget.style.borderColor = "var(--accent-border)";
+//               e.currentTarget.style.color = "var(--accent)";
+//             }}
+//             onMouseLeave={(e) => {
+//               e.currentTarget.style.borderColor = "var(--border-light)";
+//               e.currentTarget.style.color = "var(--text-muted)";
+//             }}
+//           >
+//             + {remaining} more event{remaining !== 1 ? "s" : ""} — click to view
+//             all
+//           </button>
+//         )}
+//       </div>
+
+//       {modalOpen && (
+//         <TimelineModal events={allEvents} onClose={() => setModalOpen(false)} />
+//       )}
+//     </>
+//   );
+// }
+
+// // ── Main ──────────────────────────────────────────────────────────────────────
+// export default function Dashboard({ applications, onAddClick }) {
+//   if (applications.length === 0) {
+//     return (
+//       <div>
+//         <div className="empty-state" style={{ paddingTop: 80 }}>
+//           <h3>No applications yet</h3>
+//           <p>Start tracking your job search by adding your first application</p>
+//           <button
+//             className="btn-primary"
+//             style={{ margin: "16px auto 0", display: "inline-flex" }}
+//             onClick={onAddClick}
+//           >
+//             <span>+</span> Add Your First Application
+//           </button>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div>
+//       <StreakCard applications={applications} />
+//       <TodaysPlan applications={applications} />
+//       <ActivityTimeline applications={applications} />
+//     </div>
+//   );
+// }
+
+
+
 "use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
@@ -773,14 +1582,21 @@ function StreakCard({ applications }) {
   const remaining = Math.max(DAILY_TARGET - appliedToday, 0);
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr 1fr",
-        gap: 12,
-        marginBottom: 20,
-      }}
-    >
+    <>
+      <style>{`
+        .streak-card-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 12px;
+          margin-bottom: 20px;
+        }
+        @media (max-width: 640px) {
+          .streak-card-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+      <div className="streak-card-grid">
       {/* Streak */}
       <div
         className="card"
@@ -819,7 +1635,7 @@ function StreakCard({ applications }) {
       </div>
 
       {/* Daily target */}
-      {/* <div className="card">
+      <div className="card">
         <div className="stat-label">Today's Target</div>
         <div
           className="stat-value"
@@ -857,7 +1673,7 @@ function StreakCard({ applications }) {
               : `${remaining} more to hit goal`}
           </div>
         </div>
-      </div> */}
+      </div>
 
       {/* Aggressive message */}
       <div
@@ -894,7 +1710,8 @@ function StreakCard({ applications }) {
                 : "No applications today yet. The market doesn't wait."}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -1506,7 +2323,7 @@ export default function Dashboard({ applications, onAddClick }) {
   }
 
   return (
-    <div>
+    <div style={{ overflowX: "hidden", width: "100%", boxSizing: "border-box" }}>
       <StreakCard applications={applications} />
       <TodaysPlan applications={applications} />
       <ActivityTimeline applications={applications} />
