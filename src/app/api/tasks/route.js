@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "../../../lib/db";
 
 // GET /api/dashboard — list today's-plan tasks for the current user
 export async function GET() {
