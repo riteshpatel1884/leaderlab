@@ -213,7 +213,7 @@ function ThemeToggle() {
         <span style={{ width: 14, height: 14, borderRadius: "50%", background: isDark ? "var(--text-muted)" : "#fff", transform: isDark ? "translateX(0)" : "translateX(14px)", transition: "transform 0.2s, background 0.2s", display: "block" }} />
       </span>
       <span style={{ flex: 1 }}>{isDark ? "Dark mode" : "Light mode"}</span>
-      <span style={{ fontSize: 14 }}>{isDark ? "🌙" : "☀️"}</span>
+      <span style={{ fontSize: 14 }}></span>
     </button>
   );
 }

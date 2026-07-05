@@ -39,7 +39,6 @@
 //   jobLink: "",
 //   notes: "",
 //   rejectionReason: "",
-//   notifyEmail: "",          // ← NEW
 // };
 
 // function buildFormFromData(data) {
@@ -58,7 +57,6 @@
 //     jobLink: data.jobLink || "",
 //     notes: data.notes || "",
 //     rejectionReason: data.rejectionReason || "",
-//     notifyEmail: data.notifyEmail || "",  // ← NEW
 //   };
 // }
 
@@ -258,48 +256,6 @@
 //                     onChange={(e) => set("dateApplied", e.target.value)}
 //                   />
 //                 </div>
-//               </div>
-
-//               {/* Notification Email */}
-//               <div className="form-group">
-//                 <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-//                   <span>🔔</span>
-//                   Notification Email
-//                   <span
-//                     style={{
-//                       fontSize: 10,
-//                       padding: "1px 7px",
-//                       borderRadius: 20,
-//                       background: "rgba(108,99,255,0.12)",
-//                       color: "var(--accent, #6c63ff)",
-//                       border: "1px solid rgba(108,99,255,0.25)",
-//                       fontWeight: 500,
-//                     }}
-//                   >
-//                     optional
-//                   </span>
-//                 </label>
-//                 <input
-//                   className="form-input"
-//                   type="email"
-//                   placeholder="you@gmail.com — get email alerts for this application"
-//                   value={form.notifyEmail}
-//                   onChange={(e) => set("notifyEmail", e.target.value)}
-//                 />
-//                 {form.notifyEmail && (
-//                   <div
-//                     style={{
-//                       fontSize: 11,
-//                       color: "var(--accent, #6c63ff)",
-//                       marginTop: 4,
-//                       display: "flex",
-//                       alignItems: "center",
-//                       gap: 4,
-//                     }}
-//                   >
-//                     ✓ You'll receive a confirmation email + follow-up reminders
-//                   </div>
-//                 )}
 //               </div>
 
 //               {/* Hint */}
@@ -570,13 +526,51 @@ export default function AddJobModal({ onClose, onSave, initialData }) {
   };
 
   return (
-    <div
-      className="modal-overlay"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="modal">
+    <>
+      {/* Scoped styles: keep the modal clear of the app's fixed mobile
+          bottom nav (which sits on top of everything at a fixed height,
+          separate from the browser's own chrome). */}
+      <style>{`
+        .add-job-modal-overlay {
+          padding-bottom: 0px;
+        }
+        .add-job-modal {
+          max-height: min(88dvh, 720px);
+        }
+        @media (max-width: 768px) {
+          .add-job-modal-overlay {
+            padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+          }
+          .add-job-modal {
+            max-height: calc(100dvh - 64px - env(safe-area-inset-bottom, 0px) - 24px);
+          }
+        }
+      `}</style>
+      <div
+        className="modal-overlay add-job-modal-overlay"
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+        style={{
+          // Use dvh so mobile browser chrome (address bar / bottom nav) is
+          // accounted for, and make sure the overlay itself doesn't scroll.
+          height: "100dvh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+          boxSizing: "border-box",
+        }}
+      >
+      <div
+        className="modal add-job-modal"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          width: "min(560px, 94vw)",
+          overflow: "hidden",
+        }}
+      >
         {/* Header */}
-        <div className="modal-header">
+        <div className="modal-header" style={{ flexShrink: 0 }}>
           <div className="modal-title">
             {initialData ? "Edit Application" : "Add Application"}
           </div>
@@ -592,6 +586,7 @@ export default function AddJobModal({ onClose, onSave, initialData }) {
             gap: 0,
             borderBottom: "1px solid var(--border)",
             padding: "0 20px",
+            flexShrink: 0,
           }}
         >
           {[
@@ -637,7 +632,16 @@ export default function AddJobModal({ onClose, onSave, initialData }) {
           ))}
         </div>
 
-        <div className="modal-body">
+        {/* Scrollable body — only this area scrolls, footer stays pinned */}
+        <div
+          className="modal-body"
+          style={{
+            flex: "1 1 auto",
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+            minHeight: 0,
+          }}
+        >
           {/* ── ESSENTIALS SECTION ── */}
           {activeSection === "essentials" && (
             <>
@@ -857,42 +861,35 @@ export default function AddJobModal({ onClose, onSave, initialData }) {
               </div>
             </>
           )}
+        </div>
 
-          {/* Footer */}
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              justifyContent: "flex-end",
-              marginTop: 16,
-              paddingTop: 12,
-              borderTop: "1px solid var(--border)",
-            }}
+        {/* Footer — pinned to the bottom of the modal, always visible,
+            with safe-area padding so mobile OS/browser nav bars never
+            cover the buttons. */}
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            justifyContent: "flex-end",
+            padding: "12px 20px calc(12px + env(safe-area-inset-bottom, 0px))",
+            borderTop: "1px solid var(--border)",
+            flexShrink: 0,
+          }}
+        >
+          <button className="btn-ghost" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            className="btn-primary"
+            onClick={handleSubmit}
+            disabled={!isValid}
+            style={{ opacity: isValid ? 1 : 0.5 }}
           >
-            <button className="btn-ghost" onClick={onClose}>
-              Cancel
-            </button>
-            {activeSection === "essentials" && !initialData && (
-              <button
-                className="btn-ghost"
-                disabled={!isValid}
-                style={{ opacity: isValid ? 1 : 0.5 }}
-                onClick={() => { if (!isValid) return; setActiveSection("details"); }}
-              >
-                Add Details →
-              </button>
-            )}
-            <button
-              className="btn-primary"
-              onClick={handleSubmit}
-              disabled={!isValid}
-              style={{ opacity: isValid ? 1 : 0.5 }}
-            >
-              {initialData ? "Save Changes" : "Add Application"}
-            </button>
-          </div>
+            {initialData ? "Save Changes" : "Add Application"}
+          </button>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
