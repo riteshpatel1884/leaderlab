@@ -4,7 +4,7 @@ import { prisma } from "../../../../lib/db";
 
 // PATCH /api/dashboard/[id] — update a task, e.g. { done: true }
 export async function PATCH(request, { params }) {
-  const { userId } = auth();
+  const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -38,7 +38,7 @@ export async function PATCH(request, { params }) {
 
 // DELETE /api/tasks/[id] — remove a task
 export async function DELETE(_request, { params }) {
-  const { userId } = auth();
+  const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
