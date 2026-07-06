@@ -1,6 +1,7 @@
+
 // "use client";
 
-// import { useMemo, useState, useEffect } from "react";
+// import { useMemo, useState, useEffect, useRef } from "react";
 // import InsightsEngine from "./Insightsengine";
 // import {
 //   PieChart,
@@ -37,6 +38,53 @@
 //   .recharts-pie-sector path:focus,.recharts-pie-sector path:active { outline: none !important; stroke: none !important; }
 // `;
 
+// // ── Weekly trend dropdown styles ──────────────────────────────────────────
+// const TREND_DROPDOWN_STYLES = `
+//   .wt-dropdown-wrap { position: relative; display: inline-flex; align-items: center; }
+//   .wt-dropdown-btn {
+//     display: flex; align-items: center; gap: 7px;
+//     padding: 5px 11px;
+//     border-radius: 8px;
+//     border: 1px solid rgba(255,255,255,0.1);
+//     background: rgba(255,255,255,0.04);
+//     color: var(--text-primary);
+//     font-size: 12px; font-weight: 500;
+//     cursor: pointer;
+//     font-family: 'DM Sans', sans-serif;
+//     transition: background 0.12s, border-color 0.12s;
+//     white-space: nowrap;
+//     outline: none;
+//   }
+//   .wt-dropdown-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.18); }
+//   .wt-menu {
+//     position: absolute; top: calc(100% + 6px); left: 0; z-index: 200;
+//     background: #1a1a22;
+//     border: 1px solid rgba(255,255,255,0.1);
+//     border-radius: 10px;
+//     min-width: 178px;
+//     box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+//     overflow: hidden;
+//     display: none;
+//     padding: 4px 0;
+//   }
+//   .wt-menu.open { display: block; }
+//   .wt-menu-item {
+//     display: flex; align-items: center; gap: 9px;
+//     padding: 9px 14px;
+//     font-size: 12.5px;
+//     cursor: pointer;
+//     color: var(--text-secondary);
+//     font-family: 'DM Sans', sans-serif;
+//     transition: background 0.1s;
+//     position: relative;
+//   }
+//   .wt-menu-item:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+//   .wt-menu-item.wt-active { color: var(--text-primary); font-weight: 600; }
+//   .wt-check { margin-left: auto; font-size: 11px; opacity: 0; }
+//   .wt-menu-item.wt-active .wt-check { opacity: 1; }
+//   .wt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+// `;
+
 // const THRESHOLDS = {
 //   PLATFORM_CHART: 3,
 //   DONUT_CHART: 5,
@@ -53,6 +101,16 @@
 //   Offer: "#22c55e",
 //   Rejected: "#ef4444",
 // };
+
+// // ── Metric definitions for the weekly trend dropdowns ─────────────────────
+// const TREND_METRICS = [
+//   { key: "applied",      label: "Applied",        color: "#3b82f6" },
+//   { key: "interviews",   label: "Interviews",      color: "#f59e0b" },
+//   { key: "offers",       label: "Offers",          color: "#22c55e" },
+//   { key: "rejected",     label: "Rejected",        color: "#ef4444" },
+//   { key: "ghosted",      label: "Ghosted",         color: "#8b5cf6" },
+//   { key: "callbackRate", label: "Callback Rate %", color: "#06b6d4" },
+// ];
 
 // // ── Mobile detection hook ─────────────────────────────────────────────────
 // function useIsMobile() {
@@ -341,7 +399,6 @@
 // }
 
 // // ── Resume Performance ────────────────────────────────────────────────────
-// // Rings only — no redundant bar table
 // function ResumePerformanceCard({ stats }) {
 //   const isMobile = useIsMobile();
 //   const { resumePerf } = stats;
@@ -368,7 +425,6 @@
 
 //   return (
 //     <ChartCard title="Resume Performance">
-//       {/* Rings row */}
 //       <div style={{
 //         display: "flex",
 //         gap: isMobile ? 12 : 20,
@@ -407,7 +463,6 @@
 //                   }}>{rate.toFixed(0)}%</span>
 //                 </div>
 //               </div>
-
 //               <div style={{ textAlign: "center" }}>
 //                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginBottom: 2 }}>
 //                   <span style={{ fontSize: isMobile ? 11 : 12, color: "var(--text-secondary)", fontWeight: 500 }}>
@@ -428,8 +483,6 @@
 //           );
 //         })}
 //       </div>
-
-//       {/* Insight callout */}
 //       {parseFloat(best.rate) > 0 && (
 //         <div style={{
 //           fontSize: 12,
@@ -446,7 +499,7 @@
 //   );
 // }
 
-// // ── Role Insights — Bubble Chart ──────────────────────────────────────────
+// // ── Role Insights ─────────────────────────────────────────────────────────
 // function RoleInsightsCard({ stats }) {
 //   const isMobile = useIsMobile();
 
@@ -485,7 +538,6 @@
 
 //   return (
 //     <ChartCard title="Role Insights">
-//       {/* Insight headline */}
 //       {best && parseFloat(best.rate) > 0 && worst && best.name !== worst.name && (
 //         <div style={{
 //           fontSize: 13,
@@ -505,7 +557,6 @@
 //         </div>
 //       )}
 
-//       {/* Bubble chart — size = volume, color = callback rate */}
 //       <div style={{
 //         display: "flex",
 //         flexWrap: "wrap",
@@ -516,15 +567,13 @@
 //       }}>
 //         {chartData.map((d) => {
 //           const rateColor = getBarColor(d.callbackRate);
-//           const bubbleSize = Math.max(isMobile ? 56 : 64, Math.min(isMobile ? 100 : 120, (isMobile ? 44 : 50) + (d.applications / maxApps) * (isMobile ? 56 : 70)));
+//           const bubbleSize = Math.max(
+//             isMobile ? 56 : 64,
+//             Math.min(isMobile ? 100 : 120, (isMobile ? 44 : 50) + (d.applications / maxApps) * (isMobile ? 56 : 70))
+//           );
 //           const isBest = d.role === best.name;
 //           return (
-//             <div key={d.role} style={{
-//               display: "flex",
-//               flexDirection: "column",
-//               alignItems: "center",
-//               gap: 8,
-//             }}>
+//             <div key={d.role} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
 //               <div style={{
 //                 width: bubbleSize,
 //                 height: bubbleSize,
@@ -571,7 +620,6 @@
 //         })}
 //       </div>
 
-//       {/* Legend */}
 //       <div style={{
 //         display: "flex", gap: 12, flexWrap: "wrap",
 //         fontSize: 10, color: "var(--text-muted)",
@@ -756,45 +804,362 @@
 //   );
 // }
 
-// // ── Weekly Trend ──────────────────────────────────────────────────────────
-// function WeeklyTrendChart({ weeks, total }) {
-//   const isMobile = useIsMobile();
-//   if (total < THRESHOLDS.WEEKLY_CHART || !weeks || weeks.length === 0) {
-//     return <LockedCard title="Weekly Application Trend" unlockAt={THRESHOLDS.WEEKLY_CHART} current={total} icon="📈" />;
-//   }
+// // ── Metric Dropdown ───────────────────────────────────────────────────────
+// function MetricDropdown({ selected, onSelect, excludeKey }) {
+//   const [open, setOpen] = useState(false);
+//   const wrapRef = useRef(null);
+//   const metric = TREND_METRICS.find((m) => m.key === selected) || TREND_METRICS[0];
 
-//   const data = weeks.map(([key, d]) => ({
-//     week: new Date(key).toLocaleDateString("en-IN", { month: "short", day: "2-digit" }),
-//     applied: d.applied,
-//     interviews: d.interviews || 0,
-//   }));
+//   useEffect(() => {
+//     function handleClick(e) {
+//       if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+//         setOpen(false);
+//       }
+//     }
+//     if (open) document.addEventListener("mousedown", handleClick);
+//     return () => document.removeEventListener("mousedown", handleClick);
+//   }, [open]);
 
 //   return (
-//     <ChartCard title="Weekly Application Trend">
-//       <ResponsiveContainer width="100%" height={isMobile ? 180 : 220} style={{ background: "transparent", outline: "none" }}>
+//     <div className="wt-dropdown-wrap" ref={wrapRef}>
+//       <button
+//         className="wt-dropdown-btn"
+//         onClick={() => setOpen((o) => !o)}
+//         aria-haspopup="listbox"
+//         aria-expanded={open}
+//       >
+//         <span className="wt-dot" style={{ background: metric.color }} />
+//         <span>{metric.label}</span>
+//         <span style={{ fontSize: 9, color: "var(--text-muted)", marginLeft: 2 }}>
+//           {open ? "▴" : "▾"}
+//         </span>
+//       </button>
+//       <div className={`wt-menu${open ? " open" : ""}`} role="listbox">
+//         {TREND_METRICS.filter((m) => m.key !== excludeKey).map((m) => (
+//           <div
+//             key={m.key}
+//             role="option"
+//             aria-selected={selected === m.key}
+//             className={`wt-menu-item${selected === m.key ? " wt-active" : ""}`}
+//             onClick={() => { onSelect(m.key); setOpen(false); }}
+//           >
+//             <span className="wt-dot" style={{ background: m.color }} />
+//             {m.label}
+//             <span className="wt-check">✓</span>
+//           </div>
+//         ))}
+//       </div>
+//     </div>
+//   );
+// }
+
+// // ── Granularity Toggle ────────────────────────────────────────────────────
+// function GranularityToggle({ value, onChange }) {
+//   return (
+//     <div style={{
+//       display: "flex",
+//       background: "rgba(255,255,255,0.04)",
+//       border: "1px solid rgba(255,255,255,0.08)",
+//       borderRadius: 6,
+//       padding: 2,
+//       gap: 2,
+//       flexShrink: 0,
+//     }}>
+//       {[
+//         { value: "daily",  label: "Day"  },
+//         { value: "weekly", label: "Week" },
+//       ].map((opt) => (
+//         <button
+//           key={opt.value}
+//           onClick={() => onChange(opt.value)}
+//           style={{
+//             padding: "3px 10px",
+//             borderRadius: 4,
+//             border: "none",
+//             background: value === opt.value ? "rgba(108,99,255,0.2)" : "transparent",
+//             color: value === opt.value ? "#6c63ff" : "var(--text-muted)",
+//             fontSize: 11,
+//             fontWeight: 600,
+//             cursor: "pointer",
+//             fontFamily: "'DM Sans', sans-serif",
+//             transition: "all 0.12s",
+//             outline: "none",
+//             whiteSpace: "nowrap",
+//           }}
+//         >
+//           {opt.label}
+//         </button>
+//       ))}
+//     </div>
+//   );
+// }
+
+// // ── Weekly / Daily Trend Chart ────────────────────────────────────────────
+// function WeeklyTrendChart({ weeks, total, applications }) {
+//   const isMobile = useIsMobile();
+//   const [primary, setPrimary] = useState("applied");
+//   const [secondary, setSecondary] = useState("interviews");
+//   const [granularity, setGranularity] = useState("weekly");
+
+//   // ── MUST be before early return ──────────────────────────────────────
+//   const ghostCutoff = useMemo(() => {
+//     const now = new Date();
+//     return new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+//   }, []);
+
+//   // Daily aggregation — always last 7 days (today + 6 before), zero-filled
+//   const dailyData = useMemo(() => {
+//     // Build a map from app data first
+//     const dayMap = {};
+//     (applications || []).forEach((app) => {
+//       const dateStr = app.dateApplied || app.createdAt;
+//       if (!dateStr) return;
+//       // Use local date string to avoid timezone shifting the day
+//       const d = new Date(dateStr);
+//       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+//       if (!dayMap[key]) dayMap[key] = { applied: 0, interviews: 0, offers: 0, rejected: 0, ghosted: 0 };
+//       dayMap[key].applied += 1;
+//       if (app.status === "Interview") dayMap[key].interviews += 1;
+//       if (app.status === "Offer")     dayMap[key].offers     += 1;
+//       if (app.status === "Rejected")  dayMap[key].rejected   += 1;
+//       if (app.status === "Applied" && new Date(dateStr) < ghostCutoff) dayMap[key].ghosted += 1;
+//     });
+
+//     // Generate exactly 7 consecutive days ending today
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0);
+//     const days = [];
+//     for (let i = 6; i >= 0; i--) {
+//       const d = new Date(today);
+//       d.setDate(today.getDate() - i);
+//       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+//       const isToday = i === 0;
+//       const data = dayMap[key] || { applied: 0, interviews: 0, offers: 0, rejected: 0, ghosted: 0 };
+//       const callbackRate = data.applied > 0
+//         ? parseFloat(((data.interviews + data.offers) / data.applied * 100).toFixed(1))
+//         : 0;
+//       days.push({
+//         // Label: "May 22 •" for today, "May 21" for others
+//         week: d.toLocaleDateString("en-IN", { month: "short", day: "2-digit" }) + (isToday ? " •" : ""),
+//         isToday,
+//         ...data,
+//         callbackRate,
+//       });
+//     }
+//     return days;
+//   }, [applications, ghostCutoff]);
+
+//   // ── Early return after all hooks ─────────────────────────────────────
+//   if (total < THRESHOLDS.WEEKLY_CHART || !weeks || weeks.length === 0) {
+//     return <LockedCard title="Application Trend" unlockAt={THRESHOLDS.WEEKLY_CHART} current={total} icon="📈" />;
+//   }
+
+//   // Weekly aggregation
+//   const weekMap = {};
+//   weeks.forEach(([key]) => {
+//     weekMap[key] = { applied: 0, interviews: 0, offers: 0, rejected: 0, ghosted: 0 };
+//   });
+//   (applications || []).forEach((app) => {
+//     const dateStr = app.dateApplied || app.createdAt;
+//     if (!dateStr) return;
+//     const weekKey = getWeekKey(dateStr);
+//     if (!weekMap[weekKey]) return;
+//     weekMap[weekKey].applied += 1;
+//     if (app.status === "Interview") weekMap[weekKey].interviews += 1;
+//     if (app.status === "Offer")     weekMap[weekKey].offers     += 1;
+//     if (app.status === "Rejected")  weekMap[weekKey].rejected   += 1;
+//     if (app.status === "Applied" && new Date(dateStr) < ghostCutoff) weekMap[weekKey].ghosted += 1;
+//   });
+//   const weeklyData = weeks.map(([key]) => {
+//     const d = weekMap[key] || { applied: 0, interviews: 0, offers: 0, rejected: 0, ghosted: 0 };
+//     const callbackRate = d.applied > 0
+//       ? parseFloat(((d.interviews + d.offers) / d.applied * 100).toFixed(1))
+//       : 0;
+//     return {
+//       week: new Date(key).toLocaleDateString("en-IN", { month: "short", day: "2-digit" }),
+//       ...d,
+//       callbackRate,
+//     };
+//   });
+
+//   const data = granularity === "daily" ? dailyData : weeklyData;
+
+//   const pMeta = TREND_METRICS.find((m) => m.key === primary);
+//   const sMeta = TREND_METRICS.find((m) => m.key === secondary);
+//   const chartHeight = isMobile ? 190 : 230;
+
+//   return (
+//     <div tabIndex={-1} style={{
+//       background: "var(--bg-card)",
+//       border: "1px solid var(--border)",
+//       borderRadius: "var(--radius)",
+//       padding: "20px",
+//       marginBottom: 16,
+//       outline: "none",
+//       userSelect: "none",
+//     }}>
+
+//       {/* ── Header row ── */}
+//       <div style={{
+//         display: "flex",
+//         alignItems: "center",
+//         gap: isMobile ? 6 : 8,
+//         marginBottom: 16,
+//         flexWrap: "wrap",
+//         rowGap: 8,
+//       }}>
+
+//         {/* Title */}
+//         <div style={{
+//           fontFamily: "'Syne', sans-serif",
+//           fontSize: 11,
+//           fontWeight: 700,
+//           color: "var(--text-muted)",
+//           textTransform: "uppercase",
+//           letterSpacing: "0.8px",
+//           flexShrink: 0,
+//           marginRight: 2,
+//         }}>
+//           Trend
+//         </div>
+
+//         {/* Granularity toggle */}
+//         <GranularityToggle value={granularity} onChange={setGranularity} />
+
+//         {/* Separator */}
+//         <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.08)", flexShrink: 0 }} />
+
+//         {/* Primary metric dropdown */}
+//         <MetricDropdown selected={primary} onSelect={setPrimary} excludeKey={secondary} />
+
+//         {/* vs */}
+//         <span style={{
+//           fontSize: 11,
+//           color: "var(--text-muted)",
+//           fontFamily: "'DM Sans', sans-serif",
+//           fontWeight: 500,
+//           flexShrink: 0,
+//         }}>
+//           vs
+//         </span>
+
+//         {/* Secondary metric dropdown */}
+//         <MetricDropdown selected={secondary} onSelect={setSecondary} excludeKey={primary} />
+
+//         {/* Data point count badge */}
+//         <div style={{
+//           marginLeft: "auto",
+//           fontSize: 10,
+//           color: "var(--text-muted)",
+//           background: "rgba(255,255,255,0.04)",
+//           border: "1px solid rgba(255,255,255,0.07)",
+//           borderRadius: 6,
+//           padding: "2px 8px",
+//           fontFamily: "'DM Sans', sans-serif",
+//           flexShrink: 0,
+//         }}>
+//           {granularity === "daily" ? "Last 7 days" : `${data.length} weeks`}
+//         </div>
+//       </div>
+
+//       {/* ── Legend ── */}
+//       <div style={{ display: "flex", gap: 16, marginBottom: 14, flexWrap: "wrap" }}>
+//         {[pMeta, sMeta].map((m) => (
+//           <div key={m.key} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+//             <span style={{
+//               width: 20, height: 3,
+//               background: m.color,
+//               borderRadius: 99,
+//               display: "inline-block",
+//               flexShrink: 0,
+//             }} />
+//             <span style={{ fontSize: isMobile ? 10 : 11, color: "var(--text-secondary)", fontFamily: "'DM Sans', sans-serif" }}>
+//               {m.label}
+//             </span>
+//           </div>
+//         ))}
+//       </div>
+
+//       {/* ── Chart ── */}
+//       <ResponsiveContainer width="100%" height={chartHeight} style={{ background: "transparent", outline: "none" }}>
 //         <AreaChart data={data} style={{ outline: "none" }} tabIndex={-1} margin={{ left: -10, right: 8 }}>
 //           <defs>
-//             <linearGradient id="gApplied" x1="0" y1="0" x2="0" y2="1">
-//               <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-//               <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+//             <linearGradient id="gPrimary" x1="0" y1="0" x2="0" y2="1">
+//               <stop offset="5%"  stopColor={pMeta.color} stopOpacity={0.35} />
+//               <stop offset="95%" stopColor={pMeta.color} stopOpacity={0} />
 //             </linearGradient>
-//             <linearGradient id="gInterview" x1="0" y1="0" x2="0" y2="1">
-//               <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
-//               <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+//             <linearGradient id="gSecondary" x1="0" y1="0" x2="0" y2="1">
+//               <stop offset="5%"  stopColor={sMeta.color} stopOpacity={0.35} />
+//               <stop offset="95%" stopColor={sMeta.color} stopOpacity={0} />
 //             </linearGradient>
 //           </defs>
 //           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-//           <XAxis dataKey="week" tick={{ fill: "#555562", fontSize: isMobile ? 9 : 11 }} axisLine={false} tickLine={false}
-//             interval={isMobile ? 1 : 0} />
-//           <YAxis tick={{ fill: "#555562", fontSize: 10 }} axisLine={false} tickLine={false} width={24} />
+//           <XAxis
+//             dataKey="week"
+//             tick={{ fill: "#555562", fontSize: isMobile ? 9 : 11 }}
+//             axisLine={false}
+//             tickLine={false}
+//             interval={granularity === "daily" ? 0 : (isMobile ? 1 : 0)}
+//           />
+//           <YAxis
+//             tick={{ fill: "#555562", fontSize: 10 }}
+//             axisLine={false}
+//             tickLine={false}
+//             width={24}
+//           />
 //           <Tooltip content={<CustomTooltip />} />
-//           <Legend iconType="circle" iconSize={7}
-//             formatter={(v) => <span style={{ fontSize: isMobile ? 10 : 11, color: "var(--text-secondary)" }}>{v}</span>} />
-//           <Area isAnimationActive={false} type="monotone" dataKey="applied" name="Applied" stroke="#3b82f6" strokeWidth={2} fill="url(#gApplied)" dot={false} />
-//           <Area isAnimationActive={false} type="monotone" dataKey="interviews" name="Interviews" stroke="#f59e0b" strokeWidth={2} fill="url(#gInterview)" dot={false} />
+//           <Area
+//             isAnimationActive={false}
+//             type="monotone"
+//             dataKey={primary}
+//             name={pMeta.label}
+//             stroke={pMeta.color}
+//             strokeWidth={2}
+//             fill="url(#gPrimary)"
+//             dot={granularity === "daily" ? false : false}
+//             activeDot={{ r: 4, fill: pMeta.color, strokeWidth: 0 }}
+//           />
+//           <Area
+//             isAnimationActive={false}
+//             type="monotone"
+//             dataKey={secondary}
+//             name={sMeta.label}
+//             stroke={sMeta.color}
+//             strokeWidth={2}
+//             fill="url(#gSecondary)"
+//             dot={false}
+//             activeDot={{ r: 4, fill: sMeta.color, strokeWidth: 0 }}
+//           />
 //         </AreaChart>
 //       </ResponsiveContainer>
-//     </ChartCard>
+
+//       {/* ── Insight callout ── */}
+//       {(() => {
+//         if (data.length < 2) return null;
+//         const lastPt  = data[data.length - 1];
+//         const prevPt  = data[data.length - 2];
+//         const pChange = lastPt[primary] - prevPt[primary];
+//         if (pChange === 0) return null;
+//         const isUp = pChange > 0;
+//         return (
+//           <div style={{
+//             marginTop: 14,
+//             padding: "8px 12px",
+//             borderRadius: 8,
+//             fontSize: 12,
+//             fontFamily: "'DM Sans', sans-serif",
+//             color: isUp ? "#22c55e" : "#f59e0b",
+//             background: isUp ? "rgba(34,197,94,0.07)" : "rgba(245,158,11,0.07)",
+//             border: `1px solid ${isUp ? "rgba(34,197,94,0.18)" : "rgba(245,158,11,0.18)"}`,
+//           }}>
+//             {isUp ? "↑" : "↓"} {pMeta.label}{" "}
+//             {isUp ? "up" : "down"} by{" "}
+//             <strong>{Math.abs(pChange)}{primary === "callbackRate" ? "%" : ""}</strong>{" "}
+//             {granularity === "daily" ? "today vs yesterday" : "this week vs last week"}.
+//           </div>
+//         );
+//       })()}
+//     </div>
 //   );
 // }
 
@@ -820,7 +1185,7 @@
 //       if (!byPlatform[app.platform]) byPlatform[app.platform] = { total: 0, interviews: 0, offers: 0 };
 //       byPlatform[app.platform].total++;
 //       if (app.status === "Interview") byPlatform[app.platform].interviews++;
-//       if (app.status === "Offer") byPlatform[app.platform].offers++;
+//       if (app.status === "Offer")     byPlatform[app.platform].offers++;
 //     }
 
 //     if (app.workType) byWorkType[app.workType] = (byWorkType[app.workType] || 0) + 1;
@@ -831,7 +1196,7 @@
 //       if (!weeklyData[week]) weeklyData[week] = { applied: 0, interviews: 0, offers: 0 };
 //       weeklyData[week].applied++;
 //       if (app.status === "Interview") weeklyData[week].interviews++;
-//       if (app.status === "Offer") weeklyData[week].offers++;
+//       if (app.status === "Offer")     weeklyData[week].offers++;
 //     }
 
 //     if (app.resumeVersion) {
@@ -842,10 +1207,10 @@
 
 //     if (app.role) {
 //       const r = app.role.toLowerCase();
-//       const roleKey = r.includes("backend") ? "Backend"
+//       const roleKey = r.includes("backend")  ? "Backend"
 //         : r.includes("frontend") ? "Frontend"
-//         : r.includes("full") ? "Fullstack"
-//         : r.includes("data") ? "Data"
+//         : r.includes("full")     ? "Fullstack"
+//         : r.includes("data")     ? "Data"
 //         : r.includes("ml") || r.includes("ai") ? "ML/AI"
 //         : "Other";
 //       if (!roleData[roleKey]) roleData[roleKey] = { total: 0, callbacks: 0 };
@@ -854,15 +1219,15 @@
 //     }
 
 //     if (app.statusHistory && app.statusHistory.length > 1) {
-//       const first = new Date(app.statusHistory[0].date);
+//       const first  = new Date(app.statusHistory[0].date);
 //       const second = new Date(app.statusHistory[1].date);
-//       const days = Math.round((second - first) / (1000 * 60 * 60 * 24));
+//       const days   = Math.round((second - first) / (1000 * 60 * 60 * 24));
 //       if (days >= 0) { totalResponseDays += days; responseCount++; }
 //     }
 //   });
 
 //   const ghostCutoff = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-//   const ghostCount = filtered.filter((a) => {
+//   const ghostCount  = filtered.filter((a) => {
 //     if (a.status !== "Applied") return false;
 //     return new Date(a.dateApplied || a.createdAt) < ghostCutoff;
 //   }).length;
@@ -884,8 +1249,8 @@
 //     .map(([name, d]) => ({ name, total: d.total, rate: d.total > 0 ? pct(d.callbacks, d.total) : "0.0" }))
 //     .sort((a, b) => parseFloat(b.rate) - parseFloat(a.rate));
 
-//   const weeks = Object.entries(weeklyData).sort((a, b) => a[0].localeCompare(b[0]));
-//   const weeksTotal = weeks.length;
+//   const weeks       = Object.entries(weeklyData).sort((a, b) => a[0].localeCompare(b[0]));
+//   const weeksTotal  = weeks.length;
 //   const weeksActive = weeks.filter(([, d]) => d.applied > 0).length;
 //   const avgPerActiveWeek = weeksActive > 0 ? filtered.length / weeksActive : 0;
 
@@ -911,9 +1276,9 @@
 //     resumePerf,
 //     rolePerf,
 //     weeks: weeks.slice(-8),
-//     callbackRate: pct(byStatus.Interview + byStatus.Offer, total) ?? "0.0",
-//     offerRate: pct(byStatus.Offer, total) ?? "0.0",
-//     rejectionRate: pct(byStatus.Rejected, total) ?? "0.0",
+//     callbackRate:   pct(byStatus.Interview + byStatus.Offer, total) ?? "0.0",
+//     offerRate:      pct(byStatus.Offer,     total) ?? "0.0",
+//     rejectionRate:  pct(byStatus.Rejected,  total) ?? "0.0",
 //     ghostCount,
 //     ghostRate,
 //     avgResponseDays: responseCount > 0 ? Math.round(totalResponseDays / responseCount) : null,
@@ -931,7 +1296,7 @@
 //   const filtered = useMemo(() => {
 //     if (timeFilter === "all") return applications;
 //     const cutoff = new Date();
-//     if (timeFilter === "7d") cutoff.setDate(cutoff.getDate() - 7);
+//     if (timeFilter === "7d")  cutoff.setDate(cutoff.getDate() - 7);
 //     if (timeFilter === "30d") cutoff.setDate(cutoff.getDate() - 30);
 //     cutoff.setHours(0, 0, 0, 0);
 //     return applications.filter((a) => {
@@ -975,12 +1340,12 @@
 
 //   return (
 //     <div>
-//       <style dangerouslySetInnerHTML={{ __html: RECHARTS_RESET }} />
+//       <style dangerouslySetInnerHTML={{ __html: RECHARTS_RESET + TREND_DROPDOWN_STYLES }} />
 
 //       {/* Time filter */}
 //       <div style={{ display: "flex", gap: 6, marginBottom: 20, alignItems: "center", flexWrap: "wrap" }}>
 //         {[
-//           { value: "7d", label: "Last 7d" },
+//           { value: "7d",  label: "Last 7d"  },
 //           { value: "30d", label: "Last 30d" },
 //           { value: "all", label: "All time" },
 //         ].map((opt) => (
@@ -1005,9 +1370,9 @@
 
 //       <div className="stats-grid" style={{ marginBottom: 20 }}>
 //         <MetricCard label="Callback Rate" value={`${stats.callbackRate}%`} sub="Interview + Offer" color="#6c63ff" />
-//         <MetricCard label="Offer Rate" value={`${stats.offerRate}%`} sub="Of all applications" color="#22c55e" />
-//         <MetricCard label="Ghost Rate" value={`${stats.ghostRate.toFixed(0)}%`} sub="No reply 14d+" color={stats.ghostRate > 50 ? "#ef4444" : "#f59e0b"} />
-//         <MetricCard label="Total Applied" value={stats.total} sub="In selected period" color="#3b82f6" />
+//         <MetricCard label="Offer Rate"    value={`${stats.offerRate}%`}    sub="Of all applications" color="#22c55e" />
+//         <MetricCard label="Ghost Rate"    value={`${stats.ghostRate.toFixed(0)}%`} sub="No reply 14d+" color={stats.ghostRate > 50 ? "#ef4444" : "#f59e0b"} />
+//         <MetricCard label="Total Applied" value={stats.total}             sub="In selected period"  color="#3b82f6" />
 //       </div>
 
 //       <GhostRateCard stats={stats} />
@@ -1016,7 +1381,12 @@
 
 //       {donutSection}
 
-//       <WeeklyTrendChart weeks={stats.weeks} total={stats.total} />
+//       <WeeklyTrendChart
+//         weeks={stats.weeks}
+//         total={stats.total}
+//         applications={filtered}
+//       />
+
 //       <PlatformChart platformPerf={stats.platformPerf} total={stats.total} />
 //       <ResumePerformanceCard stats={stats} />
 //       <RoleInsightsCard stats={stats} />
@@ -1025,7 +1395,6 @@
 //     </div>
 //   );
 // }
-
 
 "use client";
 
@@ -1667,54 +2036,57 @@ function RoleInsightsCard({ stats }) {
 }
 
 // ── Funnel ────────────────────────────────────────────────────────────────
+// Simplified to three solid blocks: Total Applications, Total Offers,
+// Total Rejections — each showing its count and % of total applications.
 function Funnel({ byStatus, total }) {
   const isMobile = useIsMobile();
   const steps = [
-    { label: "Applied", key: "Applied", color: "#3b82f6" },
-    { label: "Interview", key: "Interview", color: "#f59e0b" },
-    { label: "Offer", key: "Offer", color: "#22c55e" },
+    { label: "Total Applications", count: total, color: "#3b82f6" },
+    { label: "Total Offers", count: byStatus.Offer || 0, color: "#22c55e" },
+    { label: "Total Rejections", count: byStatus.Rejected || 0, color: "#ef4444" },
   ];
+
   return (
     <ChartCard title="Application Funnel">
-      <div style={{ display: "flex", alignItems: "center", gap: 0, overflowX: "auto" }}>
-        {steps.map((step, i) => {
-          const count = byStatus[step.key] || 0;
-          const prevCount = i === 0 ? total : byStatus[steps[i - 1].key] || 0;
-          const convRate = i > 0 && prevCount > 0 ? pct(count, prevCount) : null;
+      <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 16 }}>
+        {steps.map((step) => {
+          const pctOfTotal = total > 0 ? pct(step.count, total) : "0.0";
           return (
-            <div key={step.key} style={{ display: "flex", alignItems: "center", flex: 1, minWidth: isMobile ? 70 : 90 }}>
-              <div style={{ flex: 1 }}>
-                {convRate !== null && (
-                  <div style={{ fontSize: 10, color: "var(--text-muted)", textAlign: "center", marginBottom: 4 }}>{convRate}% conv.</div>
-                )}
-                <div style={{
-                  height: isMobile ? 44 : 52,
-                  background: step.color,
-                  opacity: 0.18 + (count / (total || 1)) * 0.72,
-                  borderRadius: i === 0 ? "8px 0 0 8px" : i === steps.length - 1 ? "0 8px 8px 0" : 0,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  border: `1px solid ${step.color}`,
-                  borderRight: i < steps.length - 1 ? "none" : undefined,
-                }}>
-                  <span style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#fff" }}>{count}</span>
-                </div>
-                <div style={{ fontSize: isMobile ? 10 : 11, color: "var(--text-muted)", textAlign: "center", marginTop: 6 }}>{step.label}</div>
+            <div key={step.label} style={{
+              flex: 1,
+              minWidth: 0,
+              background: step.color,
+              borderRadius: 12,
+              padding: isMobile ? "16px 8px" : "22px 14px",
+              textAlign: "center",
+            }}>
+              <div style={{
+                fontSize: isMobile ? 24 : 30,
+                fontWeight: 800,
+                color: "#fff",
+                fontFamily: "'Syne', sans-serif",
+                lineHeight: 1,
+              }}>
+                {step.count}
               </div>
-              {i < steps.length - 1 && (
-                <div style={{
-                  width: 0, height: 0,
-                  borderTop: `${isMobile ? 22 : 26}px solid transparent`,
-                  borderBottom: `${isMobile ? 22 : 26}px solid transparent`,
-                  borderLeft: `${isMobile ? 10 : 14}px solid ${step.color}`,
-                  opacity: 0.45, flexShrink: 0, zIndex: 1,
-                }} />
-              )}
+              <div style={{
+                fontSize: isMobile ? 11 : 13,
+                fontWeight: 600,
+                color: "rgba(255,255,255,0.95)",
+                marginTop: 6,
+              }}>
+                {step.label}
+              </div>
+              <div style={{
+                fontSize: isMobile ? 10 : 11,
+                color: "rgba(255,255,255,0.8)",
+                marginTop: 2,
+              }}>
+                {pctOfTotal}% of total
+              </div>
             </div>
           );
         })}
-      </div>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10, fontSize: 11, color: "var(--text-muted)" }}>
-        Rejected: {byStatus.Rejected || 0}
       </div>
     </ChartCard>
   );
@@ -2366,6 +2738,8 @@ export default function Analytics({ applications }) {
     </div>
   );
 
+  const callbackCount = stats.byStatus.Interview + stats.byStatus.Offer;
+
   return (
     <div>
       <style dangerouslySetInnerHTML={{ __html: RECHARTS_RESET + TREND_DROPDOWN_STYLES }} />
@@ -2397,10 +2771,30 @@ export default function Analytics({ applications }) {
       <HealthScore stats={stats} />
 
       <div className="stats-grid" style={{ marginBottom: 20 }}>
-        <MetricCard label="Callback Rate" value={`${stats.callbackRate}%`} sub="Interview + Offer" color="#6c63ff" />
-        <MetricCard label="Offer Rate"    value={`${stats.offerRate}%`}    sub="Of all applications" color="#22c55e" />
-        <MetricCard label="Ghost Rate"    value={`${stats.ghostRate.toFixed(0)}%`} sub="No reply 14d+" color={stats.ghostRate > 50 ? "#ef4444" : "#f59e0b"} />
-        <MetricCard label="Total Applied" value={stats.total}             sub="In selected period"  color="#3b82f6" />
+        <MetricCard
+          label="Callback Rate"
+          value={`${stats.callbackRate}%`}
+          sub={`${callbackCount} of ${stats.total} applications`}
+          color="#6c63ff"
+        />
+        <MetricCard
+          label="Offer Rate"
+          value={`${stats.offerRate}%`}
+          sub={`${stats.byStatus.Offer} of ${stats.total} applications`}
+          color="#22c55e"
+        />
+        <MetricCard
+          label="Ghost Rate"
+          value={`${stats.ghostRate.toFixed(0)}%`}
+          sub={`${stats.ghostCount} of ${stats.total} applications`}
+          color={stats.ghostRate > 50 ? "#ef4444" : "#f59e0b"}
+        />
+        <MetricCard
+          label="Total Applied"
+          value={stats.total}
+          sub="In selected period"
+          color="#3b82f6"
+        />
       </div>
 
       <GhostRateCard stats={stats} />
