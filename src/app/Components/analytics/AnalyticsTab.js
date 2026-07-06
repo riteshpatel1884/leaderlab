@@ -163,6 +163,45 @@ function getWeekKey(dateStr) {
   return monday.toISOString().slice(0, 10);
 }
 
+// ── Resume version normalizer ──────────────────────────────────────────────
+// Users tag resumes with all kinds of free-text names for the same version —
+// "resume 1", "v1", "res1", "R1", "resume one", "version 1" — and without
+// normalizing these, each variant shows up as its own resume in the stats.
+// This collapses any name that contains a version number (digit or spelled
+// out) into a single canonical "Resume N" bucket. Names with no detectable
+// number (e.g. "Machine Learning Resume") are cleaned up but kept distinct,
+// since they likely represent a genuinely different resume.
+const RESUME_WORD_NUMBERS = {
+  one: 1, two: 2, three: 3, four: 4, five: 5,
+  six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+};
+
+function normalizeResumeVersion(raw) {
+  if (!raw) return null;
+  const cleaned = raw.trim();
+  if (!cleaned) return null;
+  const lower = cleaned.toLowerCase();
+
+  const digitMatch = lower.match(/(\d+)/);
+  if (digitMatch) {
+    return `Resume ${parseInt(digitMatch[1], 10)}`;
+  }
+
+  const words = lower.split(/[^a-z]+/).filter(Boolean);
+  for (const w of words) {
+    if (RESUME_WORD_NUMBERS[w]) {
+      return `Resume ${RESUME_WORD_NUMBERS[w]}`;
+    }
+  }
+
+  const key = lower.replace(/[^a-z0-9]+/g, " ").trim();
+  if (!key) return null;
+  return key
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 const tooltipStyle = {
   background: "rgba(14,14,18,0.97)",
   border: "1px solid rgba(108,99,255,0.2)",
@@ -1351,9 +1390,12 @@ function computeStats(filtered) {
     }
 
     if (app.resumeVersion) {
-      if (!resumeData[app.resumeVersion]) resumeData[app.resumeVersion] = { total: 0, callbacks: 0 };
-      resumeData[app.resumeVersion].total++;
-      if (app.status === "Interview" || app.status === "Offer") resumeData[app.resumeVersion].callbacks++;
+      const resumeKey = normalizeResumeVersion(app.resumeVersion);
+      if (resumeKey) {
+        if (!resumeData[resumeKey]) resumeData[resumeKey] = { total: 0, callbacks: 0 };
+        resumeData[resumeKey].total++;
+        if (app.status === "Interview" || app.status === "Offer") resumeData[resumeKey].callbacks++;
+      }
     }
 
     if (app.role) {
@@ -1393,7 +1435,14 @@ function computeStats(filtered) {
 
   const resumePerf = Object.entries(resumeData)
     .map(([name, d]) => ({ name, total: d.total, rate: d.total > 0 ? pct(d.callbacks, d.total) : "0.0" }))
-    .sort((a, b) => parseFloat(b.rate) - parseFloat(a.rate));
+    .sort((a, b) => {
+      const aNum = a.name.match(/^Resume (\d+)$/);
+      const bNum = b.name.match(/^Resume (\d+)$/);
+      if (aNum && bNum) return parseInt(aNum[1], 10) - parseInt(bNum[1], 10);
+      if (aNum && !bNum) return -1;
+      if (!aNum && bNum) return 1;
+      return parseFloat(b.rate) - parseFloat(a.rate);
+    });
 
   const rolePerf = Object.entries(roleData)
     .filter(([, d]) => d.total >= 2)
