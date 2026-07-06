@@ -5,8 +5,6 @@ import InsightsEngine from "./Insightsengine";
 import {
   PieChart,
   Pie,
-  BarChart,
-  Bar,
   AreaChart,
   Area,
   Cell,
@@ -42,26 +40,35 @@ const TREND_DROPDOWN_STYLES = `
   .wt-dropdown-wrap { position: relative; display: inline-flex; align-items: center; }
   .wt-dropdown-btn {
     display: flex; align-items: center; gap: 7px;
-    padding: 5px 11px;
+    padding: 6px 12px;
     border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
     color: var(--text-primary);
-    font-size: 12px; font-weight: 500;
+    font-size: 12px; font-weight: 600;
     cursor: pointer;
     font-family: 'DM Sans', sans-serif;
-    transition: background 0.12s, border-color 0.12s;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
     white-space: nowrap;
     outline: none;
   }
-  .wt-dropdown-btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.18); }
+  .wt-dropdown-btn:hover {
+    background: rgba(108,99,255,0.08);
+    border-color: rgba(108,99,255,0.4);
+    color: #6c63ff;
+  }
+  .wt-dropdown-btn.open {
+    background: rgba(108,99,255,0.12);
+    border-color: rgba(108,99,255,0.45);
+    color: #6c63ff;
+  }
   .wt-menu {
     position: absolute; top: calc(100% + 6px); left: 0; z-index: 200;
-    background: #1a1a22;
-    border: 1px solid rgba(255,255,255,0.1);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 10px;
     min-width: 178px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.16);
     overflow: hidden;
     display: none;
     padding: 4px 0;
@@ -74,14 +81,34 @@ const TREND_DROPDOWN_STYLES = `
     cursor: pointer;
     color: var(--text-secondary);
     font-family: 'DM Sans', sans-serif;
-    transition: background 0.1s;
+    transition: background 0.1s, color 0.1s;
     position: relative;
   }
-  .wt-menu-item:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
-  .wt-menu-item.wt-active { color: var(--text-primary); font-weight: 600; }
-  .wt-check { margin-left: auto; font-size: 11px; opacity: 0; }
+  .wt-menu-item:hover { background: rgba(108,99,255,0.1); color: var(--text-primary); }
+  .wt-menu-item.wt-active { color: #6c63ff; font-weight: 700; background: rgba(108,99,255,0.08); }
+  .wt-check { margin-left: auto; font-size: 11px; opacity: 0; color: #6c63ff; }
   .wt-menu-item.wt-active .wt-check { opacity: 1; }
   .wt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+  .wt-granularity-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    outline: none;
+    white-space: nowrap;
+  }
+  .wt-granularity-btn:hover { border-color: rgba(108,99,255,0.35); color: #6c63ff; }
+  .wt-granularity-btn.active {
+    background: rgba(108,99,255,0.14);
+    border-color: rgba(108,99,255,0.45);
+    color: #6c63ff;
+  }
 `;
 
 const THRESHOLDS = {
@@ -151,7 +178,7 @@ const tooltipStyle = {
 const tooltipLabelStyle = {
   color: "#f0f0f2",
   fontWeight: 700,
-  fontFamily: "'Syne', sans-serif",
+  fontFamily: "'DM Sans', sans-serif",
   fontSize: 12,
   marginBottom: 4,
 };
@@ -192,7 +219,7 @@ function LockedCard({ title, unlockAt, current, icon = "🔒" }) {
         backgroundSize: "20px 20px",
       }} />
       <div style={{ fontSize: 28, marginBottom: 8 }}>{icon}</div>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>{title}</div>
+      <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>{title}</div>
       <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 14 }}>
         Apply to <strong style={{ color: "#6c63ff" }}>{remaining} more</strong> job{remaining !== 1 ? "s" : ""} to unlock.
       </div>
@@ -220,7 +247,7 @@ function ChartCard({ title, children, badge, style }) {
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div style={{
-          fontFamily: "'Syne', sans-serif", fontSize: 11, fontWeight: 700,
+          fontFamily: "'DM Sans', sans-serif", fontSize: 11, fontWeight: 700,
           color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.8px",
         }}>{title}</div>
         {badge && (
@@ -297,7 +324,7 @@ function HealthScore({ stats }) {
               style={{ transition: "stroke-dasharray 0.8s ease" }} />
           </svg>
           <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ fontSize: isMobile ? 24 : 30, fontWeight: 800, color: grade.color, fontFamily: "'Syne', sans-serif", lineHeight: 1 }}>{score}</div>
+            <div style={{ fontSize: isMobile ? 24 : 30, fontWeight: 800, color: grade.color, fontFamily: "'DM Sans', sans-serif", lineHeight: 1 }}>{score}</div>
             <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 2 }}>/ 100</div>
           </div>
         </div>
@@ -336,7 +363,7 @@ function GhostRateCard({ stats }) {
     <ChartCard title="Ghost Rate" badge={isHigh ? "High" : "Normal"}>
       <div style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
         <div style={{ textAlign: "center", flexShrink: 0 }}>
-          <div style={{ fontSize: 48, fontWeight: 800, lineHeight: 1, color: isHigh ? "#ef4444" : "#f59e0b", fontFamily: "'Syne', sans-serif" }}>
+          <div style={{ fontSize: 48, fontWeight: 800, lineHeight: 1, color: isHigh ? "#ef4444" : "#f59e0b", fontFamily: "'DM Sans', sans-serif" }}>
             {ghostRate.toFixed(0)}<span style={{ fontSize: 22 }}>%</span>
           </div>
           <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>no response</div>
@@ -378,7 +405,7 @@ function ConsistencyCard({ stats }) {
             background: "rgba(255,255,255,0.03)", border: "1px solid var(--border)",
             borderRadius: 8, padding: "10px 8px", textAlign: "center",
           }}>
-            <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 800, color: m.color, fontFamily: "'Syne', sans-serif" }}>{m.value}</div>
+            <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 800, color: m.color, fontFamily: "'DM Sans', sans-serif" }}>{m.value}</div>
             <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{m.label}</div>
           </div>
         ))}
@@ -457,7 +484,7 @@ function ResumePerformanceCard({ stats }) {
                     fontSize: isMobile ? 13 : 15,
                     fontWeight: 800,
                     color,
-                    fontFamily: "'Syne', sans-serif",
+                    fontFamily: "'DM Sans', sans-serif",
                     lineHeight: 1,
                   }}>{rate.toFixed(0)}%</span>
                 </div>
@@ -593,7 +620,7 @@ function RoleInsightsCard({ stats }) {
                     fontSize: 9, fontWeight: 700,
                     padding: "2px 6px", borderRadius: 99,
                     background: "#22c55e", color: "#fff",
-                    fontFamily: "'Syne', sans-serif",
+                    fontFamily: "'DM Sans', sans-serif",
                     letterSpacing: "0.4px",
                   }}>TOP</div>
                 )}
@@ -601,7 +628,7 @@ function RoleInsightsCard({ stats }) {
                   fontSize: bubbleSize > 80 ? 17 : 13,
                   fontWeight: 800,
                   color: rateColor,
-                  fontFamily: "'Syne', sans-serif",
+                  fontFamily: "'DM Sans', sans-serif",
                   lineHeight: 1,
                 }}>{d.callbackRate.toFixed(0)}%</div>
                 <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 3 }}>{d.applications} apps</div>
@@ -682,7 +709,7 @@ function Funnel({ byStatus, total, callbackRate, callbackCount, ghostRate, ghost
                 fontSize: isMobile ? 24 : 30,
                 fontWeight: 800,
                 color: "#fff",
-                fontFamily: "'Syne', sans-serif",
+                fontFamily: "'DM Sans', sans-serif",
                 lineHeight: 1,
               }}>
                 {step.count}
@@ -731,7 +758,7 @@ function Funnel({ byStatus, total, callbackRate, callbackCount, ghostRate, ghost
               fontSize: isMobile ? 20 : 24,
               fontWeight: 800,
               color: s.color,
-              fontFamily: "'Syne', sans-serif",
+              fontFamily: "'DM Sans', sans-serif",
               lineHeight: 1,
             }}>
               {s.value}
@@ -840,7 +867,9 @@ function WorkTypeChart({ byWorkType, total }) {
   );
 }
 
-// ── Platform Bar ──────────────────────────────────────────────────────────
+// ── Platform Leaderboard ──────────────────────────────────────────────────
+// Custom ranked track-bar visualization — replaces the recharts bar chart
+// with a leaderboard style consistent with the rings/bubbles used elsewhere.
 function PlatformChart({ platformPerf, total }) {
   const isMobile = useIsMobile();
   if (total < THRESHOLDS.PLATFORM_CHART || !platformPerf || platformPerf.length === 0) {
@@ -848,25 +877,100 @@ function PlatformChart({ platformPerf, total }) {
   }
 
   const data = platformPerf.map((p) => ({ name: p.name, rate: parseFloat(p.rate), total: p.total }));
-  const yWidth = isMobile ? 80 : 100;
+  const maxRate = Math.max(...data.map((d) => d.rate), 1);
+  const best = data[0];
+
+  const getColor = (rate) => {
+    if (rate >= 40) return "#22c55e";
+    if (rate >= 20) return "#6c63ff";
+    if (rate >= 5) return "#f59e0b";
+    return "#ef4444";
+  };
 
   return (
     <ChartCard title="Platform Success Rate">
-      <ResponsiveContainer width="100%" height={Math.max(140, data.length * 40)} style={{ background: "transparent", outline: "none" }}>
-        <BarChart data={data} layout="vertical" style={{ outline: "none" }} tabIndex={-1}>
-          <defs>
-            <linearGradient id="gPlatform" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#6c63ff" />
-              <stop offset="100%" stopColor="#22c55e" />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
-          <XAxis type="number" tick={{ fill: "#555562", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
-          <YAxis type="category" dataKey="name" tick={{ fill: "#8b8b9a", fontSize: isMobile ? 10 : 12 }} axisLine={false} tickLine={false} width={yWidth} />
-          <Tooltip content={<CustomTooltip formatter={(v) => `${v.toFixed(1)}%`} />} />
-          <Bar isAnimationActive={false} dataKey="rate" name="Success Rate" fill="url(#gPlatform)" radius={[0, 6, 6, 0]} barSize={16} tabIndex={-1} />
-        </BarChart>
-      </ResponsiveContainer>
+      {best && best.rate > 0 && (
+        <div style={{
+          fontSize: 13,
+          color: "var(--text-secondary)",
+          lineHeight: 1.7,
+          borderLeft: "2px solid #6c63ff",
+          paddingLeft: 12,
+          marginBottom: 20,
+        }}>
+          <strong style={{ color: "var(--text-primary)" }}>{best.name}</strong> is your top-performing platform at{" "}
+          <strong style={{ color: "#22c55e" }}>{best.rate}%</strong> callback rate.
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {data.map((d, i) => {
+          const color = getColor(d.rate);
+          const widthPct = maxRate > 0 ? Math.max(4, (d.rate / maxRate) * 100) : 0;
+          return (
+            <div key={d.name}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7, gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+                  <span style={{
+                    flexShrink: 0,
+                    width: 20, height: 20,
+                    borderRadius: 6,
+                    background: `${color}1f`,
+                    color,
+                    fontSize: 10,
+                    fontWeight: 800,
+                    fontFamily: "'DM Sans', sans-serif",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    {i + 1}
+                  </span>
+                  <span style={{
+                    fontSize: isMobile ? 12 : 13,
+                    fontWeight: 600,
+                    color: "var(--text-primary)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}>
+                    {d.name}
+                  </span>
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexShrink: 0 }}>
+                  <span style={{ fontSize: isMobile ? 14 : 16, fontWeight: 800, color, fontFamily: "'DM Sans', sans-serif" }}>
+                    {d.rate.toFixed(1)}%
+                  </span>
+                  <span style={{ fontSize: 10, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                    {d.total} app{d.total !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              </div>
+              <div style={{ height: 8, background: "rgba(108,99,255,0.08)", borderRadius: 99, overflow: "hidden" }}>
+                <div style={{
+                  height: "100%",
+                  width: `${widthPct}%`,
+                  background: color,
+                  borderRadius: 99,
+                  transition: "width 0.6s ease",
+                }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{
+        display: "flex", gap: 12, flexWrap: "wrap",
+        fontSize: 10, color: "var(--text-muted)",
+        borderTop: "1px solid var(--border)",
+        paddingTop: 12, marginTop: 16,
+      }}>
+        {[["#22c55e", "≥40%"], ["#6c63ff", "20–39%"], ["#f59e0b", "5–19%"], ["#ef4444", "<5%"]].map(([c, l]) => (
+          <span key={l} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: c, display: "inline-block", flexShrink: 0 }} />
+            {l}
+          </span>
+        ))}
+      </div>
     </ChartCard>
   );
 }
@@ -890,7 +994,7 @@ function MetricDropdown({ selected, onSelect, excludeKey }) {
   return (
     <div className="wt-dropdown-wrap" ref={wrapRef}>
       <button
-        className="wt-dropdown-btn"
+        className={`wt-dropdown-btn${open ? " open" : ""}`}
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -923,15 +1027,7 @@ function MetricDropdown({ selected, onSelect, excludeKey }) {
 // ── Granularity Toggle ────────────────────────────────────────────────────
 function GranularityToggle({ value, onChange }) {
   return (
-    <div style={{
-      display: "flex",
-      background: "rgba(255,255,255,0.04)",
-      border: "1px solid rgba(255,255,255,0.08)",
-      borderRadius: 6,
-      padding: 2,
-      gap: 2,
-      flexShrink: 0,
-    }}>
+    <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
       {[
         { value: "daily",  label: "Day"  },
         { value: "weekly", label: "Week" },
@@ -939,20 +1035,7 @@ function GranularityToggle({ value, onChange }) {
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
-          style={{
-            padding: "3px 10px",
-            borderRadius: 4,
-            border: "none",
-            background: value === opt.value ? "rgba(108,99,255,0.2)" : "transparent",
-            color: value === opt.value ? "#6c63ff" : "var(--text-muted)",
-            fontSize: 11,
-            fontWeight: 600,
-            cursor: "pointer",
-            fontFamily: "'DM Sans', sans-serif",
-            transition: "all 0.12s",
-            outline: "none",
-            whiteSpace: "nowrap",
-          }}
+          className={`wt-granularity-btn${value === opt.value ? " active" : ""}`}
         >
           {opt.label}
         </button>
@@ -992,11 +1075,11 @@ function WeeklyTrendChart({ weeks, total, applications }) {
       if (app.status === "Applied" && new Date(dateStr) < ghostCutoff) dayMap[key].ghosted += 1;
     });
 
-    // Generate exactly 7 consecutive days ending today
+    // Generate exactly 5 consecutive days ending today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const days = [];
-    for (let i = 6; i >= 0; i--) {
+    for (let i = 4; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -1070,15 +1153,15 @@ function WeeklyTrendChart({ weeks, total, applications }) {
       <div style={{
         display: "flex",
         alignItems: "center",
-        gap: isMobile ? 6 : 8,
+        columnGap: isMobile ? 6 : 8,
+        rowGap: 8,
         marginBottom: 16,
         flexWrap: "wrap",
-        rowGap: 8,
       }}>
 
         {/* Title */}
         <div style={{
-          fontFamily: "'Syne', sans-serif",
+          fontFamily: "'DM Sans', sans-serif",
           fontSize: 11,
           fontWeight: 700,
           color: "var(--text-muted)",
@@ -1094,7 +1177,7 @@ function WeeklyTrendChart({ weeks, total, applications }) {
         <GranularityToggle value={granularity} onChange={setGranularity} />
 
         {/* Separator */}
-        <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.08)", flexShrink: 0 }} />
+        <div style={{ width: 1, height: 18, background: "var(--border)", flexShrink: 0 }} />
 
         {/* Primary metric dropdown */}
         <MetricDropdown selected={primary} onSelect={setPrimary} excludeKey={secondary} />
@@ -1118,14 +1201,14 @@ function WeeklyTrendChart({ weeks, total, applications }) {
           marginLeft: "auto",
           fontSize: 10,
           color: "var(--text-muted)",
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.07)",
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
           borderRadius: 6,
-          padding: "2px 8px",
+          padding: "3px 9px",
           fontFamily: "'DM Sans', sans-serif",
           flexShrink: 0,
         }}>
-          {granularity === "daily" ? "Last 7 days" : `${data.length} weeks`}
+          {granularity === "daily" ? "Last 5 days" : `${data.length} weeks`}
         </div>
       </div>
 
@@ -1149,7 +1232,7 @@ function WeeklyTrendChart({ weeks, total, applications }) {
 
       {/* ── Chart ── */}
       <ResponsiveContainer width="100%" height={chartHeight} style={{ background: "transparent", outline: "none" }}>
-        <AreaChart data={data} style={{ outline: "none" }} tabIndex={-1} margin={{ left: -10, right: 8 }}>
+        <AreaChart data={data} style={{ outline: "none" }} tabIndex={-1} margin={{ left: 4, right: 16, top: 4, bottom: 0 }}>
           <defs>
             <linearGradient id="gPrimary" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%"  stopColor={pMeta.color} stopOpacity={0.35} />
@@ -1167,6 +1250,7 @@ function WeeklyTrendChart({ weeks, total, applications }) {
             axisLine={false}
             tickLine={false}
             interval={granularity === "daily" ? 0 : (isMobile ? 1 : 0)}
+            padding={{ left: 16, right: 16 }}
           />
           <YAxis
             tick={{ fill: "#555562", fontSize: 10 }}
@@ -1342,7 +1426,7 @@ function computeStats(filtered) {
     platformPerf,
     resumePerf,
     rolePerf,
-    weeks: weeks.slice(-8),
+    weeks: weeks.slice(-5),
     callbackRate:   pct(byStatus.Interview + byStatus.Offer, total) ?? "0.0",
     offerRate:      pct(byStatus.Offer,     total) ?? "0.0",
     rejectionRate:  pct(byStatus.Rejected,  total) ?? "0.0",
