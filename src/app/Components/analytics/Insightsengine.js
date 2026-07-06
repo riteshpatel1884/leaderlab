@@ -331,7 +331,7 @@ function InsightCard({ insight, index }) {
         <div style={{ fontSize: 22, lineHeight: 1 }}>{insight.icon}</div>
         {insight.metric && (
           <div style={{
-            fontFamily: "'Syne', sans-serif",
+            fontFamily: " sans-serif",
             fontSize: 18,
             fontWeight: 800,
             color: cfg.metricColor,
@@ -375,7 +375,7 @@ function InsightCard({ insight, index }) {
           marginBottom: 7,
         }}>
           <span style={{
-            fontFamily: "'Syne', sans-serif",
+            fontFamily: " sans-serif",
             fontSize: 9,
             fontWeight: 700,
             color: cfg.labelColor,
@@ -388,7 +388,7 @@ function InsightCard({ insight, index }) {
 
         {/* Headline */}
         <div style={{
-          fontFamily: "'Syne', sans-serif",
+          fontFamily: " sans-serif",
           fontSize: 14,
           fontWeight: 700,
           color: "var(--text-primary, #eef2f0)",
@@ -591,14 +591,14 @@ export default function InsightsEngine({ applications }) {
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 12,
             color: "var(--accent, #10b981)",
-            fontFamily: "'Syne', sans-serif",
+            fontFamily: " sans-serif",
             fontWeight: 800,
           }}>
             ✦
           </div>
           <div>
             <div style={{
-              fontFamily: "'Syne', sans-serif",
+              fontFamily: " sans-serif",
               fontSize: 14,
               fontWeight: 700,
               color: "var(--text-primary, #eef2f0)",
@@ -700,7 +700,7 @@ export default function InsightsEngine({ applications }) {
             fontSize: 18, margin: "0 auto 14px",
           }}>🧠</div>
           <div style={{
-            fontFamily: "'Syne', sans-serif",
+            fontFamily: " sans-serif",
             fontSize: 14, fontWeight: 700,
             color: "var(--text-primary, #eef2f0)",
             marginBottom: 6,
@@ -752,7 +752,7 @@ export default function InsightsEngine({ applications }) {
           textAlign: "center",
         }}>
           <div style={{
-            fontFamily: "'Syne', sans-serif",
+            fontFamily: " sans-serif",
             fontSize: 28,
             fontWeight: 800,
             color: "var(--accent, #10b981)",
@@ -761,7 +761,7 @@ export default function InsightsEngine({ applications }) {
             opacity: 0.4,
           }}>✦</div>
           <div style={{
-            fontFamily: "'Syne', sans-serif",
+            fontFamily: " sans-serif",
             fontSize: 14, fontWeight: 700,
             color: "var(--text-primary, #eef2f0)",
             marginBottom: 6,
@@ -788,7 +788,7 @@ export default function InsightsEngine({ applications }) {
               fontSize: 13,
               fontWeight: 600,
               cursor: "pointer",
-              fontFamily: "'Syne', sans-serif",
+              fontFamily: " sans-serif",
               transition: "all 0.15s",
               outline: "none",
               letterSpacing: "0.2px",
@@ -828,7 +828,7 @@ export default function InsightsEngine({ applications }) {
           <span style={{ fontSize: 16, flexShrink: 0 }}>⚠</span>
           <div style={{ flex: 1 }}>
             <div style={{
-              fontFamily: "'Syne', sans-serif",
+              fontFamily: " sans-serif",
               fontSize: 12, fontWeight: 600,
               color: "var(--red, #f87171)",
               marginBottom: 2,

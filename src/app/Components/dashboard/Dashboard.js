@@ -534,7 +534,7 @@
 //           <div>
 //             <div
 //               style={{
-//                 fontFamily: "'Syne', sans-serif",
+//                 fontFamily: " sans-serif",
 //                 fontSize: 15,
 //                 fontWeight: 700,
 //                 color: "var(--text-primary)",
@@ -1343,7 +1343,7 @@
 //           <div>
 //             <div
 //               style={{
-//                 fontFamily: "'Syne', sans-serif",
+//                 fontFamily: " sans-serif",
 //                 fontSize: 15,
 //                 fontWeight: 700,
 //                 color: "var(--text-primary)",
@@ -2160,7 +2160,7 @@ function TimelineModal({ events, onClose }) {
           <div>
             <div
               style={{
-                fontFamily: "'Syne', sans-serif",
+                fontFamily: " sans-serif",
                 fontSize: 15,
                 fontWeight: 700,
                 color: "var(--text-primary)",

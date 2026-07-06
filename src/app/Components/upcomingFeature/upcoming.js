@@ -60,7 +60,7 @@ export default function ComingSoon({
 
       <div>
         <h1 style={{
-          fontFamily: "'Syne', sans-serif",
+          fontFamily: " sans-serif",
           fontSize: "clamp(22px, 4vw, 32px)",
           fontWeight: 800, color: "var(--text-primary)",
           letterSpacing: "-0.4px", margin: 0, lineHeight: 1.2,
@@ -96,7 +96,7 @@ export default function ComingSoon({
               minWidth: 60, textAlign: "center",
             }}>
               <div style={{
-                fontFamily: "'Syne', sans-serif", fontSize: 24,
+                fontFamily: " sans-serif", fontSize: 24,
                 fontWeight: 800, color: "var(--text-primary)", lineHeight: 1,
               }}>
                 {String(value).padStart(2, "0")}

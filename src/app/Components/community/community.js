@@ -27,7 +27,7 @@
 //   return (
 //     <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "12px 16px", borderRadius: 10, background: "var(--bg-hover)", border: "1px solid var(--border)", flex: 1, minWidth: 100 }}>
 //       <span style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.6px", fontWeight: 600 }}>{label}</span>
-//       <span style={{ fontSize: 18, fontWeight: 800, color, fontFamily: "Syne, sans-serif" }}>{value}</span>
+//       <span style={{ fontSize: 18, fontWeight: 800, color, fontFamily: " sans-serif" }}>{value}</span>
 //     </div>
 //   );
 // }
@@ -333,7 +333,7 @@
 //                       <div style={{ flex: 1 }}>
 //                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
 //                           <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{step.label}</span>
-//                           <span style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 13, color: step.color }}>{step.value}</span>
+//                           <span style={{ fontFamily: " sans-serif", fontWeight: 700, fontSize: 13, color: step.color }}>{step.value}</span>
 //                         </div>
 //                         <ProgressBar value={step.value} max={funnelSteps[0]?.value || 1} color={step.color} />
 //                       </div>
@@ -379,7 +379,7 @@
 //                         {u.username}
 //                       </div>
 //                     </div>
-//                     <div style={{ fontFamily: "Syne, sans-serif", fontSize: 26, fontWeight: 800, color: i === 0 ? "var(--accent)" : "var(--text-primary)", lineHeight: 1, marginBottom: 4 }}>
+//                     <div style={{ fontFamily: " sans-serif", fontSize: 26, fontWeight: 800, color: i === 0 ? "var(--accent)" : "var(--text-primary)", lineHeight: 1, marginBottom: 4 }}>
 //                       {u.totalApps}
 //                     </div>
 //                     <div style={{ fontSize: 11, color: "var(--text-muted)" }}>applications</div>
@@ -555,13 +555,13 @@ function MyPositionBanner({ rank, percentileAhead, totalUsers, currentUserEntry 
           width: 40, height: 40, borderRadius: "50%",
           background: "var(--accent)", display: "flex",
           alignItems: "center", justifyContent: "center",
-          fontFamily: "'Syne', sans-serif", fontSize: 14,
+          fontFamily: " sans-serif", fontSize: 14,
           fontWeight: 800, color: "#050f0c", flexShrink: 0,
         }}>
           #{rank}
         </div>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", fontFamily: "'Syne', sans-serif" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", fontFamily: " sans-serif" }}>
             Your position
           </div>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
@@ -573,19 +573,19 @@ function MyPositionBanner({ rank, percentileAhead, totalUsers, currentUserEntry 
       </div>
       <div style={{ display: "flex", gap: 16 }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 800, color: "var(--accent)", lineHeight: 1 }}>
+          <div style={{ fontFamily: " sans-serif", fontSize: 18, fontWeight: 800, color: "var(--accent)", lineHeight: 1 }}>
             {currentUserEntry?.totalApps ?? 0}
           </div>
           <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.6px" }}>Apps</div>
         </div>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 800, color: "var(--green)", lineHeight: 1 }}>
+          <div style={{ fontFamily: " sans-serif", fontSize: 18, fontWeight: 800, color: "var(--green)", lineHeight: 1 }}>
             {currentUserEntry?.activeDays ?? 0}
           </div>
           <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.6px" }}>Active Days</div>
         </div>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 800, color: "var(--text-primary)", lineHeight: 1 }}>
+          <div style={{ fontFamily: " sans-serif", fontSize: 18, fontWeight: 800, color: "var(--text-primary)", lineHeight: 1 }}>
             {totalUsers}
           </div>
           <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.6px" }}>Total Users</div>
@@ -669,7 +669,7 @@ function Leaderboard({ leaderboard, loading, currentUserRank }) {
                 }}>
                   {/* Rank */}
                   <div style={{
-                    fontFamily: "'Syne', sans-serif",
+                    fontFamily: " sans-serif",
                     fontSize: MEDAL[u.rank] ? 16 : 13,
                     fontWeight: 700,
                     color: u.rank === 1 ? "var(--yellow)"
@@ -707,7 +707,7 @@ function Leaderboard({ leaderboard, loading, currentUserRank }) {
 
                   {/* Apps */}
                   <div style={{
-                    fontFamily: "'Syne', sans-serif",
+                    fontFamily: " sans-serif",
                     fontSize: 14, fontWeight: 800,
                     color: isMe ? "var(--accent)" : "var(--text-primary)",
                     display: "flex", alignItems: "center",
@@ -717,7 +717,7 @@ function Leaderboard({ leaderboard, loading, currentUserRank }) {
 
                   {/* Active Days */}
                   <div style={{
-                    fontFamily: "'Syne', sans-serif",
+                    fontFamily: " sans-serif",
                     fontSize: 14, fontWeight: 800,
                     color: "var(--green)",
                     display: "flex", alignItems: "center",
