@@ -519,7 +519,7 @@ export default function InsightsEngine({ applications }) {
         },
         signal: abortRef.current.signal,
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
+          model: "openai/gpt-oss-20b",
           max_tokens: 1000,
           temperature: 0.3,
           response_format: { type: "json_object" },
