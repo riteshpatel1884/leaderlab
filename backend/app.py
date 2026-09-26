@@ -1,3 +1,5 @@
+
+
 # from dotenv import load_dotenv
 # import os
 # import certifi
@@ -42,7 +44,12 @@
 #     get_resume,
 #     save_resume,
 #     delete_resume,
+#     update_resume_fields,
 #     resume_to_dict,
+#     save_job,
+#     list_saved_jobs,
+#     delete_saved_job,
+#     saved_job_to_dict,
 #     get_usage_status,
 #     add_usage,
 #     UNLIMITED_TOKEN_LIMIT,
@@ -59,7 +66,8 @@
 # FRONTEND_ORIGINS = [
 #     "http://localhost:3000",
 #     "http://127.0.0.1:3000",
-#     "https://agenza-ai.vercel.app",
+#     "https://leaderlab.in",
+#     "https://www.leaderlab.in"
 # ]
 
 # app.add_middleware(
@@ -376,6 +384,87 @@
 #     return {"configured": False}
 
 
+# @app.patch("/resume")
+# async def update_resume_route(request: Request, user_id: str = Depends(get_current_user_id)):
+#     """
+#     Hand-edits the signed-in user's parsed resume — used by the Settings >
+#     Job Search > Resume "Edit" mode to fix up preferred roles, years of
+#     experience, and skills (including deleting one) without re-uploading a
+#     file. Always overwrites all three fields with what's sent, so the
+#     frontend should submit the user's full current lists each time (not a
+#     diff) — an empty skills array is a deliberate "clear all skills",
+#     not "leave alone".
+#     """
+#     try:
+#         data = await request.json()
+#     except Exception:
+#         return JSONResponse({"error": "Invalid JSON body."}, status_code=400)
+
+#     raw_skills = data.get("skills")
+#     raw_roles = data.get("preferred_roles")
+
+#     if not isinstance(raw_skills, list) or not isinstance(raw_roles, list):
+#         return JSONResponse({"error": "skills and preferred_roles must be lists."}, status_code=400)
+
+#     experience_years = data.get("experience_years")
+#     if experience_years is not None:
+#         try:
+#             experience_years = float(experience_years)
+#         except (TypeError, ValueError):
+#             return JSONResponse({"error": "experience_years must be a number."}, status_code=400)
+#         if experience_years < 0:
+#             return JSONResponse({"error": "experience_years can't be negative."}, status_code=400)
+
+#     skills = [s.strip() for s in raw_skills if isinstance(s, str) and s.strip()]
+#     preferred_roles = [r.strip() for r in raw_roles if isinstance(r, str) and r.strip()]
+
+#     resume = update_resume_fields(
+#         user_id, skills=skills, preferred_roles=preferred_roles, experience_years=experience_years
+#     )
+
+#     return {"configured": True, **resume_to_dict(resume)}
+
+
+# # ---------------------------------------------------------------------------
+# # Saved jobs — bookmarking a listing from a search result so the user can
+# # come back to it later. Surfaced in the header's saved-jobs popup.
+# # job_id is a stable string computed the same way on the frontend (see
+# # computeJobId in lib/api.js) — the listing's URL when it has one,
+# # otherwise a "title::company::location" fallback — since none of the
+# # sources in job_aggregator.py hand back a real id of their own.
+# # ---------------------------------------------------------------------------
+
+
+# @app.get("/saved-jobs")
+# async def get_saved_jobs_route(user_id: str = Depends(get_current_user_id)):
+#     jobs = list_saved_jobs(user_id)
+#     return {"jobs": [saved_job_to_dict(j) for j in jobs]}
+
+
+# @app.post("/saved-jobs")
+# async def save_job_route(request: Request, user_id: str = Depends(get_current_user_id)):
+#     try:
+#         data = await request.json()
+#     except Exception:
+#         return JSONResponse({"error": "Invalid JSON body."}, status_code=400)
+
+#     job_id = (data.get("job_id") or "").strip()
+#     if not job_id:
+#         return JSONResponse({"error": "job_id is required."}, status_code=400)
+
+#     saved = save_job(user_id, job_id, data)
+#     return {"saved": True, "job": saved_job_to_dict(saved)}
+
+
+# @app.delete("/saved-jobs")
+# async def delete_saved_job_route(job_id: str, user_id: str = Depends(get_current_user_id)):
+#     """job_id comes in as a query param (?job_id=...) rather than a path
+#     segment — saved job ids are often full URLs, which don't survive being
+#     embedded in a path segment cleanly across every server/proxy."""
+#     delete_saved_job(user_id, job_id)
+#     return {"deleted": job_id}
+
+
 # def _automation_to_dict(a):
 #     return {
 #         "id": a.id,
@@ -576,7 +665,13 @@
 #             ):
 #                 if stream_mode == "custom":
 #                     if isinstance(payload, dict) and payload.get("type") == "jobs":
-#                         yield sse_data({"jobs": payload.get("jobs", []), "count": payload.get("count")})
+#                         yield sse_data(
+#                             {
+#                                 "jobs": payload.get("jobs", []),
+#                                 "count": payload.get("count"),
+#                                 "page_size": payload.get("page_size"),
+#                             }
+#                         )
 #                     continue
 
 #                 chunk, metadata = payload
@@ -624,6 +719,9 @@
 #     uvicorn.run("app:app", host="0.0.0.0", port=8080, reload=True)
 
 
+
+
+
 from dotenv import load_dotenv
 import os
 import certifi
@@ -656,13 +754,6 @@ from database import (
     list_conversations,
     rename_conversation,
     delete_conversation,
-    get_email_settings,
-    save_email_settings,
-    delete_email_settings,
-    create_automation,
-    list_automations,
-    set_automation_enabled,
-    delete_automation,
     get_job_preferences,
     save_job_preferences,
     get_resume,
@@ -679,7 +770,6 @@ from database import (
     UNLIMITED_TOKEN_LIMIT,
 )
 from resume_parsing import extract_text_from_upload, validate_upload, UnsupportedResumeFormat
-from scheduler import start_scheduler
 
 Path("data").mkdir(exist_ok=True)
 
@@ -703,7 +793,6 @@ app.add_middleware(
 )
 
 init_db()
-start_scheduler()
 
 # ---------------------------------------------------------------------------
 # Hourly token budget per user — a soft rate limit so one heavy user or one
@@ -808,76 +897,6 @@ async def rename_conversation_route(
 async def delete_conversation_route(thread_id: str, user_id: str = Depends(get_current_user_id)):
     delete_conversation(user_id, thread_id)
     return {"deleted": thread_id}
-
-
-# ---------------------------------------------------------------------------
-# Email settings & automations — user_id now comes from the verified Clerk
-# token instead of a path param, so nobody can pass someone else's id and
-# read/change their SMTP credentials.
-# ---------------------------------------------------------------------------
-
-
-@app.get("/email-settings")
-async def get_email_settings_route(user_id: str = Depends(get_current_user_id)):
-    """
-    Whether the signed-in user has email connected, and its non-secret
-    fields — never the password — so the Settings modal can show something
-    like "Connected as you@example.com" without re-displaying the secret.
-    """
-    settings = get_email_settings(user_id)
-
-    if not settings:
-        return {"configured": False}
-
-    return {
-        "configured": True,
-        "smtp_host": settings.smtp_host,
-        "smtp_port": settings.smtp_port,
-        "smtp_user": settings.smtp_user,
-        "smtp_from_name": settings.smtp_from_name,
-    }
-
-
-@app.post("/email-settings")
-async def save_email_settings_route(request: Request, user_id: str = Depends(get_current_user_id)):
-    try:
-        data = await request.json()
-    except Exception:
-        return JSONResponse({"error": "Invalid JSON body."}, status_code=400)
-
-    smtp_host = (data.get("smtp_host") or "").strip()
-    smtp_user = (data.get("smtp_user") or "").strip()
-    smtp_password = data.get("smtp_password") or ""
-    smtp_from_name = (data.get("smtp_from_name") or "").strip() or "agenza.ai"
-
-    try:
-        smtp_port = int(data.get("smtp_port") or 587)
-    except (TypeError, ValueError):
-        return JSONResponse({"error": "smtp_port must be a number."}, status_code=400)
-
-    if not smtp_host or not smtp_user:
-        return JSONResponse({"error": "smtp_host and smtp_user are required."}, status_code=400)
-
-    existing = get_email_settings(user_id)
-    if not existing and not smtp_password:
-        return JSONResponse({"error": "smtp_password is required the first time you connect."}, status_code=400)
-
-    save_email_settings(
-        user_id=user_id,
-        smtp_host=smtp_host,
-        smtp_port=smtp_port,
-        smtp_user=smtp_user,
-        smtp_password=smtp_password,
-        smtp_from_name=smtp_from_name,
-    )
-
-    return {"configured": True}
-
-
-@app.delete("/email-settings")
-async def delete_email_settings_route(user_id: str = Depends(get_current_user_id)):
-    delete_email_settings(user_id)
-    return {"configured": False}
 
 
 def _job_preferences_to_dict(p):
@@ -1089,75 +1108,6 @@ async def delete_saved_job_route(job_id: str, user_id: str = Depends(get_current
     return {"deleted": job_id}
 
 
-def _automation_to_dict(a):
-    return {
-        "id": a.id,
-        "to_email": a.to_email,
-        "subject": a.subject,
-        "body": a.body,
-        "frequency": a.frequency,
-        "time_of_day": a.time_of_day,
-        "enabled": bool(a.enabled),
-        "last_sent_at": a.last_sent_at.isoformat() if a.last_sent_at else None,
-    }
-
-
-@app.get("/automations")
-async def get_automations_route(user_id: str = Depends(get_current_user_id)):
-    return {"automations": [_automation_to_dict(a) for a in list_automations(user_id)]}
-
-
-@app.post("/automations")
-async def create_automation_route(request: Request, user_id: str = Depends(get_current_user_id)):
-    try:
-        data = await request.json()
-    except Exception:
-        return JSONResponse({"error": "Invalid JSON body."}, status_code=400)
-
-    to_email = (data.get("to_email") or "").strip()
-    subject = (data.get("subject") or "").strip()
-    body = (data.get("body") or "").strip()
-    frequency = data.get("frequency")
-    time_of_day = (data.get("time_of_day") or "").strip() or None
-
-    if not to_email or not subject or not body:
-        return JSONResponse({"error": "to_email, subject, and body are required."}, status_code=400)
-
-    if frequency not in ("hourly", "daily"):
-        return JSONResponse({"error": "frequency must be 'hourly' or 'daily'."}, status_code=400)
-
-    if frequency == "daily" and not time_of_day:
-        return JSONResponse({"error": "time_of_day (HH:MM) is required for daily automations."}, status_code=400)
-
-    if not get_email_settings(user_id):
-        return JSONResponse({"error": "Connect your email in Settings before creating an automation."}, status_code=400)
-
-    automation = create_automation(user_id, to_email, subject, body, frequency, time_of_day)
-    return _automation_to_dict(automation)
-
-
-@app.patch("/automations/{automation_id}")
-async def update_automation_route(
-    automation_id: int, request: Request, user_id: str = Depends(get_current_user_id)
-):
-    try:
-        data = await request.json()
-    except Exception:
-        return JSONResponse({"error": "Invalid JSON body."}, status_code=400)
-
-    automation = set_automation_enabled(user_id, automation_id, bool(data.get("enabled", True)))
-    if not automation:
-        return JSONResponse({"error": "Automation not found."}, status_code=404)
-
-    return _automation_to_dict(automation)
-
-
-@app.delete("/automations/{automation_id}")
-async def delete_automation_route(automation_id: int, user_id: str = Depends(get_current_user_id)):
-    delete_automation(user_id, automation_id)
-    return {"deleted": automation_id}
-
-
 def sse_data(payload: dict) -> str:
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
@@ -1240,16 +1190,6 @@ async def chat_stream(request: Request, user_id: str = Depends(get_current_user_
     # can never be shared across users even in the (extremely unlikely)
     # event of a thread_id collision between two different browsers.
     configurable = {"thread_id": f"{user_id}:{thread_id}"}
-
-    email_settings = get_email_settings(user_id)
-    if email_settings:
-        configurable["smtp"] = {
-            "host": email_settings.smtp_host,
-            "port": email_settings.smtp_port,
-            "user": email_settings.smtp_user,
-            "password": email_settings.smtp_password,
-            "from_name": email_settings.smtp_from_name,
-        }
 
     job_prefs = get_job_preferences(user_id)
     if job_prefs:
