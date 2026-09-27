@@ -21,7 +21,7 @@ LeaderLab tries to close that gap. You describe what you want in plain language,
 
 **Job search** - The agent's `search_jobs` tool queries Adzuna, RemoteOK, Remotive, and any configured RSS/Greenhouse career feeds in parallel, merges and dedupes the results, then scores every listing against the signed-in user's saved preferences and parsed resume. A second tool, `web_search`, gives the agent general web access via Tavily for anything outside job search.
 
-**Data** - Everything durable — usage limits, job preferences, parsed resumes, saved jobs, and conversation history - lives in the same PostgreSQL database as the agent's own checkpoints.
+**Data** - Everything durable - usage limits, job preferences, parsed resumes, saved jobs, and conversation history - lives in the same PostgreSQL database as the agent's own checkpoints.
 
 ## Stack
 
