@@ -1,6 +1,6 @@
 ## LeaderLab 
 
-LeaderLab is a chat-based job search assistant. Instead of juggling five different job boards and a spreadsheet, you talk to it - "find me remote backend roles in India" - and it searches, ranks, and explains its results in the same conversation.
+LeaderLab is a chat-based job search assistant. Instead of juggling five different job boards and a spreadsheet, you talk to it - "find me AI Engineer roles in India" - and it searches, ranks, and explains its results in the same conversation.
 
 ## Live Link 
 https://leaderlab.in/
@@ -29,3 +29,19 @@ Next.js · Clerk · FastAPI · LangGraph · Groq / Gemini / Mistral · Adzuna / 
 
 ## Architecture
 <img width="587" height="379" alt="image" src="https://github.com/user-attachments/assets/3fe86ccc-e9fb-4004-9afe-b3f87f7e39c7" />
+
+## User Interface
+<img width="958" height="533" alt="image" src="https://github.com/user-attachments/assets/e1e47fea-c808-48ad-8bff-41ef8d8c3b01" />
+
+## Job Customization 
+<img width="956" height="536" alt="image" src="https://github.com/user-attachments/assets/29340751-fd9c-4cfb-b66e-01df577ea56c" />
+
+## Token Usage
+<img width="959" height="535" alt="image" src="https://github.com/user-attachments/assets/aa3ff2aa-015b-4f0c-99be-9881c756bd6c" />
+
+## Job Search 
+<img width="958" height="532" alt="image" src="https://github.com/user-attachments/assets/53de231f-768c-40fb-a96a-66089658ef1c" />
+<img width="956" height="536" alt="image" src="https://github.com/user-attachments/assets/4478eea4-771e-4886-a335-d2a19e9c227c" />
+<img width="959" height="539" alt="image" src="https://github.com/user-attachments/assets/a8f1426b-2fed-4397-aa1a-2c77f55b7360" />
+
+
