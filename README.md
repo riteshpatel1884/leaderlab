@@ -1,8 +1,8 @@
-# LeaderLab 
+## LeaderLab 
 
 LeaderLab is a chat-based job search assistant. Instead of juggling five different job boards and a spreadsheet, you talk to it - "find me remote backend roles in the 120k+ range" - and it searches, ranks, and explains its results in the same conversation.
 
-# Live Link 
+## Live Link 
 https://leaderlab.in/
 
 ## Why
