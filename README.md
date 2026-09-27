@@ -1,41 +1,31 @@
-# LeaderLab
+# LeaderLab 
 
-An AI chat platform I'm building in phases - starting with a solid core chat experience and expanding from there.
+LeaderLab is a chat-based job search assistant. Instead of juggling five different job boards and a spreadsheet, you talk to it - "find me remote backend roles in the 120k+ range" - and it searches, ranks, and explains its results in the same conversation.
 
-**Live demo:** https://leaderlab.in
+# Live Link 
+https://leaderlab.in/
 
----
+## Why
 
-## Phase 1 - Core Chat Experience (Completed)
+Job search tools tend to fall into two camps: aggregators that dump hundreds of unranked listings on you, or ATS-style trackers that assume you've already found the jobs. Neither actually helps you figure out *which* of the hundred postings are worth your time.
 
-The goal of this phase was to nail the fundamentals: a fast, clean chat interface backed by real LLMs, with enough customization to make it feel personal.
+LeaderLab tries to close that gap. You describe what you want in plain language, it pulls listings from multiple sources in real time, and it scores each one against your saved preferences and resume - role match, location, skills, experience, salary, freshness - so the results are ranked by fit, not just recency. The same assistant can also just answer questions or search the web, so it doesn't feel like a bolted-on job widget.
 
-### Features
-- Chat with an LLM in a clean, ChatGPT-style interface
-- Switch between **GPT-OSS 120B** and **GPT-OSS 20B** models
-- Model selection built right into the chat UI (no settings menu digging)
-- Custom accent colors
-- Custom chat backgrounds/themes
-- Conversation sidebar with full chat history
+## How it works
 
-### Tech Stack
-- **Frontend:** Next.js
-- **Backend:** FastAPI (Python)
-- **Orchestration:** LangChain, LangGraph
-- **Database:** SQLite
+**Frontend** - A Next.js app (deployed on Vercel) handles the chat UI, saved jobs, resume upload, and settings. Auth is handled by Clerk; a middleware layer blocks every route except sign-in/sign-up for anyone without a session.
 
-### AI Models
-- `openai/gpt-oss-120b`
-- `openai/gpt-oss-20b`
+**Backend** - A FastAPI service verifies each request's Clerk session token (against Clerk's public JWKS, no shared secret needed) and exposes the chat, conversation, resume, and job-preferences endpoints. Chat responses stream back over SSE.
 
-### Tools & Hosting
-- Workflow design: Eraser
-- Version control: GitHub
-- Frontend hosting: Vercel
-- Backend hosting: Railway
+**Agent** - Each chat turn runs through a LangGraph agent. It isn't tied to a single LLM: it holds a fallback chain across Groq, Gemini, and Mistral, and rotates across multiple API keys per provider, so a rate limit on one key (or one provider) doesn't interrupt the conversation. Conversation state is checkpointed per thread in Postgres, so a chat picks up exactly where it left off.
 
----
+**Job search** - The agent's `search_jobs` tool queries Adzuna, RemoteOK, Remotive, and any configured RSS/Greenhouse career feeds in parallel, merges and dedupes the results, then scores every listing against the signed-in user's saved preferences and parsed resume. A second tool, `web_search`, gives the agent general web access via Tavily for anything outside job search.
 
-## Notes
+**Data** - Everything durable — usage limits, job preferences, parsed resumes, saved jobs, and conversation history - lives in the same PostgreSQL database as the agent's own checkpoints.
 
-This README will be updated as each phase ships.
+## Stack
+
+Next.js · Clerk · FastAPI · LangGraph · Groq / Gemini / Mistral · Adzuna / RemoteOK / Remotive · Tavily · PostgreSQL
+
+## Architecture
+<img width="587" height="379" alt="image" src="https://github.com/user-attachments/assets/3fe86ccc-e9fb-4004-9afe-b3f87f7e39c7" />
